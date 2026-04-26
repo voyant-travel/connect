@@ -1143,3 +1143,488 @@ export interface StaySearchResponse {
   connectionDiagnostics?: ConnectionDiagnostic[];
   nextCursor?: string | null;
 }
+
+// ─── Cruises (cruise data plane) ──────────────────────────────────────────
+
+export type CruiseType =
+  | "ocean"
+  | "river"
+  | "expedition"
+  | "coastal"
+  | "yacht"
+  | "sailing";
+
+export type CabinRoomType =
+  | "inside"
+  | "oceanview"
+  | "balcony"
+  | "suite"
+  | "penthouse"
+  | "single"
+  | "studio";
+
+export type CruiseSailingStatus =
+  | "open"
+  | "on_request"
+  | "wait_list"
+  | "sold_out"
+  | "closed";
+
+export type CruisePriceAvailability =
+  | "available"
+  | "limited"
+  | "on_request"
+  | "wait_list"
+  | "sold_out";
+
+export type CruiseInclusionKind =
+  | "meals"
+  | "drinks"
+  | "gratuities"
+  | "transfers"
+  | "excursions"
+  | "wifi"
+  | "flights"
+  | "other";
+
+export type CruiseEnrichmentKind =
+  | "naturalist"
+  | "historian"
+  | "photographer"
+  | "lecturer"
+  | "domain_expert"
+  | "other";
+
+export type CruiseFareComponentKind =
+  | "gratuity"
+  | "ncf"
+  | "port_charge"
+  | "tax"
+  | "airfare"
+  | "transfer"
+  | "insurance"
+  | "single_supplement"
+  | "other";
+
+export type CruiseBookingMode = "inquiry" | "reserve";
+
+export type CruiseBookingStatus =
+  | "inquiry"
+  | "pending"
+  | "confirmed"
+  | "cancelled"
+  | "no_show"
+  | "completed";
+
+export type CruiseQuoteStatus = "active" | "expired" | "consumed" | "released";
+
+export type CruisePassengerType = "adult" | "child" | "infant";
+
+export interface PortRef {
+  code?: string;
+  name: string;
+  countryCode?: string;
+}
+
+export interface CruiseImage {
+  url: string;
+  caption?: string;
+  isCover?: boolean;
+  sortOrder?: number;
+}
+
+export interface CruiseMedia {
+  url: string;
+  mediaType: "image" | "video";
+  isCover?: boolean;
+  caption?: string;
+}
+
+export interface CruiseInclusion {
+  kind: CruiseInclusionKind;
+  label: string;
+}
+
+export interface CruiseEnrichment {
+  kind: CruiseEnrichmentKind;
+  name: string;
+  description?: string;
+}
+
+export type CruiseCancellationPenalty =
+  | { type: "percentage"; value: number }
+  | { type: "fixed"; amount: ConnectMoney }
+  | { type: "full" };
+
+export interface CruiseCancellationDeadline {
+  fromDaysBeforeDeparture: number;
+  toDaysBeforeDeparture: number;
+  penalty: CruiseCancellationPenalty;
+}
+
+export interface CruiseCancellationPolicy {
+  deadlines: CruiseCancellationDeadline[];
+  notes?: string;
+}
+
+export interface CruiseLine {
+  id: string;
+  connectionId: string;
+  externalId: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+  fleetSize?: number;
+  locale: string;
+  meta: JsonObject;
+}
+
+export interface Ship {
+  id: string;
+  connectionId: string;
+  externalId: string;
+  cruiseLineId: string;
+  name: string;
+  shipType: CruiseType;
+  capacityGuests?: number;
+  cabinCount?: number;
+  deckCount?: number;
+  yearBuilt?: number;
+  yearRefurbished?: number;
+  amenities: string[];
+  images: CruiseImage[];
+  locale: string;
+  meta: JsonObject;
+}
+
+export interface Cruise {
+  id: string;
+  connectionId: string;
+  externalId: string;
+  cruiseLineId: string;
+  shipId: string;
+  name: string;
+  slug?: string;
+  cruiseType: CruiseType;
+  nights: number;
+  highlights?: string[];
+  description?: string;
+  destinations?: string[];
+  embarkationPort?: PortRef;
+  disembarkationPort?: PortRef;
+  inclusions: CruiseInclusion[];
+  enrichmentPrograms?: CruiseEnrichment[];
+  media: CruiseMedia[];
+  locale: string;
+  meta: JsonObject;
+}
+
+export interface CabinCategoryOccupancy {
+  adults: number;
+  children?: number;
+  total: number;
+}
+
+export interface CabinCategory {
+  id: string;
+  connectionId: string;
+  externalId: string;
+  shipId: string;
+  code: string;
+  name: string;
+  roomType: CabinRoomType;
+  maxOccupancy: CabinCategoryOccupancy;
+  area?: { value: number; unit: "sqm" | "sqft" };
+  features: string[];
+  images: CruiseImage[];
+  locale: string;
+  meta: JsonObject;
+}
+
+export interface ItineraryDay {
+  dayNumber: number;
+  date: string;
+  title?: string;
+  port?: PortRef;
+  isSeaDay: boolean;
+  isOvernight: boolean;
+  arriveAt?: IsoDateTime;
+  departAt?: IsoDateTime;
+  description?: string;
+  meals?: Array<"breakfast" | "lunch" | "dinner">;
+}
+
+export interface Sailing {
+  id: string;
+  connectionId: string;
+  externalId: string;
+  cruiseId: string;
+  shipId: string;
+  departureDate: string;
+  returnDate: string;
+  nights: number;
+  embarkationPort: PortRef;
+  disembarkationPort: PortRef;
+  itinerary: ItineraryDay[];
+  salesStatus: CruiseSailingStatus;
+  bookableUntil?: IsoDateTime;
+  meta: JsonObject;
+}
+
+export interface CruisePassengerOccupancy {
+  adults: number;
+  children?: number;
+  childrenAges?: number[];
+  infants?: number;
+}
+
+export interface CruiseFareComponent {
+  kind: CruiseFareComponentKind;
+  amount: ConnectMoney;
+  label?: string;
+}
+
+export interface CabinPricing {
+  connectionId: string;
+  sailingId: string;
+  cabinCategoryId: string;
+  occupancy: CruisePassengerOccupancy;
+  fareCode?: string;
+  pricePerPerson: ConnectMoney;
+  totalPrice: ConnectMoney;
+  components: CruiseFareComponent[];
+  availability: CruisePriceAvailability;
+  bookableUntil?: IsoDateTime;
+  cancellationPolicy: CruiseCancellationPolicy;
+  refreshedAt: IsoDateTime;
+}
+
+export interface CruiseSearchQuery {
+  destination?: { region?: string; portCodes?: string[] };
+  departureDate?: { from?: string; to?: string };
+  durationNights?: { min?: number; max?: number };
+  cruiseType?: CruiseType[];
+  cruiseLineIds?: string[];
+  shipIds?: string[];
+  occupancy: CruisePassengerOccupancy;
+  cabinCategories?: CabinRoomType[];
+  maxPricePerPerson?: ConnectMoney;
+  locale?: string;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface CruiseOfferPricing {
+  pricePerPerson: ConnectMoney;
+  totalPrice: ConnectMoney;
+  components: CruiseFareComponent[];
+}
+
+export interface CruiseOffer {
+  id: string;
+  connectionId: string;
+  sailingId: string;
+  cruiseId: string;
+  shipId: string;
+  cabinCategoryId: string;
+  fareCode?: string;
+  occupancy: CruisePassengerOccupancy;
+  pricing: CruiseOfferPricing;
+  cancellationPolicy: CruiseCancellationPolicy;
+  expiresAt: IsoDateTime;
+  bookableUntil?: IsoDateTime;
+}
+
+export interface CruiseQuote {
+  id: string;
+  offerSnapshot: CruiseOffer;
+  status: CruiseQuoteStatus;
+  expiresAt: IsoDateTime;
+}
+
+export interface CruisePassport {
+  number: string;
+  country: string;
+  expiresAt: string;
+}
+
+export interface CruisePassenger {
+  type: CruisePassengerType;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  nationality?: string;
+  passport?: CruisePassport;
+  email?: string;
+  phone?: string;
+  preferences?: {
+    dining?: string;
+    bedding?: string;
+    dietary?: string[];
+  };
+}
+
+export interface CruiseContact {
+  email: string;
+  phone?: string;
+  address?: {
+    line1: string;
+    line2?: string;
+    city?: string;
+    region?: string;
+    postalCode?: string;
+    countryCode?: string;
+  };
+}
+
+export interface CruisePaymentReference {
+  provider: string;
+  reference: string;
+  capturedAt?: IsoDateTime;
+  meta?: JsonObject;
+}
+
+export interface CruiseBookingDocument {
+  kind: "voucher" | "ticket" | "invoice" | "manifest";
+  url: string;
+  label?: string;
+}
+
+export interface CruiseBooking {
+  id: string;
+  connectionId: string;
+  sailingId: string;
+  cabinCategoryId: string;
+  mode: CruiseBookingMode;
+  status: CruiseBookingStatus;
+  reference: string;
+  externalReference?: string;
+  occupancy: CruisePassengerOccupancy;
+  passengers: CruisePassenger[];
+  leadPassenger: CruisePassenger;
+  contact: CruiseContact;
+  totals?: CruiseOfferPricing;
+  cancellationPolicy?: CruiseCancellationPolicy;
+  cancellation?: {
+    cancelledAt: IsoDateTime;
+    reason?: string;
+    refundAmount?: ConnectMoney;
+  };
+  payment?: CruisePaymentReference;
+  documents?: CruiseBookingDocument[];
+  notes?: string;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+}
+
+export interface CruiseInquireInput {
+  sailingId: string;
+  cabinCategoryId: string;
+  occupancy: CruisePassengerOccupancy;
+  leadPassenger: CruisePassenger;
+  contact: CruiseContact;
+  passengers?: CruisePassenger[];
+  notes?: string;
+}
+
+export interface CruiseConfirmInput {
+  quoteId: string;
+  leadPassenger: CruisePassenger;
+  contact: CruiseContact;
+  passengers: CruisePassenger[];
+  paymentReference?: CruisePaymentReference;
+  notes?: string;
+}
+
+export interface CruiseConnectionDiagnostic {
+  connectionId: string;
+  status: "ok" | "timeout" | "error" | "unauthorized";
+  message?: string;
+  durationMs?: number;
+}
+
+export interface CruiseSearchResponse {
+  offers: CruiseOffer[];
+  connectionDiagnostics?: CruiseConnectionDiagnostic[];
+  nextCursor?: string | null;
+}
+
+// Cruises read API — per-operator list/get response shapes
+
+export interface ListCruisesQuery {
+  cruiseType?: CruiseType | CruiseType[];
+  cruiseLineExternalId?: string | string[];
+  shipExternalId?: string | string[];
+  minNights?: number;
+  maxNights?: number;
+  locale?: string;
+  limit?: number;
+}
+
+export interface OperatorCruiseSummary {
+  id: string;
+  connectionId: string;
+  externalId: string;
+  cruiseLineExternalId: string;
+  shipExternalId: string;
+  name: string;
+  slug: string | null;
+  cruiseType: string;
+  nights: number;
+  destinations: string[] | null;
+  embarkationPortCode: string | null;
+  disembarkationPortCode: string | null;
+  locale: string;
+  payload: JsonObject;
+  lastSyncedAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+  providerKey: string | null;
+  supplierName: string;
+  [key: string]: unknown;
+}
+
+export interface OperatorCruiseDetail {
+  cruise: JsonObject;
+  providerKey: string | null;
+  supplierName: string;
+}
+
+export interface ListSailingsQuery {
+  cruiseExternalId?: string | string[];
+  shipExternalId?: string | string[];
+  salesStatus?: string | string[];
+  departureFrom?: string;
+  departureTo?: string;
+  limit?: number;
+}
+
+export interface OperatorSailingSummary {
+  sailing: JsonObject;
+  providerKey: string | null;
+  supplierName: string;
+}
+
+export interface OperatorSailingDetail {
+  sailing: JsonObject;
+  providerKey: string | null;
+  supplierName: string;
+}
+
+export interface ListItineraryDay {
+  connectionId: string;
+  sailingExternalId: string;
+  dayNumber: number;
+  date: string;
+  title: string | null;
+  portCode: string | null;
+  portName: string | null;
+  countryCode: string | null;
+  isSeaDay: boolean;
+  isOvernight: boolean;
+  arriveAt: IsoDateTime | null;
+  departAt: IsoDateTime | null;
+  payload: JsonObject;
+  [key: string]: unknown;
+}

@@ -7,9 +7,23 @@ import type {
   AvailabilityCalendarQueryInput,
   CancelBookingInput,
   ConfirmBookingInput,
+  CruiseBooking,
+  CruiseConfirmInput,
+  CruiseInquireInput,
+  CruiseOffer,
+  CruiseQuote,
+  CruiseSearchQuery,
+  CruiseSearchResponse,
   ListAccommodationsQuery,
+  ListCruisesQuery,
+  ListItineraryDay,
+  ListSailingsQuery,
   OperatorAccommodationDetail,
   OperatorAccommodationSummary,
+  OperatorCruiseDetail,
+  OperatorCruiseSummary,
+  OperatorSailingDetail,
+  OperatorSailingSummary,
   RatePlan,
   RoomType,
   StayBooking,
@@ -958,6 +972,345 @@ export class VoyantConnectClient {
       if (filter?.limit !== undefined) query.limit = filter.limit;
       return this.transport.request<Array<StayBooking & { providerKey: string | null; supplierName: string }>>(
         `/connect/v1/operators/${operatorId}/stays/bookings`,
+        { query },
+      );
+    },
+  };
+
+  // ── Cruises (cruise data plane — read API) ───────────────────────────
+
+  readonly cruises = {
+    /**
+     * List cruises across all of the operator's accessible connections.
+     * Filter by `connectionId`, `providerKey`, `cruiseType`, line/ship,
+     * `minNights`/`maxNights`, `locale`. Falls back to client.operatorId.
+     */
+    list: async (
+      filter?: ConnectionScopeFilter & OperatorScope & ListCruisesQuery,
+    ) => {
+      const operatorId = this.resolveOperatorId(filter);
+      const query: Record<string, string | string[] | number | undefined> = {};
+      if (filter?.connectionId !== undefined) query.connectionId = filter.connectionId;
+      if (filter?.providerKey !== undefined) query.providerKey = filter.providerKey;
+      if (filter?.cruiseType !== undefined) query.cruiseType = filter.cruiseType;
+      if (filter?.cruiseLineExternalId !== undefined)
+        query.cruiseLineExternalId = filter.cruiseLineExternalId;
+      if (filter?.shipExternalId !== undefined) query.shipExternalId = filter.shipExternalId;
+      if (filter?.minNights !== undefined) query.minNights = filter.minNights;
+      if (filter?.maxNights !== undefined) query.maxNights = filter.maxNights;
+      if (filter?.locale !== undefined) query.locale = filter.locale;
+      if (filter?.limit !== undefined) query.limit = filter.limit;
+      return this.transport.request<OperatorCruiseSummary[]>(
+        `/connect/v1/operators/${operatorId}/cruises`,
+        { query },
+      );
+    },
+
+    /** Look up a cruise by id in the operator's catalog. */
+    get: async (cruiseId: string, scope?: OperatorScope & { locale?: string }) => {
+      const operatorId = this.resolveOperatorId(scope);
+      return this.transport.request<OperatorCruiseDetail>(
+        `/connect/v1/operators/${operatorId}/cruises/${cruiseId}`,
+        {
+          query: scope?.locale ? { locale: scope.locale } : undefined,
+        },
+      );
+    },
+
+    /** Per-connection list (Connect-normalized). */
+    listOnConnection: (
+      connectionId: string,
+      options?: { locale?: string; limit?: number },
+    ) =>
+      this.transport.request<JsonObject[]>(
+        `/connect/v1/connections/${connectionId}/cruises`,
+        {
+          query: options as unknown as Record<string, string | number | undefined>,
+          unwrapData: false,
+        },
+      ),
+
+    /** Per-connection cruise lookup. */
+    getOnConnection: (
+      connectionId: string,
+      cruiseId: string,
+      options?: { locale?: string },
+    ) =>
+      this.transport.request<JsonObject>(
+        `/connect/v1/connections/${connectionId}/cruises/${cruiseId}`,
+        {
+          query: options as unknown as Record<string, string | undefined>,
+          unwrapData: false,
+        },
+      ),
+
+    /**
+     * Cross-connection sailings list — primary search axis is departure
+     * window. Filter by cruise/ship/sales status.
+     */
+    listSailings: async (
+      filter?: ConnectionScopeFilter & OperatorScope & ListSailingsQuery,
+    ) => {
+      const operatorId = this.resolveOperatorId(filter);
+      const query: Record<string, string | string[] | number | undefined> = {};
+      if (filter?.connectionId !== undefined) query.connectionId = filter.connectionId;
+      if (filter?.providerKey !== undefined) query.providerKey = filter.providerKey;
+      if (filter?.cruiseExternalId !== undefined)
+        query.cruiseExternalId = filter.cruiseExternalId;
+      if (filter?.shipExternalId !== undefined) query.shipExternalId = filter.shipExternalId;
+      if (filter?.salesStatus !== undefined) query.salesStatus = filter.salesStatus;
+      if (filter?.departureFrom !== undefined) query.departureFrom = filter.departureFrom;
+      if (filter?.departureTo !== undefined) query.departureTo = filter.departureTo;
+      if (filter?.limit !== undefined) query.limit = filter.limit;
+      return this.transport.request<OperatorSailingSummary[]>(
+        `/connect/v1/operators/${operatorId}/sailings`,
+        { query },
+      );
+    },
+
+    /** Look up a sailing by id in the operator's catalog. */
+    getSailing: async (sailingId: string, scope?: OperatorScope) => {
+      const operatorId = this.resolveOperatorId(scope);
+      return this.transport.request<OperatorSailingDetail>(
+        `/connect/v1/operators/${operatorId}/sailings/${sailingId}`,
+      );
+    },
+
+    /** Per-connection sailings list. */
+    listSailingsOnConnection: (
+      connectionId: string,
+      options?: {
+        cruiseExternalId?: string;
+        departureFrom?: string;
+        departureTo?: string;
+        salesStatus?: string | string[];
+        limit?: number;
+      },
+    ) =>
+      this.transport.request<JsonObject[]>(
+        `/connect/v1/connections/${connectionId}/sailings`,
+        {
+          query: options as unknown as Record<string, string | string[] | number | undefined>,
+          unwrapData: false,
+        },
+      ),
+
+    /** Per-connection sailing lookup. */
+    getSailingOnConnection: (connectionId: string, sailingId: string) =>
+      this.transport.request<JsonObject>(
+        `/connect/v1/connections/${connectionId}/sailings/${sailingId}`,
+        { unwrapData: false },
+      ),
+
+    /** Itinerary days for a sailing on a connection (port calls + sea days). */
+    listItinerary: (connectionId: string, sailingExternalId: string) =>
+      this.transport.request<ListItineraryDay[]>(
+        `/connect/v1/connections/${connectionId}/sailings/${sailingExternalId}/itinerary`,
+        { unwrapData: false },
+      ),
+
+    /** Cruise lines available on a connection. */
+    listCruiseLines: (connectionId: string, options?: { locale?: string }) =>
+      this.transport.request<JsonObject[]>(
+        `/connect/v1/connections/${connectionId}/cruise-lines`,
+        {
+          query: options as unknown as Record<string, string | undefined>,
+          unwrapData: false,
+        },
+      ),
+
+    /** Ships on a connection — optionally filter by cruise line. */
+    listShips: (
+      connectionId: string,
+      options?: { cruiseLineExternalId?: string; locale?: string; limit?: number },
+    ) =>
+      this.transport.request<JsonObject[]>(
+        `/connect/v1/connections/${connectionId}/ships`,
+        {
+          query: options as unknown as Record<string, string | number | undefined>,
+          unwrapData: false,
+        },
+      ),
+
+    /** Per-connection ship lookup. */
+    getShip: (connectionId: string, shipId: string) =>
+      this.transport.request<JsonObject>(
+        `/connect/v1/connections/${connectionId}/ships/${shipId}`,
+        { unwrapData: false },
+      ),
+
+    /** Cabin categories for a ship on a connection. */
+    listCabinCategories: (
+      connectionId: string,
+      shipExternalId: string,
+      options?: { locale?: string },
+    ) =>
+      this.transport.request<JsonObject[]>(
+        `/connect/v1/connections/${connectionId}/ships/${shipExternalId}/cabin-categories`,
+        {
+          query: options as unknown as Record<string, string | undefined>,
+          unwrapData: false,
+        },
+      ),
+
+    /** Per-connection cruise search; reads the local cache. */
+    search: (connectionId: string, query: CruiseSearchQuery) =>
+      this.transport.request<CruiseSearchResponse>(
+        `/connect/v1/connections/${connectionId}/cruises/search`,
+        { body: query, method: "POST", unwrapData: false },
+      ),
+
+    /**
+     * Cross-connection cruise search. Fans out across the operator's
+     * accessible connections, merges offers, returns a unified response with
+     * `connectionDiagnostics` per connection.
+     */
+    searchAcrossProviders: async (
+      query: CruiseSearchQuery,
+      filter?: ConnectionScopeFilter & OperatorScope,
+    ) => {
+      const operatorId = this.resolveOperatorId(filter);
+      const body: Record<string, unknown> = { ...query };
+      if (filter && (filter.connectionId !== undefined || filter.providerKey !== undefined)) {
+        body.filter = {
+          connectionId: filter.connectionId,
+          providerKey: filter.providerKey,
+        };
+      }
+      return this.transport.request<CruiseSearchResponse>(
+        `/connect/v1/operators/${operatorId}/cruises/search`,
+        { body, method: "POST", unwrapData: false },
+      );
+    },
+  };
+
+  // ── Cruise bookings (lock + confirm + lifecycle) ─────────────────────
+
+  readonly cruiseBookings = {
+    /**
+     * Inquiry-mode booking: creates a sales lead, no provider hold. The
+     * reseller follows up out-of-band. Returns the booking with status
+     * `inquiry`.
+     */
+    inquire: (connectionId: string, input: CruiseInquireInput) =>
+      this.transport.request<CruiseBooking>(
+        `/connect/v1/connections/${connectionId}/cruise-bookings/inquiries`,
+        { body: input, method: "POST", unwrapData: false },
+      ),
+
+    /**
+     * Lock a cruise offer (reserve mode). Connect creates a server-side
+     * quote with a 24h default TTL; if the adapter has a native option API
+     * (e.g. Viking), Connect calls it under the hood.
+     */
+    lock: (
+      connectionId: string,
+      offer: CruiseOffer,
+      options?: { ttlHours?: number },
+    ) =>
+      this.transport.request<CruiseQuote>(
+        `/connect/v1/connections/${connectionId}/cruises/lock`,
+        {
+          body: { offer, ttlHours: options?.ttlHours },
+          method: "POST",
+          unwrapData: false,
+        },
+      ),
+
+    releaseLock: (connectionId: string, quoteId: string) =>
+      this.transport.request<CruiseQuote>(
+        `/connect/v1/connections/${connectionId}/cruise-quotes/${quoteId}`,
+        { method: "DELETE", unwrapData: false },
+      ),
+
+    getQuote: (connectionId: string, quoteId: string) =>
+      this.transport.request<CruiseQuote>(
+        `/connect/v1/connections/${connectionId}/cruise-quotes/${quoteId}`,
+        { unwrapData: false },
+      ),
+
+    /**
+     * Confirm a held offer into a booking (reserve mode). `idempotencyKey`
+     * becomes `Idempotency-Key` and is enforced server-side against the
+     * quote.
+     */
+    confirm: (
+      connectionId: string,
+      input: CruiseConfirmInput,
+      options?: { idempotencyKey?: string },
+    ) =>
+      this.transport.request<CruiseBooking>(
+        `/connect/v1/connections/${connectionId}/cruise-bookings`,
+        {
+          body: input,
+          headers: withIdempotency(options?.idempotencyKey),
+          method: "POST",
+          unwrapData: false,
+        },
+      ),
+
+    cancel: (
+      connectionId: string,
+      bookingId: string,
+      options?: { reason?: string },
+    ) =>
+      this.transport.request<CruiseBooking>(
+        `/connect/v1/connections/${connectionId}/cruise-bookings/${bookingId}/cancel`,
+        {
+          body: options?.reason ? { reason: options.reason } : {},
+          method: "POST",
+          unwrapData: false,
+        },
+      ),
+
+    get: (connectionId: string, bookingId: string) =>
+      this.transport.request<CruiseBooking>(
+        `/connect/v1/connections/${connectionId}/cruise-bookings/${bookingId}`,
+        { unwrapData: false },
+      ),
+
+    list: (
+      connectionId: string,
+      query?: {
+        status?: string | string[];
+        mode?: string | string[];
+        departureFrom?: string;
+        departureTo?: string;
+        limit?: number;
+      },
+    ) =>
+      this.transport.request<CruiseBooking[]>(
+        `/connect/v1/connections/${connectionId}/cruise-bookings`,
+        {
+          query: query as unknown as Record<string, string | string[] | number | undefined>,
+          unwrapData: false,
+        },
+      ),
+
+    /** Cross-connection booking list scoped to the operator. */
+    listAll: async (
+      filter?: ConnectionScopeFilter &
+        OperatorScope & {
+          status?: string | string[];
+          mode?: string | string[];
+          departureFrom?: string;
+          departureTo?: string;
+          limit?: number;
+        },
+    ) => {
+      const operatorId = this.resolveOperatorId(filter);
+      const query: Record<string, string | string[] | number | undefined> = {};
+      if (filter?.connectionId !== undefined) query.connectionId = filter.connectionId;
+      if (filter?.providerKey !== undefined) query.providerKey = filter.providerKey;
+      if (filter?.status !== undefined) query.status = filter.status;
+      if (filter?.mode !== undefined) query.mode = filter.mode;
+      if (filter?.departureFrom !== undefined) query.departureFrom = filter.departureFrom;
+      if (filter?.departureTo !== undefined) query.departureTo = filter.departureTo;
+      if (filter?.limit !== undefined) query.limit = filter.limit;
+      return this.transport.request<
+        Array<CruiseBooking & { providerKey: string | null; supplierName: string }>
+      >(
+        `/connect/v1/operators/${operatorId}/cruise-bookings`,
         { query },
       );
     },
