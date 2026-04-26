@@ -1,14 +1,14 @@
 # Connect SDK
 
 `@voyantjs/connect-sdk` is the public TypeScript client for the Voyant Connect
-product — the operator/connection control plane plus the gateway data plane
-for inventory, bookings, and flights.
+product — the operator/connection control plane plus the Connect-normalized
+data plane for inventory, bookings, and flights.
 
 ## Current shape
 
+**Control plane**
 - `oauth` — exchange client credentials for a short-lived bearer token
-- `operators` — CRUD plus per-operator usage, products, suppliers, and search
-  projections
+- `operators` — CRUD plus per-operator usage and search projections
 - `connectorProviders` — list providers, manage applications, and per-operator
   provider registrations (including TUI settings and revalidation)
 - `connections` — CRUD plus webhook secret rotation, projection sync runs,
@@ -22,12 +22,42 @@ for inventory, bookings, and flights.
   replay deliveries
 - `customConnectionRequests` — capture inbound requests for new supplier
   integrations
-- `gateway` — connection-scoped data plane: products, availability, bookings,
-  suppliers, plus booking activity audit trail
-- `connect` — Connect-normalized inventory reads from the synced replica
-  (suppliers, products, options, units, extras, availability, bookings)
+
+**Data plane (Connect-normalized)**
+- `products` — cross-connection `list` / `get` plus per-connection
+  `listOnConnection`, `getOnConnection`, `listOptions`, `listExtras`
+- `options` — per-connection `listUnits`, `listExtraConfigs`
+- `suppliers` — cross-connection `list` plus per-connection `listOnConnection`
+- `availability` — per-connection `list` and `calendar`
+- `bookings` — cross-connection `listAll` plus per-connection `list`, `get`,
+  `create`, `confirm`, `cancel`, `listActivities`
+- `health` — per-connection sync status
+
+**Flights**
 - `flights` — multi-connection and per-connection search, price, book, manage
   orders, seats, ancillaries, exchanges, refunds, check-in, SSRs
+
+## Cross-connection methods
+
+`products.list`, `suppliers.list`, and `bookings.listAll` aggregate across
+every connection in an operator's catalog. They use the client-level
+`operatorId` as default and accept a per-call `{ operatorId }` override.
+Both `connectionId` and `providerKey` accept a scalar or an array.
+
+```ts
+import { createVoyantConnectClient } from "@voyantjs/connect-sdk";
+
+const client = createVoyantConnectClient({
+  apiKey: process.env.VOYANT_API_KEY!,
+  operatorId: "op_123",
+});
+
+await client.products.list();                            // all connections
+await client.products.list({ providerKey: "ventrata" }); // filter by provider
+await client.products.list({                              // multiple values
+  connectionId: ["conn_a", "conn_b"],
+});
+```
 
 ## Auth
 
@@ -40,7 +70,7 @@ for inventory, bookings, and flights.
 
 ## Idempotency
 
-`gateway.createBooking` accepts `{ idempotencyKey }`, which is sent as
+`bookings.create` accepts `{ idempotencyKey }`, which is sent as
 `Idempotency-Key` and replayed against the server-side dedupe table.
 
 ## Streaming
@@ -70,6 +100,6 @@ const connection = await client.connections.create(operator.id, {
   providerKey: "tui",
 });
 
-const products = await client.connect.listProducts(connection.id);
+const products = await client.products.listOnConnection(connection.id);
 void products;
 ```

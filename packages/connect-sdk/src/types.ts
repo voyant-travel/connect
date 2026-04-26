@@ -1,8 +1,34 @@
 import type { JsonObject, VoyantTransportOptions } from "@voyant-sdk/sdk-core";
 
-export type VoyantConnectClientOptions = VoyantTransportOptions;
+export interface VoyantConnectClientOptions extends VoyantTransportOptions {
+  /**
+   * Default operator for org-scoped data-plane calls (`products.list`,
+   * `suppliers.list`, `bookings.listAll`, `bookings.get` by org-scope, etc.).
+   * Methods accept a per-call override; calls without either resolved
+   * operator throw a `VoyantApiError` at request time.
+   */
+  operatorId?: string;
+}
 
 // ─── Common ────────────────────────────────────────────────────────────────
+
+/**
+ * Per-call operator override for org-scoped data-plane methods. When omitted,
+ * the client falls back to `VoyantConnectClientOptions.operatorId`.
+ */
+export interface OperatorScope {
+  operatorId?: string;
+}
+
+/**
+ * Filter accepted by every cross-connection (org-wide) read.
+ * Both fields accept a single value or an array; the SDK serializes arrays
+ * as repeated query-string parameters (e.g. `?connectionId=a&connectionId=b`).
+ */
+export interface ConnectionScopeFilter {
+  connectionId?: string | string[];
+  providerKey?: string | string[];
+}
 
 export type IsoDateTime = string;
 
@@ -381,6 +407,74 @@ export interface OperatorSupplierSummary {
   [key: string]: unknown;
 }
 
+export interface OperatorBookingSummary {
+  id: string;
+  connectionId: string;
+  providerKey: string | null;
+  supplierName: string;
+  externalBookingId: string;
+  productExternalId: string;
+  optionExternalId: string;
+  status: string;
+  sourceType: string;
+  supplierConfirmationStatus: string | null;
+  confirmedAt: IsoDateTime | null;
+  cancelledAt: IsoDateTime | null;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+  [key: string]: unknown;
+}
+
+export interface ListOperatorBookingsQuery {
+  localDateStart?: string;
+  localDateEnd?: string;
+  status?: string | string[];
+  limit?: number;
+}
+
+export interface ListAccommodationsQuery {
+  category?: AccommodationCategory | AccommodationCategory[];
+  countryCode?: string | string[];
+  city?: string | string[];
+  minStars?: number;
+  /** Filter by price_from <= this amount in minor units. Currency-agnostic. */
+  maxPriceFromAmountMinor?: number;
+  locale?: string;
+  limit?: number;
+}
+
+export interface OperatorAccommodationSummary {
+  id: string;
+  connectionId: string;
+  externalId: string;
+  category: AccommodationCategory;
+  name: string;
+  slug: string | null;
+  countryCode: string;
+  region: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  stars: number | null;
+  locale: string;
+  amenities: string[];
+  priceFromAmountMinor: number | null;
+  priceFromCurrency: string | null;
+  priceFromRefreshedAt: IsoDateTime | null;
+  providerKey: string | null;
+  supplierName: string;
+  lastSyncedAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+  payload: JsonObject;
+  [key: string]: unknown;
+}
+
+export interface OperatorAccommodationDetail {
+  accommodation: JsonObject;
+  providerKey: string | null;
+  supplierName: string;
+}
+
 export interface SearchDocumentQuery {
   connectionId?: string;
   updatedSince?: IsoDateTime;
@@ -545,16 +639,7 @@ export interface CreateCustomConnectionRequestInput {
   hasCredentials?: boolean;
 }
 
-// ─── Gateway data plane (per connection) ─────────────────────────────────
-
-export interface AvailabilityQueryInput {
-  productId: string;
-  optionId?: string;
-  localDateStart?: string;
-  localDateEnd?: string;
-  units?: Array<{ id: string; quantity: number }>;
-  [key: string]: unknown;
-}
+// ─── Connect data plane (per connection) ─────────────────────────────────
 
 export interface AvailabilityCalendarQueryInput {
   productId: string;
@@ -582,13 +667,6 @@ export interface ConfirmBookingInput {
 
 export interface CancelBookingInput {
   reason?: string | null;
-}
-
-export interface ListBookingsQuery {
-  resellerReference?: string;
-  supplierReference?: string;
-  localDateStart?: string;
-  localDateEnd?: string;
 }
 
 export interface ListBookingActivitiesQuery {
@@ -748,3 +826,320 @@ export type FlightSearchResult = JsonObject;
 export type FlightOrder = JsonObject;
 export type FlightSeatMap = JsonObject;
 export type FlightAncillaryList = JsonObject;
+
+// ─── Accommodations (hospitality data plane) ──────────────────────────────
+
+export interface ConnectMoney {
+  amountMinor: number;
+  currency: string;
+  currencyPrecision: number;
+}
+
+export type AccommodationCategory =
+  | "hotel"
+  | "apartment"
+  | "villa"
+  | "hostel"
+  | "guesthouse"
+  | "resort"
+  | "bnb"
+  | "other";
+
+export type BoardCode = "RO" | "BB" | "HB" | "FB" | "AI";
+
+export type RatePlanGuaranteeMode = "none" | "card_hold" | "deposit" | "prepay";
+
+export type RatePlanPricingMode = "static" | "dynamic";
+
+export type OccupancyPricingMode =
+  | "per_room"
+  | "per_person"
+  | "per_room_with_per_extra_person";
+
+export type StayBookingStatus =
+  | "pending"
+  | "confirmed"
+  | "cancelled"
+  | "no_show"
+  | "completed";
+
+export type StayHoldStatus = "active" | "expired" | "consumed" | "released";
+
+export type GuestType = "adult" | "child" | "infant";
+
+export type BedType =
+  | "single"
+  | "double"
+  | "queen"
+  | "king"
+  | "twin"
+  | "sofa"
+  | "bunk";
+
+export type CancellationPenalty =
+  | { type: "percentage"; value: number }
+  | { type: "first_night" }
+  | { type: "fixed"; amount: ConnectMoney }
+  | { type: "full" };
+
+export interface CancellationDeadline {
+  fromHoursBeforeCheckIn: number;
+  toHoursBeforeCheckIn: number;
+  penalty: CancellationPenalty;
+}
+
+export interface CancellationPolicy {
+  freeCancellationUntil?: IsoDateTime | null;
+  deadlines: CancellationDeadline[];
+}
+
+export interface AccommodationLocation {
+  countryCode: string;
+  region?: string | null;
+  city?: string | null;
+  address?: {
+    line1: string;
+    line2?: string | null;
+    postalCode?: string | null;
+  } | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  destinationCodes?: string[];
+}
+
+export interface AccommodationImage {
+  url: string;
+  caption?: string;
+  tags?: string[];
+  sortOrder?: number;
+}
+
+export interface AccommodationPolicies {
+  checkInFrom?: string;
+  checkInTo?: string;
+  checkOutFrom?: string;
+  checkOutTo?: string;
+  childrenWelcome?: boolean;
+  petsWelcome?: boolean;
+  smokingAllowed?: boolean;
+  extraBeds?: {
+    max?: number;
+    ageRange?: { min: number; max: number };
+  };
+}
+
+export interface Accommodation {
+  id: string;
+  connectionId: string;
+  externalId: string;
+  category: AccommodationCategory;
+  name: string;
+  slug?: string;
+  description?: string;
+  shortDescription?: string;
+  rating?: { stars?: number; source?: string };
+  location: AccommodationLocation;
+  contact?: { phone?: string; email?: string; website?: string };
+  amenities: string[];
+  policies: AccommodationPolicies;
+  images: AccommodationImage[];
+  taxesIncludedInPrice?: boolean;
+  locale: string;
+  meta: JsonObject;
+}
+
+export interface RoomTypeOccupancy {
+  maxAdults: number;
+  maxChildren: number;
+  maxInfants: number;
+  maxTotal: number;
+  standardOccupancy: number;
+}
+
+export interface RoomTypeBed {
+  type: BedType;
+  count: number;
+}
+
+export interface RoomType {
+  id: string;
+  connectionId: string;
+  accommodationId: string;
+  externalId: string;
+  name: string;
+  description?: string;
+  occupancy: RoomTypeOccupancy;
+  beds: RoomTypeBed[];
+  area?: { value: number; unit: "sqm" | "sqft" };
+  view?: string;
+  amenities: string[];
+  images: AccommodationImage[];
+  locale: string;
+  meta: JsonObject;
+}
+
+export interface RatePlanRestrictions {
+  minStay?: number;
+  maxStay?: number;
+  advancePurchaseDays?: number;
+  closedToArrivalWeekdays?: number[];
+  closedToDepartureWeekdays?: number[];
+}
+
+export interface RatePlan {
+  id: string;
+  connectionId: string;
+  accommodationId: string;
+  roomTypeId: string;
+  externalId: string;
+  code: string;
+  name: string;
+  description?: string;
+  board: BoardCode;
+  refundable: boolean;
+  cancellationPolicy: CancellationPolicy;
+  guaranteeMode: RatePlanGuaranteeMode;
+  currency: string;
+  occupancyPricingMode: OccupancyPricingMode;
+  pricingMode: RatePlanPricingMode;
+  restrictions?: RatePlanRestrictions;
+  locale: string;
+  meta: JsonObject;
+}
+
+export interface StaySearchRoom {
+  adults: number;
+  children?: number;
+  childrenAges?: number[];
+  infants?: number;
+}
+
+export interface StaySearchQuery {
+  destination?: { countryCode?: string; region?: string; city?: string };
+  near?: { latitude: number; longitude: number; radiusKm: number };
+  accommodationIds?: string[];
+  checkIn: string;
+  checkOut: string;
+  rooms: StaySearchRoom[];
+  category?: AccommodationCategory[];
+  minStars?: number;
+  amenities?: string[];
+  boards?: BoardCode[];
+  refundableOnly?: boolean;
+  maxPrice?: ConnectMoney;
+  locale?: string;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface StayOfferRoom {
+  roomTypeId: string;
+  ratePlanId: string;
+  occupancy: StaySearchRoom;
+  nights: number;
+  nightlyBreakdown: Array<{ date: string; amount: ConnectMoney }>;
+  subtotal: ConnectMoney;
+  taxes: ConnectMoney;
+  fees: ConnectMoney;
+  total: ConnectMoney;
+  cancellationPolicy: CancellationPolicy;
+}
+
+export interface StayOfferTotals {
+  subtotal: ConnectMoney;
+  taxes: ConnectMoney;
+  fees: ConnectMoney;
+  total: ConnectMoney;
+}
+
+export interface StayOffer {
+  id: string;
+  connectionId: string;
+  accommodationId: string;
+  rooms: StayOfferRoom[];
+  totals: StayOfferTotals;
+  expiresAt: IsoDateTime;
+}
+
+export interface StayHold {
+  id: string;
+  offerSnapshot: StayOffer;
+  status: StayHoldStatus;
+  expiresAt: IsoDateTime;
+}
+
+export interface Guest {
+  type: GuestType;
+  firstName: string;
+  lastName: string;
+  age?: number;
+  dateOfBirth?: string;
+  title?: string;
+  email?: string;
+  phone?: string;
+  passport?: { number: string; country: string; expiresAt: string };
+}
+
+export interface StayBookingContact {
+  email: string;
+  phone?: string;
+}
+
+export interface StayBookingRoom {
+  roomTypeId: string;
+  ratePlanId: string;
+  checkIn: string;
+  checkOut: string;
+  occupancy: StaySearchRoom;
+  guests: Guest[];
+  totals: StayOfferRoom;
+}
+
+export interface PaymentReference {
+  provider: string;
+  reference: string;
+  capturedAt?: IsoDateTime;
+  meta?: JsonObject;
+}
+
+export interface StayBooking {
+  id: string;
+  connectionId: string;
+  accommodationId: string;
+  status: StayBookingStatus;
+  reference: string;
+  externalReference?: string;
+  voucher?: { url?: string; codes?: string[] };
+  rooms: StayBookingRoom[];
+  leadGuest: Guest;
+  contact: StayBookingContact;
+  totals: StayOfferTotals;
+  cancellationPolicy: CancellationPolicy;
+  cancellation?: { cancelledAt: IsoDateTime; reason?: string; refundAmount?: ConnectMoney };
+  payment?: PaymentReference;
+  notes?: string;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+}
+
+export interface StayConfirmInput {
+  holdId: string;
+  leadGuest: Guest;
+  contact: StayBookingContact;
+  guestsByRoom: Guest[][];
+  paymentReference?: PaymentReference;
+  notes?: string;
+}
+
+export interface ConnectionDiagnostic {
+  connectionId: string;
+  status: "ok" | "timeout" | "error" | "unauthorized";
+  message?: string;
+  durationMs?: number;
+}
+
+export interface StaySearchResponse {
+  offers: StayOffer[];
+  connectionDiagnostics?: ConnectionDiagnostic[];
+  nextCursor?: string | null;
+}

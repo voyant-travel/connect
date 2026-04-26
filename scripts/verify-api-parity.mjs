@@ -8,6 +8,7 @@ const voyantCloudRepo = path.resolve(repoRoot, "../voyant-cloud");
 const manifestFile = path.join(repoRoot, "generated", "public-routes.json");
 
 const connectRouteFiles = [
+  "accommodations.ts",
   "audit-logs.ts",
   "availability.ts",
   "bookings.ts",
@@ -25,6 +26,7 @@ const connectRouteFiles = [
   "operator-data.ts",
   "operators.ts",
   "products.ts",
+  "stays.ts",
   "suppliers.ts",
   "usage.ts",
   "webhook-subscriptions.ts",
@@ -34,10 +36,19 @@ const connectRouteFiles = [
 
 // Routes the public Connect SDK intentionally does not surface (different
 // auth model or internal-only). Kept in sync with sync-route-manifests.mjs.
-const connectExclusions = new Set(["POST /internal/operators/sync"]);
+const connectExclusions = new Set(["POST /connect/internal/operators/sync"]);
 
 function isConnectChannelRoute(route) {
-  return route.includes(" /v1/connect-channel/");
+  return route.includes(" /connect/v1/connect-channel/");
+}
+
+// Raw provider passthrough — internal live-connector routes consumed by the
+// platform API, not surfaced through the public SDK. Mirrors the rule in
+// sync-route-manifests.mjs.
+function isGatewayPassthroughRoute(route) {
+  return /^(?:GET|POST|DELETE|PATCH|PUT) \/connect\/v1\/raw\/connections\/:connectionId\/(?:products|suppliers|availability|bookings)(?:\/|$)/.test(
+    route,
+  );
 }
 
 function fileExists(filePath) {
@@ -101,6 +112,7 @@ for (const file of connectRouteFiles) {
   for (const route of extractRoutes(file)) {
     if (connectExclusions.has(route)) continue;
     if (isConnectChannelRoute(route)) continue;
+    if (isGatewayPassthroughRoute(route)) continue;
     actualConnectRoutes.add(route);
   }
 }

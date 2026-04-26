@@ -1,8 +1,8 @@
 # `@voyantjs/connect-sdk`
 
 Public TypeScript client for Voyant Connect APIs — the operator/connection
-control plane plus the gateway data plane for products, availability,
-bookings, suppliers, flights, and Connect-normalized inventory reads.
+control plane plus the Connect-normalized data plane for products,
+availability, bookings, suppliers, options, and flights.
 
 ## Scope
 
@@ -10,8 +10,10 @@ bookings, suppliers, flights, and Connect-normalized inventory reads.
 - connector providers and per-operator provider registrations
 - webhook subscriptions, deliveries, test events, and replays
 - audit logs, usage, invite tokens, custom connection requests
-- gateway data plane: products, availability, bookings, suppliers
-- Connect-normalized inventory reads (`/v1/connect/...`)
+- Connect-normalized data plane: `products`, `options`, `suppliers`,
+  `availability`, `bookings`, `health`
+- cross-connection list methods (`products.list`, `suppliers.list`,
+  `bookings.listAll`) with `connectionId` / `providerKey` filters
 - flights: search, price, book, manage orders, seats, ancillaries, exchanges,
   refunds, check-in, SSRs
 
@@ -28,11 +30,20 @@ import { createVoyantConnectClient } from "@voyantjs/connect-sdk";
 
 const client = createVoyantConnectClient({
   apiKey: process.env.VOYANT_API_KEY!,
+  operatorId: "op_123", // default operator for org-scoped reads
 });
 
-const operators = await client.operators.list();
-const connections = await client.connections.list("op_123");
-const booking = await client.gateway.createBooking(
+// Cross-connection — list every product in the operator's catalog,
+// optionally filtered by provider or connection.
+const everything = await client.products.list();
+const byProvider = await client.products.list({ providerKey: "ventrata" });
+
+// Per-connection — Connect-normalized reads.
+const productsOnConn = await client.products.listOnConnection("conn_456");
+const options = await client.products.listOptions("conn_456", "prod_789");
+
+// Bookings (per connection) — `idempotencyKey` becomes `Idempotency-Key`.
+const booking = await client.bookings.create(
   "conn_456",
   {
     productId: "prod_789",
@@ -65,6 +76,7 @@ void me;
 
 Root groups on `VoyantConnectClient`:
 
+**Control plane**
 - `oauth`
 - `operators`
 - `connectorProviders`
@@ -76,21 +88,36 @@ Root groups on `VoyantConnectClient`:
 - `inviteTokens`
 - `webhookSubscriptions`
 - `customConnectionRequests`
-- `gateway`
-- `connect`
+
+**Data plane (Connect-normalized)**
+- `products` — cross-connection `list` / `get` plus per-connection
+  `listOnConnection`, `getOnConnection`, `listOptions`, `listExtras`
+- `options` — `listUnits`, `listExtraConfigs`
+- `suppliers` — cross-connection `list` plus `listOnConnection`
+- `availability` — `list`, `calendar`
+- `bookings` — cross-connection `listAll` plus per-connection `list`,
+  `get`, `create`, `confirm`, `cancel`, `listActivities`
+- `health` — `get`
+
+**Flights**
 - `flights`
 
 ## Notes
 
-- default base URL is `https://api.voyantjs.com`
+- default base URL is `https://api.voyantjs.com`; the SDK targets the
+  `/connect/v1/...` path namespace under it
 - request auth defaults to `authorization: Bearer <apiKey>`
 - response envelopes of the form `{ data: ... }` are unwrapped by default;
-  paginated and gateway endpoints return their raw shape
+  paginated and per-connection Connect reads return their raw shape
 - OAuth M2M tokens carry scopes (e.g. `operators:read`, `connections:write`,
   `bookings:write`, `flights:read`); requests fail with `403` if the token
   does not include the required scope
-- `gateway.createBooking` accepts an `idempotencyKey` option that is sent as
+- `bookings.create` accepts an `idempotencyKey` option that is sent as
   the `Idempotency-Key` header
+- cross-connection `products.list` / `suppliers.list` / `bookings.listAll`
+  use the client-level `operatorId` as default; pass `{ operatorId }` to
+  override per call. Both `connectionId` and `providerKey` filters accept
+  scalar or array values.
 - `flights.searchStream` returns the raw `Response` so callers can stream the
   Server-Sent Events with whichever parser they prefer
 

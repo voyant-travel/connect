@@ -6,6 +6,7 @@ const repoRoot = path.resolve(import.meta.dirname, "..");
 const voyantCloudRepo = path.resolve(repoRoot, "../voyant-cloud");
 
 const connectSources = [
+  "accommodations.ts",
   "audit-logs.ts",
   "availability.ts",
   "bookings.ts",
@@ -23,6 +24,7 @@ const connectSources = [
   "operator-data.ts",
   "operators.ts",
   "products.ts",
+  "stays.ts",
   "suppliers.ts",
   "usage.ts",
   "webhook-subscriptions.ts",
@@ -36,11 +38,20 @@ const manifestFile = path.join(repoRoot, "generated", "public-routes.json");
 // Routes the public Connect SDK does not surface (different auth model or
 // internal-only). Kept in sync with verify-api-parity.mjs.
 const connectExclusions = new Set([
-  "POST /internal/operators/sync",
+  "POST /connect/internal/operators/sync",
 ]);
 
 const connectChannelExcluded = (route) =>
-  route.includes(" /v1/connect-channel/");
+  route.includes(" /connect/v1/connect-channel/");
+
+// Raw provider passthrough — internal live-connector routes consumed by the
+// platform API (voyant-cloud `apps/api`), not surfaced through the public
+// SDK. The SDK exposes the Connect-normalized equivalents under
+// `/connect/v1/connections/:connectionId/...`.
+const gatewayPassthroughExcluded = (route) =>
+  /^(?:GET|POST|DELETE|PATCH|PUT) \/connect\/v1\/raw\/connections\/:connectionId\/(?:products|suppliers|availability|bookings)(?:\/|$)/.test(
+    route,
+  );
 
 function fileExists(filePath) {
   return fs.existsSync(filePath);
@@ -73,6 +84,7 @@ const connectRoutes = connectSources
   .flatMap((source) => extractRoutes(source.file, source.pathPrefix))
   .filter((route) => !connectExclusions.has(route))
   .filter((route) => !connectChannelExcluded(route))
+  .filter((route) => !gatewayPassthroughExcluded(route))
   .sort();
 
 const manifest = { connect: connectRoutes };

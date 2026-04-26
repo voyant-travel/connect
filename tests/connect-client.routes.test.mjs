@@ -37,7 +37,7 @@ test("connect client unwraps `data` for control-plane reads", async () => {
   assert.deepEqual(operators, [
     { id: "op_1", slug: "alpine", name: "Alpine" },
   ]);
-  assert.equal(recorder.calls[0].url, "https://api.voyantjs.com/v1/operators");
+  assert.equal(recorder.calls[0].url, "https://api.voyantjs.com/connect/v1/operators");
   assert.equal(recorder.calls[0].method, "GET");
   assert.equal(
     recorder.calls[0].headers.get("authorization"),
@@ -58,13 +58,13 @@ test("connect client composes nested operator and connection routes", async () =
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/v1/operators/op_1/connections",
+    "https://api.voyantjs.com/connect/v1/operators/op_1/connections",
   );
   assert.equal(recorder.calls[0].method, "GET");
 
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyantjs.com/v1/operators/op_1/connections",
+    "https://api.voyantjs.com/connect/v1/operators/op_1/connections",
   );
   assert.equal(recorder.calls[1].method, "POST");
   assert.deepEqual(JSON.parse(recorder.calls[1].body), {
@@ -73,7 +73,7 @@ test("connect client composes nested operator and connection routes", async () =
 
   assert.equal(
     recorder.calls[2].url,
-    "https://api.voyantjs.com/v1/operators/op_1/connections/conn_1/webhook-secret/rotate",
+    "https://api.voyantjs.com/connect/v1/operators/op_1/connections/conn_1/webhook-secret/rotate",
   );
   assert.equal(recorder.calls[2].method, "POST");
 });
@@ -97,11 +97,11 @@ test("connect client preserves `{ data, pagination }` envelope for audit logs", 
   });
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/v1/audit-logs?limit=5",
+    "https://api.voyantjs.com/connect/v1/audit-logs?limit=5",
   );
 });
 
-test("connect client returns raw shape for gateway data plane and forwards idempotency key", async () => {
+test("connect client per-connection bookings.create forwards idempotency key", async () => {
   const recorder = createRecorder({
     responseBody: { id: "book_1", status: "reserved" },
   });
@@ -110,8 +110,7 @@ test("connect client returns raw shape for gateway data plane and forwards idemp
     fetch: recorder.fetch,
   });
 
-  await client.gateway.listProducts("conn_1");
-  const booking = await client.gateway.createBooking(
+  const booking = await client.bookings.create(
     "conn_1",
     {
       productId: "prod_1",
@@ -124,50 +123,255 @@ test("connect client returns raw shape for gateway data plane and forwards idemp
   assert.deepEqual(booking, { id: "book_1", status: "reserved" });
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/v1/connections/conn_1/products",
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/bookings",
   );
   assert.equal(recorder.calls[0].method, "POST");
-
-  assert.equal(
-    recorder.calls[1].url,
-    "https://api.voyantjs.com/v1/connections/conn_1/bookings",
-  );
-  assert.equal(recorder.calls[1].method, "POST");
-  assert.equal(recorder.calls[1].headers.get("idempotency-key"), "key-123");
-  assert.deepEqual(JSON.parse(recorder.calls[1].body), {
+  assert.equal(recorder.calls[0].headers.get("idempotency-key"), "key-123");
+  assert.deepEqual(JSON.parse(recorder.calls[0].body), {
     productId: "prod_1",
     optionId: "opt_1",
     unitItems: [{ unitId: "u_1", quantity: 2 }],
   });
 });
 
-test("connect client composes Connect-normalized read routes", async () => {
+test("connect client domain namespaces target Connect-normalized routes", async () => {
   const recorder = createRecorder({ responseBody: [] });
   const client = createVoyantConnectClient({
     apiKey: "k",
     fetch: recorder.fetch,
   });
 
-  await client.connect.listProducts("conn_1", { supplierId: "sup_1" });
-  await client.connect.listOptionUnits("conn_1", "opt_1");
-  await client.connect.listAvailability("conn_1", {
+  await client.products.listOnConnection("conn_1", { supplierId: "sup_1" });
+  await client.options.listUnits("conn_1", "opt_1");
+  await client.availability.list("conn_1", {
     productId: "prod_1",
     localDateStart: "2026-05-01",
     localDateEnd: "2026-05-31",
   });
+  await client.health.get("conn_1");
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/v1/connect/connections/conn_1/products?supplierId=sup_1",
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/products?supplierId=sup_1",
   );
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyantjs.com/v1/connect/connections/conn_1/options/opt_1/units",
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/options/opt_1/units",
   );
   assert.equal(
     recorder.calls[2].url,
-    "https://api.voyantjs.com/v1/connect/connections/conn_1/availability?productId=prod_1&localDateStart=2026-05-01&localDateEnd=2026-05-31",
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/availability?productId=prod_1&localDateStart=2026-05-01&localDateEnd=2026-05-31",
   );
+  assert.equal(
+    recorder.calls[3].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/health",
+  );
+});
+
+test("products.list resolves operatorId from client default and serializes filters", async () => {
+  const recorder = createRecorder({
+    responseBody: { data: [{ id: "prod_1" }] },
+  });
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    operatorId: "op_default",
+    fetch: recorder.fetch,
+  });
+
+  await client.products.list();
+  await client.products.list({
+    connectionId: ["conn_a", "conn_b"],
+    providerKey: "ventrata",
+  });
+  await client.products.list({ operatorId: "op_override" });
+
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyantjs.com/connect/v1/operators/op_default/products",
+  );
+  assert.equal(
+    recorder.calls[1].url,
+    "https://api.voyantjs.com/connect/v1/operators/op_default/products?connectionId=conn_a&connectionId=conn_b&providerKey=ventrata",
+  );
+  assert.equal(
+    recorder.calls[2].url,
+    "https://api.voyantjs.com/connect/v1/operators/op_override/products",
+  );
+});
+
+test("bookings.listAll fans out across connections via operator route", async () => {
+  const recorder = createRecorder({
+    responseBody: { data: [{ id: "book_1", connectionId: "conn_a" }] },
+  });
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    operatorId: "op_default",
+    fetch: recorder.fetch,
+  });
+
+  await client.bookings.listAll({
+    providerKey: ["ventrata", "fareharbor"],
+    localDateStart: "2026-05-01",
+  });
+
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyantjs.com/connect/v1/operators/op_default/bookings?providerKey=ventrata&providerKey=fareharbor&localDateStart=2026-05-01",
+  );
+});
+
+test("accommodations namespace targets the new accommodations routes", async () => {
+  const recorder = createRecorder({ responseBody: { data: [] } });
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    operatorId: "op_default",
+    fetch: recorder.fetch,
+  });
+
+  await client.accommodations.list({ providerKey: "tui", minStars: 4 });
+  await client.accommodations.get("acc_1");
+  await client.accommodations.listOnConnection("conn_1");
+  await client.accommodations.getOnConnection("conn_1", "acc_1");
+  await client.accommodations.listRoomTypes("conn_1", "TUI_HOTEL_X");
+  await client.accommodations.listRatePlans("conn_1", "TUI_HOTEL_X", {
+    roomTypeId: "TUI_HOTEL_X:STANDARD",
+  });
+
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyantjs.com/connect/v1/operators/op_default/accommodations?providerKey=tui&minStars=4",
+  );
+  assert.equal(
+    recorder.calls[1].url,
+    "https://api.voyantjs.com/connect/v1/operators/op_default/accommodations/acc_1",
+  );
+  assert.equal(
+    recorder.calls[2].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/accommodations",
+  );
+  assert.equal(
+    recorder.calls[3].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/accommodations/acc_1",
+  );
+  assert.equal(
+    recorder.calls[4].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/accommodations/TUI_HOTEL_X/room-types",
+  );
+  assert.equal(
+    recorder.calls[5].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/accommodations/TUI_HOTEL_X/rate-plans?roomTypeId=TUI_HOTEL_X%3ASTANDARD",
+  );
+});
+
+test("stays namespace targets search/lock/confirm/cancel routes", async () => {
+  const recorder = createRecorder({ responseBody: { offers: [], connectionDiagnostics: [] } });
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    operatorId: "op_default",
+    fetch: recorder.fetch,
+  });
+
+  await client.stays.search("conn_1", {
+    checkIn: "2026-06-01",
+    checkOut: "2026-06-05",
+    rooms: [{ adults: 2, childrenAges: [8] }],
+    destination: { city: "Marrakech" },
+  });
+  await client.stays.searchAcrossProviders(
+    {
+      checkIn: "2026-06-01",
+      checkOut: "2026-06-05",
+      rooms: [{ adults: 2 }],
+      accommodationIds: ["TUI_HOTEL_X"],
+    },
+    { providerKey: "tui" },
+  );
+  const offer = {
+    id: "tui:offer_123",
+    connectionId: "conn_1",
+    accommodationId: "HX",
+    rooms: [],
+    totals: {
+      subtotal: { amountMinor: 0, currency: "EUR", currencyPrecision: 2 },
+      taxes: { amountMinor: 0, currency: "EUR", currencyPrecision: 2 },
+      fees: { amountMinor: 0, currency: "EUR", currencyPrecision: 2 },
+      total: { amountMinor: 0, currency: "EUR", currencyPrecision: 2 },
+    },
+    expiresAt: "2026-06-01T00:00:00.000Z",
+  };
+  await client.stays.lock("conn_1", offer, { ttlMinutes: 25 });
+  await client.stays.confirm(
+    "conn_1",
+    {
+      holdId: "h_1",
+      leadGuest: { type: "adult", firstName: "Jane", lastName: "Doe" },
+      contact: { email: "jane@example.com" },
+      guestsByRoom: [
+        [
+          { type: "adult", firstName: "Jane", lastName: "Doe" },
+          { type: "adult", firstName: "John", lastName: "Doe" },
+        ],
+      ],
+    },
+    { idempotencyKey: "confirm-001" },
+  );
+  await client.stays.cancel("conn_1", "b_1", { reason: "guest changed plans" });
+  await client.stays.get("conn_1", "b_1");
+  await client.stays.list("conn_1", { status: ["confirmed", "pending"] });
+  await client.stays.listAll({ providerKey: "tui", checkInFrom: "2026-06-01" });
+  await client.stays.releaseLock("conn_1", "h_1");
+
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/search",
+  );
+  assert.equal(recorder.calls[0].method, "POST");
+  assert.equal(
+    recorder.calls[1].url,
+    "https://api.voyantjs.com/connect/v1/operators/op_default/stays/search",
+  );
+  assert.equal(
+    recorder.calls[2].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/lock",
+  );
+  assert.equal(
+    recorder.calls[3].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/bookings",
+  );
+  assert.equal(recorder.calls[3].headers.get("idempotency-key"), "confirm-001");
+  assert.equal(
+    recorder.calls[4].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/bookings/b_1",
+  );
+  assert.equal(recorder.calls[4].method, "DELETE");
+  assert.equal(
+    recorder.calls[5].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/bookings/b_1",
+  );
+  assert.equal(
+    recorder.calls[6].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/bookings?status=confirmed&status=pending",
+  );
+  assert.equal(
+    recorder.calls[7].url,
+    "https://api.voyantjs.com/connect/v1/operators/op_default/stays/bookings?providerKey=tui&checkInFrom=2026-06-01",
+  );
+  assert.equal(
+    recorder.calls[8].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/holds/h_1",
+  );
+  assert.equal(recorder.calls[8].method, "DELETE");
+});
+
+test("products.list throws when neither client nor scope provides operatorId", async () => {
+  const recorder = createRecorder();
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    fetch: recorder.fetch,
+  });
+
+  await assert.rejects(() => client.products.list(), /operatorId is required/);
+  assert.equal(recorder.calls.length, 0);
 });
 
 test("connect client OAuth issueToken sends client_credentials body", async () => {
@@ -197,7 +401,7 @@ test("connect client OAuth issueToken sends client_credentials body", async () =
     expires_in: 3600,
     scope: "operators:read",
   });
-  assert.equal(recorder.calls[0].url, "https://api.voyantjs.com/v1/oauth/token");
+  assert.equal(recorder.calls[0].url, "https://api.voyantjs.com/connect/v1/oauth/token");
   assert.equal(recorder.calls[0].method, "POST");
   assert.deepEqual(JSON.parse(recorder.calls[0].body), {
     client_id: "ci",
@@ -226,7 +430,7 @@ test("connect client flights.searchStream returns the raw response", async () =>
   assert.equal(response instanceof Response, true);
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/v1/flights/search-stream",
+    "https://api.voyantjs.com/connect/v1/flights/search-stream",
   );
   assert.equal(recorder.calls[0].method, "POST");
   assert.equal(recorder.calls[0].headers.get("accept"), "text/event-stream");
