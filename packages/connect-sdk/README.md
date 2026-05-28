@@ -2,7 +2,8 @@
 
 Public TypeScript client for Voyant Connect APIs — the operator/connection
 control plane plus the Connect-normalized data plane for products,
-availability, bookings, suppliers, options, and flights.
+availability, bookings, suppliers, options, cruises, stays, accommodations,
+and flights.
 
 ## Scope
 
@@ -11,7 +12,7 @@ availability, bookings, suppliers, options, and flights.
 - webhook subscriptions, deliveries, test events, and replays
 - audit logs, usage, invite tokens, custom connection requests
 - Connect-normalized data plane: `products`, `options`, `suppliers`,
-  `availability`, `bookings`, `health`
+  `availability`, `bookings`, `cruises`, `stays`, `accommodations`, `health`
 - cross-connection list methods (`products.list`, `suppliers.list`,
   `bookings.listAll`) with `connectionId` / `providerKey` filters
 - flights: search, price, book, manage orders, seats, ancillaries, exchanges,
@@ -97,6 +98,8 @@ Root groups on `VoyantConnectClient`:
 - `availability` — `list`, `calendar`
 - `bookings` — cross-connection `listAll` plus per-connection `list`,
   `get`, `create`, `confirm`, `cancel`, `listActivities`
+- `cruises` / `cruiseBookings` — cruise catalog, search, lock, inquiry, and
+  booking lifecycle routes
 - `health` — `get`
 
 **Flights**

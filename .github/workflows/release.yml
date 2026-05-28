@@ -58,7 +58,7 @@ jobs:
         if: steps.changesets.outputs.published == 'true'
         id: version
         run: |
-          VERSION=$(node -p "require('./packages/cloud-sdk/package.json').version")
+          VERSION=$(node -p "require('./packages/connect-sdk/package.json').version")
           echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Tag release

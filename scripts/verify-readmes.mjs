@@ -24,6 +24,8 @@ function verifyRootReadme() {
   const required = [
     "# Voyant Connect SDK",
     "`@voyantjs/connect-sdk`",
+    "`@voyantjs/connect-provider-sdk`",
+    "`@voyantjs/connect-cruises`",
     "`@voyant-sdk/sdk-core`",
     "pnpm verify",
     "pnpm release",
@@ -34,6 +36,8 @@ function verifyRootReadme() {
     "pnpm verify:package-manifests",
     "pnpm verify:readmes",
     "[Connect SDK](./docs/connect.md)",
+    "[Provider SDK](./docs/provider-sdk.md)",
+    "[Connect Cruises](./docs/connect-cruises.md)",
   ];
 
   for (const needle of required) {
@@ -224,6 +228,20 @@ verifyPackageReadme({
   packageName: "@voyantjs/connect-sdk",
   factoryName: "createVoyantConnectClient",
   docLink: "[../../docs/connect.md](../../docs/connect.md)",
+  envVar: "VOYANT_API_KEY",
+});
+verifyPackageReadme({
+  path: "packages/connect-provider-sdk/README.md",
+  packageName: "@voyantjs/connect-provider-sdk",
+  factoryName: "defineConnectProvider",
+  docLink: "[../../docs/provider-sdk.md](../../docs/provider-sdk.md)",
+  envVar: "https://api.voyantjs.com",
+});
+verifyPackageReadme({
+  path: "packages/connect-cruises/README.md",
+  packageName: "@voyantjs/connect-cruises",
+  factoryName: "createConnectCruiseAdapter",
+  docLink: "[../../docs/connect-cruises.md](../../docs/connect-cruises.md)",
   envVar: "VOYANT_API_KEY",
 });
 verifyPublishingDoc();

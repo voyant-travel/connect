@@ -26,6 +26,15 @@ function normalizeRoute(route) {
   return `${method} ${normalizeParameterizedPath(pathParts.join(" "))}`;
 }
 
+function isManualAuthRoute(route) {
+  return (
+    route === "POST /connect/v1/oauth/token" ||
+    /^GET \/connect\/v1\/operators\/:[^/]+\/oauth-clients$/.test(route) ||
+    /^POST \/connect\/v1\/operators\/:[^/]+\/oauth-clients$/.test(route) ||
+    /^DELETE \/connect\/v1\/operators\/:[^/]+\/oauth-clients\/:[^/]+$/.test(route)
+  );
+}
+
 function resolveStringExpression(expression, sourceFile) {
   if (ts.isStringLiteral(expression) || ts.isNoSubstitutionTemplateLiteral(expression)) {
     return expression.text;
@@ -95,7 +104,7 @@ function extractTransportRoutes(filePath) {
 }
 
 function verifyProductCoverage(product, clientRoutes, manifestRoutes) {
-  const actual = new Set([...clientRoutes].map(normalizeRoute));
+  const actual = new Set([...clientRoutes].filter((route) => !isManualAuthRoute(route)).map(normalizeRoute));
   const expected = new Set(manifestRoutes.map(normalizeRoute));
 
   const missingRoutes = [...expected].filter((route) => !actual.has(route)).sort();

@@ -9,10 +9,46 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const packDir = mkdtempSync(path.join(tmpdir(), "voyant-sdk-pack-"));
 
+function readPackageVersion(relativePath) {
+  const manifestPath = path.join(repoRoot, relativePath, "package.json");
+  const raw = execFileSync("node", ["-e", `process.stdout.write(require(${JSON.stringify(manifestPath)}).version)`], {
+    encoding: "utf8",
+  });
+  return raw.trim();
+}
+
+const sdkCoreVersion = readPackageVersion("packages/sdk-core");
+const connectSdkVersion = readPackageVersion("packages/connect-sdk");
+
 const packages = [
   {
     dir: path.join(repoRoot, "packages", "connect-sdk"),
     expectedName: "@voyantjs/connect-sdk",
+    dependencies: {
+      "@voyant-sdk/sdk-core": sdkCoreVersion,
+    },
+    bundleDependencies: ["@voyant-sdk/sdk-core"],
+    bundledFiles: [
+      "package/node_modules/@voyant-sdk/sdk-core/package.json",
+      "package/node_modules/@voyant-sdk/sdk-core/dist/index.js",
+      "package/node_modules/@voyant-sdk/sdk-core/dist/index.d.ts",
+    ],
+  },
+  {
+    dir: path.join(repoRoot, "packages", "connect-provider-sdk"),
+    expectedName: "@voyantjs/connect-provider-sdk",
+    dependencies: {},
+    bundleDependencies: undefined,
+    bundledFiles: [],
+  },
+  {
+    dir: path.join(repoRoot, "packages", "connect-cruises"),
+    expectedName: "@voyantjs/connect-cruises",
+    dependencies: {
+      "@voyantjs/connect-sdk": connectSdkVersion,
+    },
+    bundleDependencies: undefined,
+    bundledFiles: [],
   },
 ];
 
@@ -84,8 +120,19 @@ function verifyInstalledImports(tarballs) {
         `
           import assert from "node:assert/strict";
           import { createVoyantConnectClient } from "@voyantjs/connect-sdk";
+          import { defineConnectProvider } from "@voyantjs/connect-provider-sdk";
+          import { createConnectCruiseAdapter } from "@voyantjs/connect-cruises";
 
           const connect = createVoyantConnectClient({ apiKey: "connect_key" });
+          const provider = defineConnectProvider({
+            key: "example-cruises",
+            displayName: "Example Cruises",
+            authModel: "bring_your_own_credentials",
+            accessModel: "credential_scoped",
+            supportedDirections: ["inbound"],
+            categoryCoverage: ["cruise"],
+          });
+          const cruiseAdapter = createConnectCruiseAdapter({ client: connect });
 
           assert.equal(typeof connect.oauth.issueToken, "function");
           assert.equal(typeof connect.operators.list, "function");
@@ -116,6 +163,8 @@ function verifyInstalledImports(tarballs) {
           assert.equal(typeof connect.flights.search, "function");
           assert.equal(typeof connect.flights.searchStream, "function");
           assert.equal(typeof connect.flights.book, "function");
+          assert.equal(provider.key, "example-cruises");
+          assert.equal(typeof cruiseAdapter.listEntries, "function");
         `,
       ],
       {
@@ -183,6 +232,14 @@ function verifyInstalledTypecheck(tarballs) {
           type OperatorSummary,
           type VoyantConnectClientOptions,
         } from "@voyantjs/connect-sdk";
+        import {
+          defineConnectProvider,
+          type ConnectProviderDescriptor,
+        } from "@voyantjs/connect-provider-sdk";
+        import {
+          createConnectCruiseAdapter,
+          type ConnectCruiseAdapter,
+        } from "@voyantjs/connect-cruises";
 
         const connect: VoyantConnectClient = createVoyantConnectClient({
           apiKey: "connect_key",
@@ -217,6 +274,15 @@ function verifyInstalledTypecheck(tarballs) {
           departureDate: "2026-06-01",
           passengers: [{ type: "adult", count: 1 }],
         });
+        const provider: ConnectProviderDescriptor = defineConnectProvider({
+          key: "example-cruises",
+          displayName: "Example Cruises",
+          authModel: "bring_your_own_credentials",
+          accessModel: "credential_scoped",
+          supportedDirections: ["inbound"],
+          categoryCoverage: ["cruise"],
+        });
+        const cruiseAdapter: ConnectCruiseAdapter = createConnectCruiseAdapter({ client: connect });
 
         void tokenPromise;
         void operatorsPromise;
@@ -225,6 +291,8 @@ function verifyInstalledTypecheck(tarballs) {
         void connectionPromise;
         void auditLogsPromise;
         void flightStreamPromise;
+        void provider;
+        void cruiseAdapter;
       `,
     );
 
@@ -257,16 +325,22 @@ try {
     assert.equal(manifest.exports?.["."].import, "./dist/index.js");
     assert.equal(manifest.exports?.["."].types, "./dist/index.d.ts");
 
-    assert.deepEqual(manifest.bundleDependencies, ["@voyant-sdk/sdk-core"]);
-    assert.equal(manifest.dependencies?.["@voyant-sdk/sdk-core"], "0.1.0");
+    if (pkg.bundleDependencies === undefined) {
+      assert.equal(manifest.bundleDependencies, undefined);
+    } else {
+      assert.deepEqual(manifest.bundleDependencies, pkg.bundleDependencies);
+    }
+    for (const [dependency, expectedVersion] of Object.entries(pkg.dependencies)) {
+      assert.equal(manifest.dependencies?.[dependency], expectedVersion);
+    }
 
     assert.ok(files.includes("package/README.md"));
     assert.ok(files.includes("package/package.json"));
     assert.ok(files.includes("package/dist/index.js"));
     assert.ok(files.includes("package/dist/index.d.ts"));
-    assert.ok(files.includes("package/node_modules/@voyant-sdk/sdk-core/package.json"));
-    assert.ok(files.includes("package/node_modules/@voyant-sdk/sdk-core/dist/index.js"));
-    assert.ok(files.includes("package/node_modules/@voyant-sdk/sdk-core/dist/index.d.ts"));
+    for (const bundledFile of pkg.bundledFiles) {
+      assert.ok(files.includes(bundledFile));
+    }
 
     const hasSrcFiles = files.some((file) => file.startsWith("package/src/"));
     assert.equal(hasSrcFiles, false);

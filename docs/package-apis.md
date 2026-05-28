@@ -73,3 +73,48 @@ Selected public types:
   `FlightCheckInInput`, `FlightExchangeInput`, `FlightRefundInput`,
   `FlightSsrInput`
 - `UsageQuery`, `UsageSummary`
+
+## `@voyantjs/connect-provider-sdk`
+
+Provider-author primitives:
+
+- `defineConnectProvider(descriptor)`
+- `assertProviderKey(key)`
+- `parseJsonCredentials(raw)`
+- `ConnectProviderSdkError`
+
+Selected public types:
+
+- `ConnectProviderDescriptor`
+- `ConnectConnectionContext`
+- `ConnectProviderCategory`
+- `ConnectProviderDirection`
+- `ConnectProviderAuthModel`
+- `ConnectProviderAccessModel`
+- `ConnectProviderCredentialValidationResult`
+
+## `@voyantjs/connect-cruises`
+
+Voyant-side cruises adapter factory:
+
+- `createConnectCruiseAdapter(options)`
+- `ConnectCruisesNotImplementedError`
+- `passengerCountFromConnectOccupancy(occupancy)`
+- `connectFareComponentAmount(component)`
+
+`createConnectCruiseAdapter` accepts a `quoteTtlHours` option for reserve-mode
+booking commits. When Voyant calls `createBooking` without an existing
+`cabinCategoryRef.quoteId`, the adapter asks Connect to lock the selected
+sailing/cabin/fare/occupancy, then confirms the resulting quote.
+
+Selected public types:
+
+- `ConnectCruiseAdapter`
+- `ConnectCruiseAdapterOptions`
+- `ConnectCruiseSourceRef`
+- `ConnectExternalCruise`
+- `ConnectExternalSailing`
+- `ConnectExternalShip`
+- `ConnectExternalPriceRow`
+- `ConnectExternalBookingInput`
+- `ConnectExternalBookingResult`

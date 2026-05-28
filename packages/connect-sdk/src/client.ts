@@ -6,10 +6,12 @@ import type {
   AuditLogQuery,
   AvailabilityCalendarQueryInput,
   CancelBookingInput,
+  CabinPricing,
   ConfirmBookingInput,
   CruiseBooking,
   CruiseConfirmInput,
   CruiseInquireInput,
+  CruiseLockSelectionInput,
   CruiseOffer,
   CruiseQuote,
   CruiseSearchQuery,
@@ -17,6 +19,7 @@ import type {
   ListAccommodationsQuery,
   ListCruisesQuery,
   ListItineraryDay,
+  ListSailingPricingQuery,
   ListSailingsQuery,
   OperatorAccommodationDetail,
   OperatorAccommodationSummary,
@@ -1109,6 +1112,20 @@ export class VoyantConnectClient {
         { unwrapData: false },
       ),
 
+    /** Cabin pricing grid for a sailing on a connection. */
+    listSailingPricing: (
+      connectionId: string,
+      sailingExternalId: string,
+      query?: ListSailingPricingQuery,
+    ) =>
+      this.transport.request<CabinPricing[]>(
+        `/connect/v1/connections/${connectionId}/sailings/${sailingExternalId}/pricing`,
+        {
+          query: query as unknown as Record<string, string | number | undefined>,
+          unwrapData: false,
+        },
+      ),
+
     /** Cruise lines available on a connection. */
     listCruiseLines: (connectionId: string, options?: { locale?: string }) =>
       this.transport.request<JsonObject[]>(
@@ -1215,6 +1232,17 @@ export class VoyantConnectClient {
           method: "POST",
           unwrapData: false,
         },
+      ),
+
+    /**
+     * Lock a concrete cruise selection. Connect resolves the current
+     * normalized pricing row server-side, builds the canonical offer snapshot,
+     * optionally calls the provider lock API, and returns the quote.
+     */
+    lockSelection: (connectionId: string, input: CruiseLockSelectionInput) =>
+      this.transport.request<CruiseQuote>(
+        `/connect/v1/connections/${connectionId}/cruises/lock-selection`,
+        { body: input, method: "POST", unwrapData: false },
       ),
 
     releaseLock: (connectionId: string, quoteId: string) =>

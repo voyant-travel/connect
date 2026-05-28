@@ -31,6 +31,8 @@ data plane for inventory, bookings, and flights.
 - `availability` — per-connection `list` and `calendar`
 - `bookings` — cross-connection `listAll` plus per-connection `list`, `get`,
   `create`, `confirm`, `cancel`, `listActivities`
+- `cruises` / `cruiseBookings` — cruise catalog, search, lock, inquiry, and
+  booking lifecycle routes
 - `health` — per-connection sync status
 
 **Flights**

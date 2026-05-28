@@ -30,7 +30,10 @@ function verifyRootPackage() {
   );
 }
 
-function verifyPublicPackage(relativePath, { name, descriptionKeyword }) {
+function verifyPublicPackage(
+  relativePath,
+  { name, descriptionKeyword, dependencies = {}, bundleDependencies },
+) {
   const manifest = readJson(relativePath);
 
   assert.equal(manifest.name, name, `${relativePath} has an unexpected package name`);
@@ -49,16 +52,18 @@ function verifyPublicPackage(relativePath, { name, descriptionKeyword }) {
     `${relativePath} keywords must include voyant and sdk`,
   );
   assertEqual(manifest.files, ["dist"], `${relativePath} files`);
-  assertEqual(
-    manifest.bundleDependencies,
-    ["@voyant-sdk/sdk-core"],
-    `${relativePath} bundleDependencies`,
-  );
-  assert.equal(
-    manifest.dependencies?.["@voyant-sdk/sdk-core"],
-    "workspace:*",
-    `${relativePath} must depend on workspace sdk-core`,
-  );
+  if (bundleDependencies !== undefined) {
+    assertEqual(manifest.bundleDependencies, bundleDependencies, `${relativePath} bundleDependencies`);
+  } else {
+    assert.ok(!("bundleDependencies" in manifest), `${relativePath} must not bundle dependencies`);
+  }
+  for (const [dependency, expectedVersion] of Object.entries(dependencies)) {
+    assert.equal(
+      manifest.dependencies?.[dependency],
+      expectedVersion,
+      `${relativePath} must depend on ${dependency}`,
+    );
+  }
   assertEqual(
     manifest.exports,
     {
@@ -126,6 +131,17 @@ verifyRootPackage();
 verifyPublicPackage("packages/connect-sdk/package.json", {
   name: "@voyantjs/connect-sdk",
   descriptionKeyword: "Voyant Connect",
+  dependencies: { "@voyant-sdk/sdk-core": "workspace:*" },
+  bundleDependencies: ["@voyant-sdk/sdk-core"],
+});
+verifyPublicPackage("packages/connect-provider-sdk/package.json", {
+  name: "@voyantjs/connect-provider-sdk",
+  descriptionKeyword: "provider integrations",
+});
+verifyPublicPackage("packages/connect-cruises/package.json", {
+  name: "@voyantjs/connect-cruises",
+  descriptionKeyword: "cruises adapter",
+  dependencies: { "@voyantjs/connect-sdk": "workspace:*" },
 });
 verifyPrivatePackage("packages/sdk-core/package.json");
 

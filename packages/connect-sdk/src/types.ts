@@ -1437,6 +1437,14 @@ export interface CruiseOffer {
   bookableUntil?: IsoDateTime;
 }
 
+export interface CruiseLockSelectionInput {
+  sailingExternalId: string;
+  cabinCategoryExternalId: string;
+  fareCode?: string;
+  occupancy: CruisePassengerOccupancy;
+  ttlHours?: number;
+}
+
 export interface CruiseQuote {
   id: string;
   offerSnapshot: CruiseOffer;
@@ -1597,6 +1605,13 @@ export interface ListSailingsQuery {
   salesStatus?: string | string[];
   departureFrom?: string;
   departureTo?: string;
+  limit?: number;
+}
+
+export interface ListSailingPricingQuery {
+  cabinCategoryExternalId?: string;
+  fareCode?: string;
+  occupancySignature?: string;
   limit?: number;
 }
 

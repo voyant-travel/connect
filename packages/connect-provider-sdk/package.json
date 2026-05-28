@@ -1,12 +1,12 @@
 {
-  "name": "@voyantjs/connect-sdk",
+  "name": "@voyantjs/connect-provider-sdk",
   "version": "0.1.1",
-  "description": "Public TypeScript SDK for Voyant Connect APIs.",
+  "description": "Public SDK primitives for building Voyant Connect provider integrations.",
   "license": "FSL-1.1-Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/voyantjs/connect-sdk.git",
-    "directory": "packages/connect-sdk"
+    "directory": "packages/connect-provider-sdk"
   },
   "homepage": "https://github.com/voyantjs/connect-sdk#readme",
   "bugs": {
@@ -19,6 +19,7 @@
   "keywords": [
     "voyant",
     "voyant-connect",
+    "provider",
     "sdk",
     "typescript"
   ],
@@ -29,16 +30,10 @@
     }
   },
   "files": ["dist"],
-  "bundleDependencies": [
-    "@voyant-sdk/sdk-core"
-  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "eslint src --max-warnings 0",
     "check-types": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@voyant-sdk/sdk-core": "workspace:*"
   },
   "devDependencies": {
     "@voyant-sdk/eslint-config": "workspace:*",
