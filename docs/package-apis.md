@@ -93,6 +93,36 @@ Selected public types:
 - `ConnectProviderAccessModel`
 - `ConnectProviderCredentialValidationResult`
 
+## `@voyantjs/connect-adapter`
+
+Voyant-side catalog adapter factory:
+
+- `createVoyantConnectSourceAdapter(options)`
+- `mapSearchDocumentToProjection(document, defaults)`
+
+`createVoyantConnectSourceAdapter` returns an OSS-compatible `SourceAdapter`
+shape. Discovery reads Connect search documents and emits `CatalogProjection`
+values with `source_kind`, `source_provider`, `source_connection_id`,
+`source_ref`, and `source_freshness` populated. Live resolution uses Connect's
+live routes for availability, stays, and cruises when requested by
+`parameters.connectRoute`.
+
+Selected public types:
+
+- `SourceAdapter`
+- `SourceAdapterContext`
+- `AdapterCapabilities`
+- `CatalogProjection`
+- `LiveResolveRequest`
+- `LiveResolveResult`
+- `GetContentRequest`
+- `GetContentResult`
+- `ReserveRequest`
+- `ReserveResult`
+- `CancelRequest`
+- `CancelResult`
+- `VoyantConnectSourceAdapterOptions`
+
 ## `@voyantjs/connect-cruises`
 
 Voyant-side cruises adapter factory:

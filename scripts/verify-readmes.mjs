@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -24,6 +30,7 @@ function verifyRootReadme() {
   const required = [
     "# Voyant Connect SDK",
     "`@voyantjs/connect-sdk`",
+    "`@voyantjs/connect-adapter`",
     "`@voyantjs/connect-provider-sdk`",
     "`@voyantjs/connect-cruises`",
     "`@voyant-sdk/sdk-core`",
@@ -36,6 +43,7 @@ function verifyRootReadme() {
     "pnpm verify:package-manifests",
     "pnpm verify:readmes",
     "[Connect SDK](./docs/connect.md)",
+    "[Connect Adapter](./docs/connect-adapter.md)",
     "[Provider SDK](./docs/provider-sdk.md)",
     "[Connect Cruises](./docs/connect-cruises.md)",
   ];
@@ -130,8 +138,8 @@ function verifyContractsDoc() {
 
 function extractTypeScriptSnippets(relativePath) {
   const source = readFile(relativePath);
-  const snippets = [...source.matchAll(/```ts\n([\s\S]*?)```/g)].map(([, snippet]) =>
-    snippet.trim(),
+  const snippets = [...source.matchAll(/```ts\n([\s\S]*?)```/g)].map(
+    ([, snippet]) => snippet.trim(),
   );
 
   assert.ok(
@@ -161,6 +169,35 @@ function verifyMarkdownExamplesTypecheck() {
     symlinkSync(
       path.join(repoRoot, "packages", "connect-sdk"),
       path.join(voyantJsDir, "connect-sdk"),
+    );
+    symlinkSync(
+      path.join(repoRoot, "packages", "connect-adapter"),
+      path.join(voyantJsDir, "connect-adapter"),
+    );
+    mkdirSync(path.join(voyantJsDir, "catalog"), { recursive: true });
+    writeFileSync(
+      path.join(voyantJsDir, "catalog", "package.json"),
+      JSON.stringify(
+        {
+          name: "@voyantjs/catalog",
+          type: "module",
+          exports: {
+            "./booking-engine": "./booking-engine.d.ts",
+          },
+        },
+        null,
+        2,
+      ),
+    );
+    writeFileSync(
+      path.join(voyantJsDir, "catalog", "booking-engine.d.ts"),
+      [
+        "export interface SourceAdapterRegistry {",
+        "  register(connectionId: string, adapter: unknown): void;",
+        "}",
+        "export function createSourceAdapterRegistry(): SourceAdapterRegistry;",
+        "",
+      ].join("\n"),
     );
     writeFileSync(
       path.join(tempDir, "package.json"),
@@ -194,7 +231,9 @@ function verifyMarkdownExamplesTypecheck() {
 
     const snippetSources = [
       "packages/connect-sdk/README.md",
+      "packages/connect-adapter/README.md",
       "docs/connect.md",
+      "docs/connect-adapter.md",
     ].flatMap((relativePath) =>
       extractTypeScriptSnippets(relativePath).map((snippet, index) => ({
         filename: `snippet-${path
@@ -211,7 +250,11 @@ function verifyMarkdownExamplesTypecheck() {
 
     execFileSync(
       process.execPath,
-      [path.join(repoRoot, "node_modules", "typescript", "bin", "tsc"), "-p", tempDir],
+      [
+        path.join(repoRoot, "node_modules", "typescript", "bin", "tsc"),
+        "-p",
+        tempDir,
+      ],
       {
         cwd: repoRoot,
         encoding: "utf8",
@@ -228,6 +271,13 @@ verifyPackageReadme({
   packageName: "@voyantjs/connect-sdk",
   factoryName: "createVoyantConnectClient",
   docLink: "[../../docs/connect.md](../../docs/connect.md)",
+  envVar: "VOYANT_API_KEY",
+});
+verifyPackageReadme({
+  path: "packages/connect-adapter/README.md",
+  packageName: "@voyantjs/connect-adapter",
+  factoryName: "createVoyantConnectSourceAdapter",
+  docLink: "[../../docs/connect-adapter.md](../../docs/connect-adapter.md)",
   envVar: "VOYANT_API_KEY",
 });
 verifyPackageReadme({

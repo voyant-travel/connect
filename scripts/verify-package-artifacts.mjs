@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
@@ -11,9 +17,16 @@ const packDir = mkdtempSync(path.join(tmpdir(), "voyant-sdk-pack-"));
 
 function readPackageVersion(relativePath) {
   const manifestPath = path.join(repoRoot, relativePath, "package.json");
-  const raw = execFileSync("node", ["-e", `process.stdout.write(require(${JSON.stringify(manifestPath)}).version)`], {
-    encoding: "utf8",
-  });
+  const raw = execFileSync(
+    "node",
+    [
+      "-e",
+      `process.stdout.write(require(${JSON.stringify(manifestPath)}).version)`,
+    ],
+    {
+      encoding: "utf8",
+    },
+  );
   return raw.trim();
 }
 
@@ -60,6 +73,15 @@ const packages = [
     bundleDependencies: undefined,
     bundledFiles: [],
   },
+  {
+    dir: path.join(repoRoot, "packages", "connect-adapter"),
+    expectedName: "@voyantjs/connect-adapter",
+    dependencies: {
+      "@voyantjs/connect-sdk": connectSdkVersion,
+    },
+    bundleDependencies: undefined,
+    bundledFiles: [],
+  },
 ];
 
 function packPackage(packageDir) {
@@ -72,9 +94,13 @@ function packPackage(packageDir) {
 }
 
 function readPackedManifest(tarballPath) {
-  const raw = execFileSync("tar", ["-xOf", tarballPath, "package/package.json"], {
-    encoding: "utf8",
-  });
+  const raw = execFileSync(
+    "tar",
+    ["-xOf", tarballPath, "package/package.json"],
+    {
+      encoding: "utf8",
+    },
+  );
 
   return JSON.parse(raw);
 }
@@ -95,7 +121,9 @@ function installPackedPackage(appDir, tarballPath, packageName) {
   const extractDir = mkdtempSync(path.join(tmpdir(), "voyant-sdk-unpack-"));
 
   mkdirSync(scopeDir, { recursive: true });
-  execFileSync("tar", ["-xzf", tarballPath, "-C", extractDir], { encoding: "utf8" });
+  execFileSync("tar", ["-xzf", tarballPath, "-C", extractDir], {
+    encoding: "utf8",
+  });
   renameSync(path.join(extractDir, "package"), packageDir);
   rmSync(extractDir, { force: true, recursive: true });
 }
@@ -133,6 +161,7 @@ function verifyInstalledImports(tarballs) {
           import { defineConnectProvider } from "@voyantjs/connect-provider-sdk";
           import { CONNECTOR_WORKER_PROTOCOL_VERSION } from "@voyantjs/connect-provider-sdk/hosted-worker";
           import { createConnectCruiseAdapter } from "@voyantjs/connect-cruises";
+          import { createVoyantConnectSourceAdapter } from "@voyantjs/connect-adapter";
 
           const connect = createVoyantConnectClient({ apiKey: "connect_key" });
           const provider = defineConnectProvider({
@@ -144,6 +173,10 @@ function verifyInstalledImports(tarballs) {
             categoryCoverage: ["cruise"],
           });
           const cruiseAdapter = createConnectCruiseAdapter({ client: connect });
+          const sourceAdapter = createVoyantConnectSourceAdapter({
+            client: connect,
+            operatorId: "op_1",
+          });
 
           assert.equal(typeof connect.oauth.issueToken, "function");
           assert.equal(typeof connect.operators.list, "function");
@@ -177,6 +210,8 @@ function verifyInstalledImports(tarballs) {
           assert.equal(CONNECTOR_WORKER_PROTOCOL_VERSION, "2026-05-28");
           assert.equal(provider.key, "example-cruises");
           assert.equal(typeof cruiseAdapter.listEntries, "function");
+          assert.equal(sourceAdapter.kind, "voyant-connect");
+          assert.equal(typeof sourceAdapter.discover, "function");
         `,
       ],
       {
@@ -262,6 +297,10 @@ function verifyInstalledTypecheck(tarballs) {
           createConnectCruiseAdapter,
           type ConnectCruiseAdapter,
         } from "@voyantjs/connect-cruises";
+        import {
+          createVoyantConnectSourceAdapter,
+          type SourceAdapter,
+        } from "@voyantjs/connect-adapter";
 
         const connect: VoyantConnectClient = createVoyantConnectClient({
           apiKey: "connect_key",
@@ -305,6 +344,10 @@ function verifyInstalledTypecheck(tarballs) {
           categoryCoverage: ["cruise"],
         });
         const cruiseAdapter: ConnectCruiseAdapter = createConnectCruiseAdapter({ client: connect });
+        const sourceAdapter: SourceAdapter = createVoyantConnectSourceAdapter({
+          client: connect,
+          operatorId: "op_1",
+        });
         const manifest: ConnectorWorkerManifest = {
           protocolVersion: CONNECTOR_WORKER_PROTOCOL_VERSION,
           providerKey: "example-cruises",
@@ -332,6 +375,7 @@ function verifyInstalledTypecheck(tarballs) {
         void flightStreamPromise;
         void provider;
         void cruiseAdapter;
+        void sourceAdapter;
         void manifest;
         void workerRequest;
         void workerResponse;
@@ -341,7 +385,11 @@ function verifyInstalledTypecheck(tarballs) {
 
     execFileSync(
       process.execPath,
-      [path.join(repoRoot, "node_modules", "typescript", "bin", "tsc"), "-p", appDir],
+      [
+        path.join(repoRoot, "node_modules", "typescript", "bin", "tsc"),
+        "-p",
+        appDir,
+      ],
       {
         cwd: appDir,
         encoding: "utf8",
@@ -367,7 +415,9 @@ try {
     assert.equal(manifest.publishConfig?.access, "public");
     assert.equal(manifest.exports?.["."].import, "./dist/index.js");
     assert.equal(manifest.exports?.["."].types, "./dist/index.d.ts");
-    for (const [subpath, expectedExport] of Object.entries(pkg.extraExports ?? {})) {
+    for (const [subpath, expectedExport] of Object.entries(
+      pkg.extraExports ?? {},
+    )) {
       assert.deepEqual(manifest.exports?.[subpath], expectedExport);
     }
 
@@ -376,7 +426,9 @@ try {
     } else {
       assert.deepEqual(manifest.bundleDependencies, pkg.bundleDependencies);
     }
-    for (const [dependency, expectedVersion] of Object.entries(pkg.dependencies)) {
+    for (const [dependency, expectedVersion] of Object.entries(
+      pkg.dependencies,
+    )) {
       assert.equal(manifest.dependencies?.[dependency], expectedVersion);
     }
 

@@ -1,0 +1,43 @@
+# `@voyantjs/connect-adapter`
+
+Voyant Connect catalog SourceAdapter for Voyant apps.
+
+Use this package in a Voyant operator template that wants Connect-sourced
+inventory to flow through the OSS catalog plane: sourced entries, indexing,
+quote/book/cancel dispatch, and booking snapshots.
+
+## Install
+
+```sh
+pnpm add @voyantjs/connect-adapter @voyantjs/connect-sdk @voyantjs/catalog
+```
+
+## Usage
+
+```ts
+import { createSourceAdapterRegistry } from "@voyantjs/catalog/booking-engine";
+import { createVoyantConnectSourceAdapter } from "@voyantjs/connect-adapter";
+
+const registry = createSourceAdapterRegistry();
+const adapter = createVoyantConnectSourceAdapter({
+  connect: {
+    apiKey: process.env.VOYANT_API_KEY!,
+    operatorId: "op_123",
+    baseUrl: "https://api.voyantjs.com",
+  },
+});
+
+registry.register("conn_123", adapter);
+```
+
+## Notes
+
+- Use `@voyantjs/connect-adapter` for Voyant apps consuming Connect inventory
+  through the OSS catalog.
+- Use `@voyantjs/connect-sdk` directly for non-Voyant apps and low-level tools
+  calling `/connect/v1/...`.
+- `source_connection_id` is always populated from the Connect connection that
+  produced the projection so quote, book, cancel, and status dispatch resolve
+  the same registered connection.
+
+For repo-level context, see [../../docs/connect-adapter.md](../../docs/connect-adapter.md).

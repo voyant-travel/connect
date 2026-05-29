@@ -1,9 +1,10 @@
 # Overview
 
 `connect-sdk` is the public-facing Voyant Connect package monorepo. It
-publishes three public TypeScript packages:
+publishes four public TypeScript packages:
 
 - `@voyantjs/connect-sdk`
+- `@voyantjs/connect-adapter`
 - `@voyantjs/connect-provider-sdk`
 - `@voyantjs/connect-cruises`
 
@@ -15,6 +16,8 @@ public SDK boundary stays clean.
 - `@voyantjs/connect-sdk` wraps the Voyant Connect operator/connection control
   plane plus the gateway data plane for products, availability, bookings,
   suppliers, flights, and Connect-normalized inventory reads.
+- `@voyantjs/connect-adapter` adapts Connect inventory into the OSS catalog
+  `SourceAdapter` contract for Voyant operator templates.
 - `@voyantjs/connect-provider-sdk` contains provider-author primitives:
   descriptors, credential parsing helpers, and small conformance utilities that
   supplier/provider-owned connector packages can depend on.

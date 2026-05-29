@@ -5,20 +5,26 @@ import path from "node:path";
 const repoRoot = path.resolve(import.meta.dirname, "..");
 
 function readJson(relativePath) {
-  return JSON.parse(
-    fs.readFileSync(path.join(repoRoot, relativePath), "utf8"),
-  );
+  return JSON.parse(fs.readFileSync(path.join(repoRoot, relativePath), "utf8"));
 }
 
 function assertEqual(actual, expected, label) {
-  assert.deepStrictEqual(actual, expected, `${label} does not match the expected value.`);
+  assert.deepStrictEqual(
+    actual,
+    expected,
+    `${label} does not match the expected value.`,
+  );
 }
 
 function verifyRootPackage() {
   const manifest = readJson("package.json");
 
   assert.equal(manifest.private, true, "root package.json must stay private");
-  assert.equal(manifest.packageManager, "pnpm@9.0.0", "root packageManager must stay pinned");
+  assert.equal(
+    manifest.packageManager,
+    "pnpm@9.0.0",
+    "root packageManager must stay pinned",
+  );
   assert.ok(manifest.scripts, "root package.json must define scripts");
   assert.ok(
     manifest.scripts["verify:package-manifests"],
@@ -43,26 +49,56 @@ function verifyPublicPackage(
 ) {
   const manifest = readJson(relativePath);
 
-  assert.equal(manifest.name, name, `${relativePath} has an unexpected package name`);
-  assert.ok(!("private" in manifest), `${relativePath} must not be marked private`);
-  assert.equal(manifest.type, "module", `${relativePath} must stay ESM`);
-  assert.equal(manifest.sideEffects, false, `${relativePath} must stay side-effect free`);
-  assert.equal(manifest.main, "./dist/index.js", `${relativePath} main must point at dist`);
-  assert.equal(manifest.types, "./src/index.ts", `${relativePath} types must point at src in-workspace`);
+  assert.equal(
+    manifest.name,
+    name,
+    `${relativePath} has an unexpected package name`,
+  );
   assert.ok(
-    typeof manifest.description === "string" && manifest.description.includes(descriptionKeyword),
+    !("private" in manifest),
+    `${relativePath} must not be marked private`,
+  );
+  assert.equal(manifest.type, "module", `${relativePath} must stay ESM`);
+  assert.equal(
+    manifest.sideEffects,
+    false,
+    `${relativePath} must stay side-effect free`,
+  );
+  assert.equal(
+    manifest.main,
+    "./dist/index.js",
+    `${relativePath} main must point at dist`,
+  );
+  assert.equal(
+    manifest.types,
+    "./src/index.ts",
+    `${relativePath} types must point at src in-workspace`,
+  );
+  assert.ok(
+    typeof manifest.description === "string" &&
+      manifest.description.includes(descriptionKeyword),
     `${relativePath} description must mention ${descriptionKeyword}`,
   );
-  assert.ok(Array.isArray(manifest.keywords), `${relativePath} must define keywords`);
+  assert.ok(
+    Array.isArray(manifest.keywords),
+    `${relativePath} must define keywords`,
+  );
   assert.ok(
     manifest.keywords.includes("voyant") && manifest.keywords.includes("sdk"),
     `${relativePath} keywords must include voyant and sdk`,
   );
   assertEqual(manifest.files, ["dist"], `${relativePath} files`);
   if (bundleDependencies !== undefined) {
-    assertEqual(manifest.bundleDependencies, bundleDependencies, `${relativePath} bundleDependencies`);
+    assertEqual(
+      manifest.bundleDependencies,
+      bundleDependencies,
+      `${relativePath} bundleDependencies`,
+    );
   } else {
-    assert.ok(!("bundleDependencies" in manifest), `${relativePath} must not bundle dependencies`);
+    assert.ok(
+      !("bundleDependencies" in manifest),
+      `${relativePath} must not bundle dependencies`,
+    );
   }
   for (const [dependency, expectedVersion] of Object.entries(dependencies)) {
     assert.equal(
@@ -103,12 +139,28 @@ function verifyPublicPackage(
 function verifyPrivatePackage(relativePath) {
   const manifest = readJson(relativePath);
 
-  assert.equal(manifest.name, "@voyant-sdk/sdk-core", `${relativePath} has an unexpected package name`);
+  assert.equal(
+    manifest.name,
+    "@voyant-sdk/sdk-core",
+    `${relativePath} has an unexpected package name`,
+  );
   assert.equal(manifest.private, true, `${relativePath} must stay private`);
   assert.equal(manifest.type, "module", `${relativePath} must stay ESM`);
-  assert.equal(manifest.sideEffects, false, `${relativePath} must stay side-effect free`);
-  assert.equal(manifest.main, "./dist/index.js", `${relativePath} main must point at dist`);
-  assert.equal(manifest.types, "./src/index.ts", `${relativePath} types must point at src in-workspace`);
+  assert.equal(
+    manifest.sideEffects,
+    false,
+    `${relativePath} must stay side-effect free`,
+  );
+  assert.equal(
+    manifest.main,
+    "./dist/index.js",
+    `${relativePath} main must point at dist`,
+  );
+  assert.equal(
+    manifest.types,
+    "./src/index.ts",
+    `${relativePath} types must point at src in-workspace`,
+  );
   assertEqual(manifest.files, ["dist"], `${relativePath} files`);
   assertEqual(
     manifest.exports,
@@ -162,6 +214,11 @@ verifyPublicPackage("packages/connect-provider-sdk/package.json", {
 verifyPublicPackage("packages/connect-cruises/package.json", {
   name: "@voyantjs/connect-cruises",
   descriptionKeyword: "cruises adapter",
+  dependencies: { "@voyantjs/connect-sdk": "workspace:*" },
+});
+verifyPublicPackage("packages/connect-adapter/package.json", {
+  name: "@voyantjs/connect-adapter",
+  descriptionKeyword: "catalog SourceAdapter",
   dependencies: { "@voyantjs/connect-sdk": "workspace:*" },
 });
 verifyPrivatePackage("packages/sdk-core/package.json");
