@@ -77,8 +77,10 @@ const packages = [
     dir: path.join(repoRoot, "packages", "connect-adapter"),
     expectedName: "@voyantjs/connect-adapter",
     dependencies: {
-      "@voyantjs/catalog": "*",
       "@voyantjs/connect-sdk": connectSdkVersion,
+    },
+    peerDependencies: {
+      "@voyantjs/catalog": ">=0.85.0 <1",
     },
     bundleDependencies: undefined,
     bundledFiles: [],
@@ -486,6 +488,12 @@ try {
       pkg.dependencies,
     )) {
       assert.equal(manifest.dependencies?.[dependency], expectedVersion);
+    }
+    for (const [dependency, expectedVersion] of Object.entries(
+      pkg.peerDependencies ?? {},
+    )) {
+      assert.equal(manifest.peerDependencies?.[dependency], expectedVersion);
+      assert.equal(manifest.dependencies?.[dependency], undefined);
     }
 
     assert.ok(files.includes("package/README.md"));
