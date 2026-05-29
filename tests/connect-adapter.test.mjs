@@ -400,6 +400,106 @@ test("connect adapter getContent returns normalized cruise content for flat sear
   assert.equal(result.content.policies[0].kind, "supplier_notes");
 });
 
+test("connect adapter keeps cruise itinerary variants scoped to sailings", async () => {
+  const recorder = createRecorder([
+    {
+      id: "ccr_204",
+      externalId: "204_81-from-2027",
+      connectionId: "conn_1",
+      cruiseLineExternalId: "uniworld",
+      shipExternalId: "ship_1",
+      name: "Castles along the Rhine",
+      cruiseType: "river",
+      nights: 7,
+      locale: "en",
+      payload: {
+        description: "Rhine cruise with alternating directions.",
+      },
+    },
+    [
+      {
+        id: "sail_1",
+        externalId: "204_24940_74684_81",
+        departureDate: "2027-11-25",
+        returnDate: "2027-12-02",
+        nights: 7,
+        salesStatus: "available",
+        embarkationPortCode: "BSL",
+        disembarkationPortCode: "CGN",
+        priceFrom: {
+          amountMinor: 240000,
+          currency: "EUR",
+          currencyPrecision: 2,
+        },
+        payload: {
+          itinerary: [
+            { dayNumber: 1, portName: "Basel (Embark)" },
+            { dayNumber: 2, portName: "Strasbourg" },
+          ],
+        },
+      },
+      {
+        id: "sail_2",
+        externalId: "204_24947_74802_81",
+        departureDate: "2027-12-16",
+        returnDate: "2027-12-23",
+        nights: 7,
+        salesStatus: "available",
+        embarkationPortCode: "CGN",
+        disembarkationPortCode: "BSL",
+        payload: {
+          itinerary: [
+            { dayNumber: 1, portName: "Cologne (Embark)" },
+            { dayNumber: 2, portName: "Rudesheim" },
+          ],
+        },
+      },
+    ],
+    [
+      {
+        externalId: "ship_1",
+        name: "S.S. Victoria",
+      },
+    ],
+    [],
+  ]);
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    fetch: recorder.fetch,
+  });
+  const adapter = createVoyantConnectSourceAdapter({
+    client,
+    operatorId: "op_1",
+  });
+
+  const result = await adapter.getContent(
+    { connection_id: "conn_1" },
+    {
+      entity_module: "cruises",
+      entity_id: "cruise:204_81-from-2027:en",
+      locale: "en",
+    },
+  );
+
+  assert.equal(result.content.sailings.length, 2);
+  assert.deepEqual(
+    result.content.itinerary_stops.map((stop) => stop.port_name),
+    ["Basel (Embark)", "Strasbourg"],
+  );
+  assert.deepEqual(
+    result.content.sailings[0].itinerary_stops.map((stop) => stop.port_name),
+    ["Basel (Embark)", "Strasbourg"],
+  );
+  assert.deepEqual(
+    result.content.sailings[1].itinerary_stops.map((stop) => stop.port_name),
+    ["Cologne (Embark)", "Rudesheim"],
+  );
+  assert.equal(result.content.sailings[0].lowestPriceCached, "2400.00");
+  assert.equal(result.content.sailings[0].lowestPriceCachedCurrency, "EUR");
+  assert.equal(result.content.sailings[1].lowestPriceCached, null);
+  assert.equal(result.content.sailings[1].lowestPriceCachedCurrency, null);
+});
+
 test("connect adapter reserve forwards generic bookings with the source connection id", async () => {
   const recorder = createRecorder([
     {
