@@ -1,5 +1,11 @@
 # @voyantjs/connect-sdk
 
+## 0.1.3
+
+### Patch Changes
+
+- 9825584: Preserve the global fetch receiver in the default transport path so Worker-style runtimes do not require callers to pass a bound fetch.
+
 ## 0.1.2
 
 ### Patch Changes
