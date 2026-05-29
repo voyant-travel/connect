@@ -99,6 +99,53 @@ test("connect adapter maps Connect search documents to catalog projections with 
   assert.equal(page.projections[0].fields.title, "Danube tour");
 });
 
+test("connect adapter maps flat live API search document rows", () => {
+  const updatedAt = "2026-05-29T17:39:33.021Z";
+  const projection = mapSearchDocumentToProjection(
+    {
+      id: "sdoc_1",
+      operatorId: "op_1",
+      connectionId: "conn_1",
+      market: "US",
+      documentExternalId: "cruise:173_54-from-2027:en",
+      category: "cruise",
+      title: "A Portrait of Majestic France",
+      summary: "This picture-perfect journey blends your passion.",
+      searchableText: "A Portrait of Majestic France Uniworld river France",
+      destinations: ["France"],
+      countryCodes: null,
+      tags: ["French river cruise"],
+      imageUrl: "https://example.com/cruise.jpg",
+      priceFrom: null,
+      availabilityStatus: null,
+      marketContext: null,
+      source: {
+        connectionId: "conn_1",
+        adapterKey: "uniworld",
+        providerKey: "uniworld",
+      },
+      freshness: {
+        refreshedAt: updatedAt,
+      },
+      sourceUpdatedAt: updatedAt,
+      updatedAt,
+    },
+    {
+      sourceKind: "voyant-connect",
+      operatorId: "op_1",
+      connectionId: "conn_1",
+    },
+  );
+
+  assert.equal(projection.entity_module, "cruises");
+  assert.equal(projection.entity_id, "cruise:173_54-from-2027:en");
+  assert.equal(projection.provenance.source_provider, "uniworld");
+  assert.equal(projection.provenance.source_connection_id, "conn_1");
+  assert.equal(projection.fields.title, "A Portrait of Majestic France");
+  assert.equal(projection.fields.thumbnailUrl, "https://example.com/cruise.jpg");
+  assert.deepEqual(projection.fields.destinations, ["France"]);
+});
+
 test("mapSearchDocumentToProjection preserves OSS-shaped projection payloads", () => {
   const projection = mapSearchDocumentToProjection(
     {

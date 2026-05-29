@@ -209,7 +209,9 @@ export function createVoyantConnectSourceAdapter(
         },
       );
       const document = documents.find(
-        (item) => item.id === entityId || item.payload.id === entityId,
+        (item) =>
+          item.id === entityId ||
+          getString(normalizeSearchDocumentPayload(item), "id") === entityId,
       );
       if (!document) return undefined;
       return { etag: document.id, updated_at: new Date(document.updatedAt) };
@@ -285,7 +287,7 @@ export function mapSearchDocumentToProjection(
   document: SearchDocument,
   defaults: ProjectionDefaults,
 ): CatalogProjection | null {
-  const payload = document.payload;
+  const payload = normalizeSearchDocumentPayload(document);
   if (isCatalogProjection(payload)) {
     return withProjectionDefaults(payload, document, defaults);
   }
@@ -363,6 +365,47 @@ export function mapSearchDocumentToProjection(
       market_context: payload.marketContext ?? document.market ?? null,
       connect_document: payload,
     },
+  };
+}
+
+function normalizeSearchDocumentPayload(document: SearchDocument): JsonRecord {
+  const payload = (document as JsonRecord).payload;
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    return payload as JsonRecord;
+  }
+
+  return {
+    id:
+      getString(document as JsonRecord, "documentExternalId") ??
+      getString(document as JsonRecord, "productExternalId") ??
+      document.id,
+    sourceRef:
+      getString(document as JsonRecord, "documentExternalId") ??
+      getString(document as JsonRecord, "productExternalId") ??
+      document.id,
+    connectionId: document.connectionId,
+    productId: getString(document as JsonRecord, "productExternalId"),
+    optionId: getString(document as JsonRecord, "optionExternalId"),
+    supplierId: getString(document as JsonRecord, "supplierExternalId"),
+    accommodationId: getString(
+      document as JsonRecord,
+      "accommodationExternalId",
+    ),
+    category: getString(document as JsonRecord, "category"),
+    title: getString(document as JsonRecord, "title"),
+    name: getString(document as JsonRecord, "title"),
+    summary: getString(document as JsonRecord, "summary"),
+    searchableText: getString(document as JsonRecord, "searchableText"),
+    destinations: document.destinations,
+    countryCodes: document.countryCodes,
+    tags: document.tags,
+    imageUrl: getString(document as JsonRecord, "imageUrl"),
+    priceFrom: getRecordOrNull(document as JsonRecord, "priceFrom"),
+    availabilityStatus: getString(document as JsonRecord, "availabilityStatus"),
+    marketContext: document.marketContext ?? document.market ?? null,
+    source: document.source,
+    freshness: document.freshness,
+    updatedAt: document.sourceUpdatedAt ?? document.updatedAt,
   };
 }
 

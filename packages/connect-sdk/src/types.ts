@@ -487,7 +487,25 @@ export interface SearchDocument {
   operatorId: string;
   connectionId: string;
   market: string | null;
-  payload: JsonObject;
+  documentExternalId?: string;
+  productExternalId?: string | null;
+  optionExternalId?: string | null;
+  supplierExternalId?: string | null;
+  accommodationExternalId?: string | null;
+  category?: string;
+  title?: string;
+  summary?: string | null;
+  searchableText?: string;
+  destinations?: string[] | null;
+  countryCodes?: string[] | null;
+  tags?: string[] | null;
+  imageUrl?: string | null;
+  priceFrom?: JsonObject | null;
+  availabilityStatus?: string | null;
+  marketContext?: JsonObject | null;
+  source?: JsonObject;
+  freshness?: JsonObject | null;
+  sourceUpdatedAt?: IsoDateTime;
   updatedAt: IsoDateTime;
   [key: string]: unknown;
 }
