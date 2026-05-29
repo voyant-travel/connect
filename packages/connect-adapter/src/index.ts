@@ -823,13 +823,17 @@ async function resolveCruiseItineraryVariants(
   }
   if (variants.size > 0) return variants;
 
-  const sourceRef = sourceRefForSailing(sailings[0] ?? {});
-  if (!sourceRef) return variants;
-  const days = await client.cruises.listItinerary(connectionId, sourceRef);
-  const stops = days
-    .map((day) => toCruiseContentItineraryStop(day))
-    .filter((day): day is JsonRecord => day !== null);
-  if (stops.length > 0) variants.set(sourceRef, stops);
+  await Promise.all(
+    sailings.map(async (sailing) => {
+      const sourceRef = sourceRefForSailing(sailing);
+      if (!sourceRef) return;
+      const days = await client.cruises.listItinerary(connectionId, sourceRef);
+      const stops = days
+        .map((day) => toCruiseContentItineraryStop(day))
+        .filter((day): day is JsonRecord => day !== null);
+      if (stops.length > 0) variants.set(sourceRef, stops);
+    }),
+  );
   return variants;
 }
 

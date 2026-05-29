@@ -500,6 +500,90 @@ test("connect adapter keeps cruise itinerary variants scoped to sailings", async
   assert.equal(result.content.sailings[1].lowestPriceCachedCurrency, null);
 });
 
+test("connect adapter fetches endpoint itinerary variants for every sailing", async () => {
+  const recorder = createRecorder([
+    {
+      id: "ccr_204",
+      externalId: "204_81-from-2027",
+      connectionId: "conn_1",
+      cruiseLineExternalId: "uniworld",
+      shipExternalId: "ship_1",
+      name: "Castles along the Rhine",
+      cruiseType: "river",
+      nights: 7,
+      locale: "en",
+      payload: {},
+    },
+    [
+      {
+        id: "sail_1",
+        externalId: "204_24940_74684_81",
+        departureDate: "2027-11-25",
+        returnDate: "2027-12-02",
+        nights: 7,
+        salesStatus: "available",
+      },
+      {
+        id: "sail_2",
+        externalId: "204_24947_74802_81",
+        departureDate: "2027-12-16",
+        returnDate: "2027-12-23",
+        nights: 7,
+        salesStatus: "available",
+      },
+    ],
+    [
+      {
+        externalId: "ship_1",
+        name: "S.S. Victoria",
+      },
+    ],
+    [],
+    [
+      { dayNumber: 1, portName: "Basel (Embark)" },
+      { dayNumber: 2, portName: "Strasbourg" },
+    ],
+    [
+      { dayNumber: 1, portName: "Cologne (Embark)" },
+      { dayNumber: 2, portName: "Rudesheim" },
+    ],
+  ]);
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    fetch: recorder.fetch,
+  });
+  const adapter = createVoyantConnectSourceAdapter({
+    client,
+    operatorId: "op_1",
+  });
+
+  const result = await adapter.getContent(
+    { connection_id: "conn_1" },
+    {
+      entity_module: "cruises",
+      entity_id: "cruise:204_81-from-2027:en",
+      locale: "en",
+    },
+  );
+
+  assert.equal(
+    recorder.calls[4].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings/204_24940_74684_81/itinerary",
+  );
+  assert.equal(
+    recorder.calls[5].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings/204_24947_74802_81/itinerary",
+  );
+  assert.deepEqual(
+    result.content.sailings[0].itinerary_stops.map((stop) => stop.port_name),
+    ["Basel (Embark)", "Strasbourg"],
+  );
+  assert.deepEqual(
+    result.content.sailings[1].itinerary_stops.map((stop) => stop.port_name),
+    ["Cologne (Embark)", "Rudesheim"],
+  );
+});
+
 test("connect adapter reserve forwards generic bookings with the source connection id", async () => {
   const recorder = createRecorder([
     {
