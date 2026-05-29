@@ -675,11 +675,26 @@ async function getCruiseContentFromConnect(
         locale: request.locale,
       })
     : [];
-  const itineraryStops = await resolveCruiseItineraryStops(
+  const itineraryVariants = await resolveCruiseItineraryVariants(
     client,
     connectionId,
     sailings,
   );
+  const contentSailings = sailings
+    .map((sailing) => {
+      const sourceRef = sourceRefForSailing(sailing);
+      return toCruiseContentSailing(sailing, {
+        itineraryStops: sourceRef
+          ? (itineraryVariants.get(sourceRef) ?? [])
+          : [],
+        lowestPrice: lowestPriceFromSailing(sailing),
+      });
+    })
+    .filter((sailing): sailing is JsonRecord => sailing !== null);
+  const representativeItinerary =
+    contentSailings.find(
+      (sailing) => getRecordArray(sailing, "itinerary_stops").length > 0,
+    ) ?? {};
 
   return {
     entity_module: request.entity_module,
@@ -689,13 +704,14 @@ async function getCruiseContentFromConnect(
     content: {
       cruise: toCruiseContentSummary(cruise, request.entity_id),
       ship: ship ? toCruiseContentShip(ship) : null,
-      sailings: sailings
-        .map((sailing) => toCruiseContentSailing(sailing))
-        .filter((sailing): sailing is JsonRecord => sailing !== null),
+      sailings: contentSailings,
       cabin_categories: cabinCategories
         .map((category) => toCruiseContentCabinCategory(category))
         .filter((category): category is JsonRecord => category !== null),
-      itinerary_stops: itineraryStops,
+      itinerary_stops: getRecordArray(
+        representativeItinerary,
+        "itinerary_stops",
+      ),
       policies: toCruiseContentPolicies(cruise),
     },
     content_schema_version: "cruises/v1",
@@ -786,29 +802,39 @@ async function resolveCruiseShip(
   return ships.find((ship) => recordMatchesAnyRef(ship, refs)) ?? null;
 }
 
-async function resolveCruiseItineraryStops(
+async function resolveCruiseItineraryVariants(
   client: VoyantConnectClient,
   connectionId: string,
   sailings: JsonRecord[],
-): Promise<JsonRecord[]> {
-  const fromPayload = sailings.flatMap((sailing) =>
-    getRecordArray(getRecord(sailing, "payload"), "itinerary")
+): Promise<Map<string, JsonRecord[]>> {
+  const variants = new Map<string, JsonRecord[]>();
+  for (const sailing of sailings) {
+    const sourceRef = sourceRefForSailing(sailing);
+    if (!sourceRef) continue;
+    const payloadStops = getRecordArray(
+      getRecord(sailing, "payload"),
+      "itinerary",
+    )
       .map((day) => toCruiseContentItineraryStop(day))
-      .filter((day): day is JsonRecord => day !== null),
-  );
-  if (fromPayload.length > 0) return fromPayload;
+      .filter((day): day is JsonRecord => day !== null);
+    if (payloadStops.length > 0) {
+      variants.set(sourceRef, payloadStops);
+    }
+  }
+  if (variants.size > 0) return variants;
 
-  const sailingExternalId =
-    getString(sailings[0] ?? {}, "externalId") ??
-    getString(getRecord(sailings[0] ?? {}, "payload"), "externalId");
-  if (!sailingExternalId) return [];
-  const days = await client.cruises.listItinerary(
-    connectionId,
-    sailingExternalId,
+  await Promise.all(
+    sailings.map(async (sailing) => {
+      const sourceRef = sourceRefForSailing(sailing);
+      if (!sourceRef) return;
+      const days = await client.cruises.listItinerary(connectionId, sourceRef);
+      const stops = days
+        .map((day) => toCruiseContentItineraryStop(day))
+        .filter((day): day is JsonRecord => day !== null);
+      if (stops.length > 0) variants.set(sourceRef, stops);
+    }),
   );
-  return days
-    .map((day) => toCruiseContentItineraryStop(day))
-    .filter((day): day is JsonRecord => day !== null);
+  return variants;
 }
 
 function toCruiseContentSummary(
@@ -883,12 +909,21 @@ function toCruiseContentShip(ship: JsonRecord): JsonRecord | null {
   };
 }
 
-function toCruiseContentSailing(sailing: JsonRecord): JsonRecord | null {
+function sourceRefForSailing(sailing: JsonRecord): string | undefined {
   const payload = getRecord(sailing, "payload");
-  const sourceRef =
+  return (
     getString(sailing, "externalId") ??
     getString(payload, "externalId") ??
-    getString(sailing, "id");
+    getString(sailing, "id")
+  );
+}
+
+function toCruiseContentSailing(
+  sailing: JsonRecord,
+  extras: { itineraryStops: JsonRecord[]; lowestPrice: JsonRecord | null },
+): JsonRecord | null {
+  const payload = getRecord(sailing, "payload");
+  const sourceRef = sourceRefForSailing(sailing);
   const startDate =
     getString(sailing, "departureDate") ?? getString(payload, "departureDate");
   const endDate =
@@ -919,6 +954,10 @@ function toCruiseContentSailing(sailing: JsonRecord): JsonRecord | null {
       "disembarkationPort",
       "disembarkationPortCode",
     ),
+    itinerary_stops: extras.itineraryStops,
+    lowestPriceCached: moneyToDecimalString(extras.lowestPrice),
+    lowestPriceCachedCurrency:
+      getString(extras.lowestPrice ?? {}, "currency") ?? null,
   };
 }
 
@@ -981,6 +1020,16 @@ function toCruiseContentItineraryStop(day: JsonRecord): JsonRecord | null {
       getBoolean(day, "is_at_sea") ||
       getString(day, "portName") === undefined,
   };
+}
+
+function lowestPriceFromSailing(sailing: JsonRecord): JsonRecord | null {
+  const payload = getRecord(sailing, "payload");
+  return (
+    getRecordOrNull(sailing, "priceFrom") ??
+    getRecordOrNull(payload, "priceFrom") ??
+    getRecordOrNull(sailing, "lowestPrice") ??
+    getRecordOrNull(payload, "lowestPrice")
+  );
 }
 
 function toCruiseContentPolicies(cruise: JsonRecord): JsonRecord[] {
