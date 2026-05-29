@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
@@ -11,9 +17,16 @@ const packDir = mkdtempSync(path.join(tmpdir(), "voyant-sdk-pack-"));
 
 function readPackageVersion(relativePath) {
   const manifestPath = path.join(repoRoot, relativePath, "package.json");
-  const raw = execFileSync("node", ["-e", `process.stdout.write(require(${JSON.stringify(manifestPath)}).version)`], {
-    encoding: "utf8",
-  });
+  const raw = execFileSync(
+    "node",
+    [
+      "-e",
+      `process.stdout.write(require(${JSON.stringify(manifestPath)}).version)`,
+    ],
+    {
+      encoding: "utf8",
+    },
+  );
   return raw.trim();
 }
 
@@ -60,6 +73,16 @@ const packages = [
     bundleDependencies: undefined,
     bundledFiles: [],
   },
+  {
+    dir: path.join(repoRoot, "packages", "connect-adapter"),
+    expectedName: "@voyantjs/connect-adapter",
+    dependencies: {
+      "@voyantjs/catalog": "*",
+      "@voyantjs/connect-sdk": connectSdkVersion,
+    },
+    bundleDependencies: undefined,
+    bundledFiles: [],
+  },
 ];
 
 function packPackage(packageDir) {
@@ -72,9 +95,13 @@ function packPackage(packageDir) {
 }
 
 function readPackedManifest(tarballPath) {
-  const raw = execFileSync("tar", ["-xOf", tarballPath, "package/package.json"], {
-    encoding: "utf8",
-  });
+  const raw = execFileSync(
+    "tar",
+    ["-xOf", tarballPath, "package/package.json"],
+    {
+      encoding: "utf8",
+    },
+  );
 
   return JSON.parse(raw);
 }
@@ -95,9 +122,65 @@ function installPackedPackage(appDir, tarballPath, packageName) {
   const extractDir = mkdtempSync(path.join(tmpdir(), "voyant-sdk-unpack-"));
 
   mkdirSync(scopeDir, { recursive: true });
-  execFileSync("tar", ["-xzf", tarballPath, "-C", extractDir], { encoding: "utf8" });
+  execFileSync("tar", ["-xzf", tarballPath, "-C", extractDir], {
+    encoding: "utf8",
+  });
   renameSync(path.join(extractDir, "package"), packageDir);
   rmSync(extractDir, { force: true, recursive: true });
+}
+
+function createCatalogTypeStub(appDir) {
+  const catalogDir = path.join(appDir, "node_modules", "@voyantjs", "catalog");
+  mkdirSync(path.join(catalogDir, "adapter"), { recursive: true });
+  writeFileSync(
+    path.join(catalogDir, "package.json"),
+    JSON.stringify(
+      {
+        name: "@voyantjs/catalog",
+        type: "module",
+        exports: {
+          "./adapter/contract": "./adapter/contract.d.ts",
+          "./provenance": "./provenance.d.ts",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  writeFileSync(
+    path.join(catalogDir, "adapter", "contract.d.ts"),
+    [
+      "export type SourceAdapter = { kind: string; capabilities: AdapterCapabilities; discover?: Function; liveResolve?: Function; getContent?: Function; reserve?: Function; cancel?: Function; getReservation?: Function; listReservations?: Function };",
+      "export type AdapterCapabilities = { verticals: string[]; supportsLiveResolution: boolean; supportsDriftDetection: boolean; supportsBookingForwarding: boolean; postBookOperations: readonly string[]; [key: string]: unknown };",
+      "export type SourceAdapterContext = { connection_id: string; credentials?: Record<string, string>; tenant_id?: string; correlation_id?: string };",
+      "export type DiscoveryCursor = string | undefined;",
+      "export type CatalogProjection = { entity_module: string; entity_id: string; provenance: unknown; fields: Record<string, unknown> };",
+      "export type DiscoveryPage = { projections: CatalogProjection[]; next_cursor: DiscoveryCursor };",
+      "export type SourceAdapterRequestScope = { locale: string; audience: string; market: string; currency?: string };",
+      "export type LiveResolveRequest = { ids: string[]; scope: SourceAdapterRequestScope; parameters?: Record<string, unknown> };",
+      "export type LiveResolveResult = { values: Record<string, Record<string, unknown>>; failed?: Record<string, string> };",
+      "export type GetContentRequest = { entity_module: string; entity_id: string; locale: string; market?: string; currency?: string };",
+      "export type GetContentResult = { entity_module: string; entity_id: string; source_ref: string; returned_locale: string; content: unknown; content_schema_version: string };",
+      "export type ReserveRequest = { entity_module: string; entity_id: string; parameters: Record<string, unknown>; idempotency_key?: string };",
+      "export type ReserveResult = { upstream_ref: string; status: 'held' | 'confirmed' | 'ticketed' | 'failed'; upstream_payload?: Record<string, unknown> };",
+      "export type CancelRequest = { upstream_ref: string; reason?: string; idempotency_key?: string };",
+      "export type CancelResult = { status: 'cancelled' | 'pending' | 'refused' | 'failed' };",
+      "export type ReservationStatus = ReserveResult['status'] | CancelResult['status'] | 'cancelling';",
+      "export type GetReservationRequest = { upstream_ref: string; scope?: SourceAdapterRequestScope };",
+      "export type GetReservationResult = { upstream_ref: string; status: ReservationStatus; source_updated_at?: Date; upstream_payload?: Record<string, unknown> };",
+      "export type ListReservationsQuery = { cursor?: DiscoveryCursor; limit?: number; status?: readonly ReservationStatus[]; updated_after?: Date; scope?: SourceAdapterRequestScope };",
+      "export type ListReservationsPage = { reservations: GetReservationResult[]; next_cursor: DiscoveryCursor };",
+      "export type ConnectionState = 'active' | 'paused' | 'disconnected' | 'error';",
+      "",
+    ].join("\n"),
+  );
+  writeFileSync(
+    path.join(catalogDir, "provenance.d.ts"),
+    [
+      "export type Provenance = { source_kind: string; source_provider?: string; source_connection_id?: string; source_ref?: string; source_freshness: 'sync' | 'event' | 'request' | 'static' | null; last_sourced_at?: Date };",
+      "",
+    ].join("\n"),
+  );
 }
 
 function verifyInstalledImports(tarballs) {
@@ -133,6 +216,7 @@ function verifyInstalledImports(tarballs) {
           import { defineConnectProvider } from "@voyantjs/connect-provider-sdk";
           import { CONNECTOR_WORKER_PROTOCOL_VERSION } from "@voyantjs/connect-provider-sdk/hosted-worker";
           import { createConnectCruiseAdapter } from "@voyantjs/connect-cruises";
+          import { createVoyantConnectSourceAdapter } from "@voyantjs/connect-adapter";
 
           const connect = createVoyantConnectClient({ apiKey: "connect_key" });
           const provider = defineConnectProvider({
@@ -144,6 +228,10 @@ function verifyInstalledImports(tarballs) {
             categoryCoverage: ["cruise"],
           });
           const cruiseAdapter = createConnectCruiseAdapter({ client: connect });
+          const sourceAdapter = createVoyantConnectSourceAdapter({
+            client: connect,
+            operatorId: "op_1",
+          });
 
           assert.equal(typeof connect.oauth.issueToken, "function");
           assert.equal(typeof connect.operators.list, "function");
@@ -177,6 +265,8 @@ function verifyInstalledImports(tarballs) {
           assert.equal(CONNECTOR_WORKER_PROTOCOL_VERSION, "2026-05-28");
           assert.equal(provider.key, "example-cruises");
           assert.equal(typeof cruiseAdapter.listEntries, "function");
+          assert.equal(sourceAdapter.kind, "voyant-connect");
+          assert.equal(typeof sourceAdapter.discover, "function");
         `,
       ],
       {
@@ -210,6 +300,7 @@ function verifyInstalledTypecheck(tarballs) {
     for (const [packageName, tarballPath] of tarballs) {
       installPackedPackage(appDir, tarballPath, packageName);
     }
+    createCatalogTypeStub(appDir);
 
     writeFileSync(
       path.join(appDir, "tsconfig.json"),
@@ -262,6 +353,10 @@ function verifyInstalledTypecheck(tarballs) {
           createConnectCruiseAdapter,
           type ConnectCruiseAdapter,
         } from "@voyantjs/connect-cruises";
+        import {
+          createVoyantConnectSourceAdapter,
+          type SourceAdapter,
+        } from "@voyantjs/connect-adapter";
 
         const connect: VoyantConnectClient = createVoyantConnectClient({
           apiKey: "connect_key",
@@ -305,6 +400,10 @@ function verifyInstalledTypecheck(tarballs) {
           categoryCoverage: ["cruise"],
         });
         const cruiseAdapter: ConnectCruiseAdapter = createConnectCruiseAdapter({ client: connect });
+        const sourceAdapter: SourceAdapter = createVoyantConnectSourceAdapter({
+          client: connect,
+          operatorId: "op_1",
+        });
         const manifest: ConnectorWorkerManifest = {
           protocolVersion: CONNECTOR_WORKER_PROTOCOL_VERSION,
           providerKey: "example-cruises",
@@ -332,6 +431,7 @@ function verifyInstalledTypecheck(tarballs) {
         void flightStreamPromise;
         void provider;
         void cruiseAdapter;
+        void sourceAdapter;
         void manifest;
         void workerRequest;
         void workerResponse;
@@ -341,7 +441,11 @@ function verifyInstalledTypecheck(tarballs) {
 
     execFileSync(
       process.execPath,
-      [path.join(repoRoot, "node_modules", "typescript", "bin", "tsc"), "-p", appDir],
+      [
+        path.join(repoRoot, "node_modules", "typescript", "bin", "tsc"),
+        "-p",
+        appDir,
+      ],
       {
         cwd: appDir,
         encoding: "utf8",
@@ -367,7 +471,9 @@ try {
     assert.equal(manifest.publishConfig?.access, "public");
     assert.equal(manifest.exports?.["."].import, "./dist/index.js");
     assert.equal(manifest.exports?.["."].types, "./dist/index.d.ts");
-    for (const [subpath, expectedExport] of Object.entries(pkg.extraExports ?? {})) {
+    for (const [subpath, expectedExport] of Object.entries(
+      pkg.extraExports ?? {},
+    )) {
       assert.deepEqual(manifest.exports?.[subpath], expectedExport);
     }
 
@@ -376,7 +482,9 @@ try {
     } else {
       assert.deepEqual(manifest.bundleDependencies, pkg.bundleDependencies);
     }
-    for (const [dependency, expectedVersion] of Object.entries(pkg.dependencies)) {
+    for (const [dependency, expectedVersion] of Object.entries(
+      pkg.dependencies,
+    )) {
       assert.equal(manifest.dependencies?.[dependency], expectedVersion);
     }
 

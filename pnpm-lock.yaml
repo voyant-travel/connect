@@ -21,6 +21,28 @@ importers:
         specifier: 5.9.2
         version: 5.9.2
 
+  packages/connect-adapter:
+    dependencies:
+      '@voyantjs/catalog':
+        specifier: '*'
+        version: 0.84.4(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyantjs/connect-sdk':
+        specifier: workspace:*
+        version: link:../connect-sdk
+    devDependencies:
+      '@voyant-sdk/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@voyant-sdk/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      eslint:
+        specifier: ^9.39.1
+        version: 9.39.4
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
   packages/connect-cruises:
     dependencies:
       '@voyantjs/connect-sdk':

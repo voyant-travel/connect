@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -24,6 +30,7 @@ function verifyRootReadme() {
   const required = [
     "# Voyant Connect SDK",
     "`@voyantjs/connect-sdk`",
+    "`@voyantjs/connect-adapter`",
     "`@voyantjs/connect-provider-sdk`",
     "`@voyantjs/connect-cruises`",
     "`@voyant-sdk/sdk-core`",
@@ -36,6 +43,7 @@ function verifyRootReadme() {
     "pnpm verify:package-manifests",
     "pnpm verify:readmes",
     "[Connect SDK](./docs/connect.md)",
+    "[Connect Adapter](./docs/connect-adapter.md)",
     "[Provider SDK](./docs/provider-sdk.md)",
     "[Connect Cruises](./docs/connect-cruises.md)",
   ];
@@ -130,8 +138,8 @@ function verifyContractsDoc() {
 
 function extractTypeScriptSnippets(relativePath) {
   const source = readFile(relativePath);
-  const snippets = [...source.matchAll(/```ts\n([\s\S]*?)```/g)].map(([, snippet]) =>
-    snippet.trim(),
+  const snippets = [...source.matchAll(/```ts\n([\s\S]*?)```/g)].map(
+    ([, snippet]) => snippet.trim(),
   );
 
   assert.ok(
@@ -161,6 +169,74 @@ function verifyMarkdownExamplesTypecheck() {
     symlinkSync(
       path.join(repoRoot, "packages", "connect-sdk"),
       path.join(voyantJsDir, "connect-sdk"),
+    );
+    symlinkSync(
+      path.join(repoRoot, "packages", "connect-adapter"),
+      path.join(voyantJsDir, "connect-adapter"),
+    );
+    mkdirSync(path.join(voyantJsDir, "catalog"), { recursive: true });
+    writeFileSync(
+      path.join(voyantJsDir, "catalog", "package.json"),
+      JSON.stringify(
+        {
+          name: "@voyantjs/catalog",
+          type: "module",
+          exports: {
+            "./booking-engine": "./booking-engine.d.ts",
+            "./adapter/contract": "./adapter/contract.d.ts",
+            "./provenance": "./provenance.d.ts",
+          },
+        },
+        null,
+        2,
+      ),
+    );
+    writeFileSync(
+      path.join(voyantJsDir, "catalog", "booking-engine.d.ts"),
+      [
+        "export interface SourceAdapterRegistry {",
+        "  register(connectionId: string, adapter: unknown): void;",
+        "}",
+        "export function createSourceAdapterRegistry(): SourceAdapterRegistry;",
+        "",
+      ].join("\n"),
+    );
+    mkdirSync(path.join(voyantJsDir, "catalog", "adapter"), {
+      recursive: true,
+    });
+    writeFileSync(
+      path.join(voyantJsDir, "catalog", "adapter", "contract.d.ts"),
+      [
+        "export type SourceAdapter = { kind: string; capabilities: AdapterCapabilities; discover?: Function; liveResolve?: Function; getContent?: Function; reserve?: Function; cancel?: Function; getReservation?: Function; listReservations?: Function };",
+        "export type AdapterCapabilities = { verticals: string[]; supportsLiveResolution: boolean; supportsDriftDetection: boolean; supportsBookingForwarding: boolean; postBookOperations: readonly string[]; [key: string]: unknown };",
+        "export type SourceAdapterContext = { connection_id: string; credentials?: Record<string, string>; tenant_id?: string; correlation_id?: string };",
+        "export type DiscoveryCursor = string | undefined;",
+        "export type CatalogProjection = { entity_module: string; entity_id: string; provenance: unknown; fields: Record<string, unknown> };",
+        "export type DiscoveryPage = { projections: CatalogProjection[]; next_cursor: DiscoveryCursor };",
+        "export type SourceAdapterRequestScope = { locale: string; audience: string; market: string; currency?: string };",
+        "export type LiveResolveRequest = { ids: string[]; scope: SourceAdapterRequestScope; parameters?: Record<string, unknown> };",
+        "export type LiveResolveResult = { values: Record<string, Record<string, unknown>>; failed?: Record<string, string> };",
+        "export type GetContentRequest = { entity_module: string; entity_id: string; locale: string; market?: string; currency?: string };",
+        "export type GetContentResult = { entity_module: string; entity_id: string; source_ref: string; returned_locale: string; content: unknown; content_schema_version: string };",
+        "export type ReserveRequest = { entity_module: string; entity_id: string; parameters: Record<string, unknown>; idempotency_key?: string };",
+        "export type ReserveResult = { upstream_ref: string; status: 'held' | 'confirmed' | 'ticketed' | 'failed'; upstream_payload?: Record<string, unknown> };",
+        "export type CancelRequest = { upstream_ref: string; reason?: string; idempotency_key?: string };",
+        "export type CancelResult = { status: 'cancelled' | 'pending' | 'refused' | 'failed' };",
+        "export type ReservationStatus = ReserveResult['status'] | CancelResult['status'] | 'cancelling';",
+        "export type GetReservationRequest = { upstream_ref: string; scope?: SourceAdapterRequestScope };",
+        "export type GetReservationResult = { upstream_ref: string; status: ReservationStatus; source_updated_at?: Date; upstream_payload?: Record<string, unknown> };",
+        "export type ListReservationsQuery = { cursor?: DiscoveryCursor; limit?: number; status?: readonly ReservationStatus[]; updated_after?: Date; scope?: SourceAdapterRequestScope };",
+        "export type ListReservationsPage = { reservations: GetReservationResult[]; next_cursor: DiscoveryCursor };",
+        "export type ConnectionState = 'active' | 'paused' | 'disconnected' | 'error';",
+        "",
+      ].join("\n"),
+    );
+    writeFileSync(
+      path.join(voyantJsDir, "catalog", "provenance.d.ts"),
+      [
+        "export type Provenance = { source_kind: string; source_provider?: string; source_connection_id?: string; source_ref?: string; source_freshness: 'sync' | 'event' | 'request' | 'static' | null; last_sourced_at?: Date };",
+        "",
+      ].join("\n"),
     );
     writeFileSync(
       path.join(tempDir, "package.json"),
@@ -194,7 +270,9 @@ function verifyMarkdownExamplesTypecheck() {
 
     const snippetSources = [
       "packages/connect-sdk/README.md",
+      "packages/connect-adapter/README.md",
       "docs/connect.md",
+      "docs/connect-adapter.md",
     ].flatMap((relativePath) =>
       extractTypeScriptSnippets(relativePath).map((snippet, index) => ({
         filename: `snippet-${path
@@ -211,7 +289,11 @@ function verifyMarkdownExamplesTypecheck() {
 
     execFileSync(
       process.execPath,
-      [path.join(repoRoot, "node_modules", "typescript", "bin", "tsc"), "-p", tempDir],
+      [
+        path.join(repoRoot, "node_modules", "typescript", "bin", "tsc"),
+        "-p",
+        tempDir,
+      ],
       {
         cwd: repoRoot,
         encoding: "utf8",
@@ -228,6 +310,13 @@ verifyPackageReadme({
   packageName: "@voyantjs/connect-sdk",
   factoryName: "createVoyantConnectClient",
   docLink: "[../../docs/connect.md](../../docs/connect.md)",
+  envVar: "VOYANT_API_KEY",
+});
+verifyPackageReadme({
+  path: "packages/connect-adapter/README.md",
+  packageName: "@voyantjs/connect-adapter",
+  factoryName: "createVoyantConnectSourceAdapter",
+  docLink: "[../../docs/connect-adapter.md](../../docs/connect-adapter.md)",
   envVar: "VOYANT_API_KEY",
 });
 verifyPackageReadme({

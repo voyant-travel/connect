@@ -1,5 +1,10 @@
 # Connect SDK
 
+`@voyantjs/connect-sdk` is the raw typed HTTP client for `/connect/v1/...`.
+Use it for non-Voyant apps and low-level tools. Voyant operator templates that
+want Connect inventory inside the OSS catalog plane should use
+`@voyantjs/connect-adapter` instead.
+
 `@voyantjs/connect-sdk` is the public TypeScript client for the Voyant Connect
 product — the operator/connection control plane plus the Connect-normalized
 data plane for inventory, bookings, and flights.
@@ -7,6 +12,7 @@ data plane for inventory, bookings, and flights.
 ## Current shape
 
 **Control plane**
+
 - `oauth` — exchange client credentials for a short-lived bearer token
 - `operators` — CRUD plus per-operator usage and search projections
 - `connectorProviders` — list providers, manage applications, and per-operator
@@ -24,6 +30,7 @@ data plane for inventory, bookings, and flights.
   integrations
 
 **Data plane (Connect-normalized)**
+
 - `products` — cross-connection `list` / `get` plus per-connection
   `listOnConnection`, `getOnConnection`, `listOptions`, `listExtras`
 - `options` — per-connection `listUnits`, `listExtraConfigs`
@@ -36,6 +43,7 @@ data plane for inventory, bookings, and flights.
 - `health` — per-connection sync status
 
 **Flights**
+
 - `flights` — multi-connection and per-connection search, price, book, manage
   orders, seats, ancillaries, exchanges, refunds, check-in, SSRs
 
@@ -54,9 +62,10 @@ const client = createVoyantConnectClient({
   operatorId: "op_123",
 });
 
-await client.products.list();                            // all connections
+await client.products.list(); // all connections
 await client.products.list({ providerKey: "ventrata" }); // filter by provider
-await client.products.list({                              // multiple values
+await client.products.list({
+  // multiple values
   connectionId: ["conn_a", "conn_b"],
 });
 ```

@@ -1,0 +1,62 @@
+{
+  "name": "@voyantjs/connect-adapter",
+  "version": "0.1.1",
+  "description": "Voyant Connect catalog SourceAdapter for Voyant apps.",
+  "license": "FSL-1.1-Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/connect-sdk.git",
+    "directory": "packages/connect-adapter"
+  },
+  "homepage": "https://github.com/voyantjs/connect-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/voyantjs/connect-sdk/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "sideEffects": false,
+  "keywords": [
+    "voyant",
+    "voyant-connect",
+    "catalog",
+    "adapter",
+    "sdk",
+    "typescript"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src --max-warnings 0",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@voyantjs/catalog": "*",
+    "@voyantjs/connect-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@voyant-sdk/eslint-config": "workspace:*",
+    "@voyant-sdk/typescript-config": "workspace:*",
+    "eslint": "^9.39.1",
+    "typescript": "5.9.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  }
+}

@@ -9,6 +9,7 @@ lives as Markdown under [`docs/`](./docs).
 ## Packages
 
 - `@voyantjs/connect-sdk`: client for Voyant Connect operator, connection, gateway, and flight APIs
+- `@voyantjs/connect-adapter`: OSS catalog `SourceAdapter` backed by Connect
 - `@voyantjs/connect-provider-sdk`: primitives for building provider integrations
 - `@voyantjs/connect-cruises`: Connect-backed cruises adapter for Voyant deployments
 - `@voyant-sdk/sdk-core`: private shared runtime bundled into the public package
@@ -16,6 +17,7 @@ lives as Markdown under [`docs/`](./docs).
 ## Workspace layout
 
 - `packages/connect-sdk`: public Voyant Connect SDK
+- `packages/connect-adapter`: public OSS catalog adapter package for Connect
 - `packages/connect-provider-sdk`: public provider integration SDK
 - `packages/connect-cruises`: public Voyant cruises adapter package for Connect
 - `packages/sdk-core`: shared internal transport, auth, and error handling
@@ -62,6 +64,7 @@ pnpm release
 - [Package APIs](./docs/package-apis.md)
 - [FAQ](./docs/faq.md)
 - [Connect SDK](./docs/connect.md)
+- [Connect Adapter](./docs/connect-adapter.md)
 - [Provider SDK](./docs/provider-sdk.md)
 - [Connect Cruises](./docs/connect-cruises.md)
 - [Roadmap](./ROADMAP.md)
