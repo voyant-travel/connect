@@ -42,6 +42,8 @@ function verifyPublicPackage(
     name,
     descriptionKeyword,
     dependencies = {},
+    peerDependencies = {},
+    devDependencies = {},
     bundleDependencies,
     extraExports = {},
     extraPublishExports = {},
@@ -105,6 +107,20 @@ function verifyPublicPackage(
       manifest.dependencies?.[dependency],
       expectedVersion,
       `${relativePath} must depend on ${dependency}`,
+    );
+  }
+  for (const [dependency, expectedVersion] of Object.entries(peerDependencies)) {
+    assert.equal(
+      manifest.peerDependencies?.[dependency],
+      expectedVersion,
+      `${relativePath} must peer-depend on ${dependency}`,
+    );
+  }
+  for (const [dependency, expectedVersion] of Object.entries(devDependencies)) {
+    assert.equal(
+      manifest.devDependencies?.[dependency],
+      expectedVersion,
+      `${relativePath} must dev-depend on ${dependency}`,
     );
   }
   assertEqual(
@@ -220,8 +236,13 @@ verifyPublicPackage("packages/connect-adapter/package.json", {
   name: "@voyantjs/connect-adapter",
   descriptionKeyword: "catalog SourceAdapter",
   dependencies: {
-    "@voyantjs/catalog": "*",
     "@voyantjs/connect-sdk": "workspace:*",
+  },
+  peerDependencies: {
+    "@voyantjs/catalog": ">=0.85.0 <1",
+  },
+  devDependencies: {
+    "@voyantjs/catalog": ">=0.85.0 <1",
   },
 });
 verifyPrivatePackage("packages/sdk-core/package.json");
