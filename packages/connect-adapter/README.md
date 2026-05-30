@@ -58,7 +58,9 @@ const resolveAdapterContext = (input: {
   flat Connect search-document ids back to the Connect cruise source ref and
   returns `{ cruise, ship, sailings, cabin_categories, itinerary_stops,
 policies }` instead of a raw Connect row. Sailing browse prices are flattened
-  to `lowest_price_cents` and `currency` in that sourced-content payload.
+  to `lowest_price_cents` and `currency`; sailing cabin pricing grids are
+  exposed as qualitative `cabin_options` with integer minor-unit prices when
+  Connect provides them.
 - Catalog route wiring must pass the quote or sourced row
   `source_connection_id` into `SourceAdapterContext.connection_id`. The adapter
   rejects `"engine"` contexts for booking dispatch because Connect cannot route

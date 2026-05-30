@@ -685,14 +685,24 @@ async function getCruiseContentFromConnect(
     connectionId,
     sailings,
   );
+  const cabinOptionsBySailing = await resolveCruiseCabinOptions(
+    client,
+    connectionId,
+    sailings,
+    cabinCategories,
+  );
   const contentSailings = sailings
     .map((sailing) => {
       const sourceRef = sourceRefForSailing(sailing);
+      const cabinOptions = sourceRef
+        ? (cabinOptionsBySailing.get(sourceRef) ?? [])
+        : [];
       return toCruiseContentSailing(sailing, {
         itineraryStops: sourceRef
           ? (itineraryVariants.get(sourceRef) ?? [])
           : [],
         lowestPrice: lowestPriceFromSailing(sailing),
+        cabinOptions,
       });
     })
     .filter((sailing): sailing is JsonRecord => sailing !== null);
@@ -843,6 +853,45 @@ async function resolveCruiseItineraryVariants(
   return variants;
 }
 
+async function resolveCruiseCabinOptions(
+  client: VoyantConnectClient,
+  connectionId: string,
+  sailings: JsonRecord[],
+  cabinCategories: JsonRecord[],
+): Promise<Map<string, JsonRecord[]>> {
+  const categoryLookup = createCabinCategoryLookup(cabinCategories);
+  const optionsBySailing = new Map<string, JsonRecord[]>();
+
+  await Promise.all(
+    sailings.map(async (sailing) => {
+      const sourceRef = sourceRefForSailing(sailing);
+      if (!sourceRef) return;
+      try {
+        const rows = await client.cruises.listSailingPricing(
+          connectionId,
+          sourceRef,
+        );
+        if (!Array.isArray(rows)) return;
+        const options = rows
+          .map((row) =>
+            toCruiseContentCabinOption(
+              row as unknown as JsonRecord,
+              sourceRef,
+              categoryLookup,
+              lowestPriceFromSailing(sailing),
+            ),
+          )
+          .filter((option): option is JsonRecord => option !== null);
+        optionsBySailing.set(sourceRef, options);
+      } catch {
+        optionsBySailing.set(sourceRef, []);
+      }
+    }),
+  );
+
+  return optionsBySailing;
+}
+
 function toCruiseContentSummary(
   cruise: JsonRecord,
   entityId: string,
@@ -947,7 +996,11 @@ function sourceRefForSailing(sailing: JsonRecord): string | undefined {
 
 function toCruiseContentSailing(
   sailing: JsonRecord,
-  extras: { itineraryStops: JsonRecord[]; lowestPrice: JsonRecord | null },
+  extras: {
+    itineraryStops: JsonRecord[];
+    lowestPrice: JsonRecord | null;
+    cabinOptions: JsonRecord[];
+  },
 ): JsonRecord | null {
   const payload = getRecord(sailing, "payload");
   const sourceRef = sourceRefForSailing(sailing);
@@ -985,6 +1038,11 @@ function toCruiseContentSailing(
     itinerary_stops: extras.itineraryStops,
     lowest_price_cents: price.lowest_price_cents,
     currency: price.currency,
+    availability_status: sailingAvailabilityStatus(
+      sailing,
+      extras.cabinOptions,
+    ),
+    cabin_options: extras.cabinOptions,
   };
 }
 
@@ -999,6 +1057,75 @@ function cruiseContentPriceFields(price: JsonRecord | null): {
     return { lowest_price_cents: null, currency: null };
   }
   return { lowest_price_cents: amountMinor, currency };
+}
+
+function toCruiseContentCabinOption(
+  row: JsonRecord,
+  sailingSourceRef: string,
+  categoryLookup: Map<string, JsonRecord>,
+  sailingPrice: JsonRecord | null,
+): JsonRecord | null {
+  const payload = getRecord(row, "payload");
+  const categoryId =
+    getString(row, "cabinCategoryExternalId") ??
+    getString(payload, "cabinCategoryExternalId") ??
+    getString(row, "cabinCategoryId") ??
+    getString(payload, "cabinCategoryId");
+  if (!categoryId) return null;
+
+  const category = categoryLookup.get(categoryId) ?? {};
+  const categoryPayload = getRecord(category, "payload");
+  const occupancySignature =
+    getString(row, "occupancySignature") ??
+    getString(payload, "occupancySignature") ??
+    occupancySignatureFromRecord(getRecord(row, "occupancy")) ??
+    occupancySignatureFromRecord(getRecord(payload, "occupancy"));
+  const fareCode = getString(row, "fareCode") ?? getString(payload, "fareCode");
+  const fallbackCurrency =
+    getString(sailingPrice ?? {}, "currency") ??
+    getString(row, "currency") ??
+    getString(payload, "currency");
+  const pricePerPerson = moneyFieldFromRecord(row, payload, {
+    objectKey: "pricePerPerson",
+    amountKey: "pricePerPersonAmountMinor",
+    currencyKey: "pricePerPersonCurrency",
+    fallbackCurrency,
+  });
+  const totalPrice = moneyFieldFromRecord(row, payload, {
+    objectKey: "totalPrice",
+    amountKey: "totalPriceAmountMinor",
+    currencyKey: "totalPriceCurrency",
+    fallbackCurrency,
+  });
+  const currency =
+    pricePerPerson.currency ?? totalPrice.currency ?? fallbackCurrency ?? null;
+
+  return {
+    id:
+      getString(row, "id") ??
+      [sailingSourceRef, categoryId, occupancySignature, fareCode]
+        .filter((part): part is string => !!part)
+        .join(":"),
+    cabin_category_id: categoryId,
+    cabin_category_code:
+      getString(row, "cabinCategoryCode") ??
+      getString(payload, "cabinCategoryCode") ??
+      getString(category, "code") ??
+      getString(categoryPayload, "code") ??
+      null,
+    occupancy_signature: occupancySignature ?? null,
+    fare_code: fareCode ?? null,
+    availability_status:
+      normalizeCruiseAvailabilityStatus(
+        getString(row, "availability") ??
+          getString(payload, "availability") ??
+          getString(row, "availabilityStatus") ??
+          getString(payload, "availabilityStatus"),
+      ) ?? "unknown",
+    price_per_person_cents: pricePerPerson.amountMinor,
+    total_price_cents: totalPrice.amountMinor,
+    currency,
+  };
 }
 
 function toCruiseContentCabinCategory(category: JsonRecord): JsonRecord | null {
@@ -1062,6 +1189,26 @@ function toCruiseContentItineraryStop(day: JsonRecord): JsonRecord | null {
   };
 }
 
+function createCabinCategoryLookup(
+  cabinCategories: JsonRecord[],
+): Map<string, JsonRecord> {
+  const lookup = new Map<string, JsonRecord>();
+  for (const category of cabinCategories) {
+    const payload = getRecord(category, "payload");
+    for (const ref of [
+      getString(category, "id"),
+      getString(category, "externalId"),
+      getString(category, "code"),
+      getString(payload, "id"),
+      getString(payload, "externalId"),
+      getString(payload, "code"),
+    ]) {
+      if (ref) lookup.set(ref, category);
+    }
+  }
+  return lookup;
+}
+
 function lowestPriceFromSailing(sailing: JsonRecord): JsonRecord | null {
   const payload = getRecord(sailing, "payload");
   return (
@@ -1095,6 +1242,144 @@ function moneyFromMinorFields(
     currency,
     currencyPrecision: 2,
   };
+}
+
+function moneyFieldFromRecord(
+  row: JsonRecord,
+  payload: JsonRecord,
+  options: {
+    objectKey: string;
+    amountKey: string;
+    currencyKey: string;
+    fallbackCurrency?: string;
+  },
+): { amountMinor: number | null; currency: string | null } {
+  const money =
+    getRecordOrNull(row, options.objectKey) ??
+    getRecordOrNull(payload, options.objectKey);
+  const amountMinor =
+    getNumber(money ?? {}, "amountMinor") ??
+    getNumber(row, options.amountKey) ??
+    getNumber(payload, options.amountKey);
+  const currency =
+    getString(money ?? {}, "currency") ??
+    getString(row, options.currencyKey) ??
+    getString(payload, options.currencyKey) ??
+    options.fallbackCurrency ??
+    null;
+  if (amountMinor === null || !Number.isInteger(amountMinor)) {
+    return { amountMinor: null, currency };
+  }
+  return { amountMinor, currency };
+}
+
+function occupancySignatureFromRecord(
+  occupancy: JsonRecord,
+): string | undefined {
+  const adults = getNumber(occupancy, "adults");
+  if (adults === null) return undefined;
+  const children = getNumber(occupancy, "children") ?? 0;
+  const infants = getNumber(occupancy, "infants") ?? 0;
+  return [
+    `${adults}a`,
+    children > 0 ? `${children}c` : undefined,
+    infants > 0 ? `${infants}i` : undefined,
+  ]
+    .filter((part): part is string => !!part)
+    .join("-");
+}
+
+function sailingAvailabilityStatus(
+  sailing: JsonRecord,
+  cabinOptions: JsonRecord[],
+): string | null {
+  const payload = getRecord(sailing, "payload");
+  return (
+    normalizeCruiseAvailabilityStatus(
+      getString(sailing, "availabilityStatus") ??
+        getString(payload, "availabilityStatus") ??
+        getString(sailing, "availability") ??
+        getString(payload, "availability"),
+    ) ??
+    aggregateCabinAvailabilityStatus(cabinOptions) ??
+    normalizeCruiseAvailabilityStatus(
+      getString(sailing, "salesStatus") ?? getString(payload, "salesStatus"),
+    )
+  );
+}
+
+function aggregateCabinAvailabilityStatus(
+  cabinOptions: JsonRecord[],
+): string | null {
+  if (cabinOptions.length === 0) return null;
+  const statuses = new Set(
+    cabinOptions
+      .map((option) => getString(option, "availability_status"))
+      .filter((status): status is string => !!status),
+  );
+  for (const status of [
+    "available",
+    "limited",
+    "on_request",
+    "wait_list",
+    "sold_out",
+    "unknown",
+  ]) {
+    if (statuses.has(status)) return status;
+  }
+  return null;
+}
+
+function normalizeCruiseAvailabilityStatus(
+  value: string | undefined,
+): string | null {
+  if (!value) return null;
+  const normalized = value
+    .trim()
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[\s-]+/g, "_")
+    .toLowerCase();
+  if (
+    normalized === "available" ||
+    normalized === "active" ||
+    normalized === "open" ||
+    normalized === "bookable"
+  ) {
+    return "available";
+  }
+  if (
+    normalized === "limited" ||
+    normalized === "low" ||
+    normalized === "low_availability" ||
+    normalized === "few_left"
+  ) {
+    return "limited";
+  }
+  if (
+    normalized === "on_request" ||
+    normalized === "request" ||
+    normalized === "request_only"
+  ) {
+    return "on_request";
+  }
+  if (
+    normalized === "wait_list" ||
+    normalized === "waitlist" ||
+    normalized === "waitlisted"
+  ) {
+    return "wait_list";
+  }
+  if (
+    normalized === "sold_out" ||
+    normalized === "soldout" ||
+    normalized === "unavailable" ||
+    normalized === "closed" ||
+    normalized === "full"
+  ) {
+    return "sold_out";
+  }
+  if (normalized === "unknown") return "unknown";
+  return null;
 }
 
 function toCruiseContentPolicies(cruise: JsonRecord): JsonRecord[] {

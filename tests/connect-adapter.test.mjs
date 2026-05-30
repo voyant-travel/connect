@@ -474,6 +474,34 @@ test("connect adapter getContent prefers canonical cruise projection fields", as
         name: "Balcony",
       },
     ],
+    [
+      {
+        id: "price_1",
+        cabinCategoryId: "balcony",
+        occupancy: { adults: 2 },
+        fareCode: "BEST",
+        pricePerPerson: {
+          amountMinor: 120000,
+          currency: "EUR",
+          currencyPrecision: 2,
+        },
+        totalPrice: {
+          amountMinor: 240000,
+          currency: "EUR",
+          currencyPrecision: 2,
+        },
+        availability: "available",
+      },
+      {
+        cabinCategoryId: "suite",
+        cabinCategoryCode: "STE",
+        occupancySignature: "2a",
+        fareCode: "REF",
+        totalPriceAmountMinor: 480000,
+        totalPriceCurrency: "EUR",
+        availability: "sold_out",
+      },
+    ],
   ]);
   const client = createVoyantConnectClient({
     apiKey: "k",
@@ -498,6 +526,10 @@ test("connect adapter getContent prefers canonical cruise projection fields", as
     recorder.calls[1].url,
     "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings?cruiseExternalId=308_54-until-2026&limit=200",
   );
+  assert.equal(
+    recorder.calls[4].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings/sail_1/pricing",
+  );
   assert.equal(result.source_ref, "cruise:308_54-until-2026:en");
   assert.deepEqual(
     result.source_updated_at,
@@ -517,6 +549,31 @@ test("connect adapter getContent prefers canonical cruise projection fields", as
   assert.equal(result.content.sailings.length, 1);
   assert.equal(result.content.sailings[0].lowest_price_cents, 240000);
   assert.equal(result.content.sailings[0].currency, "EUR");
+  assert.equal(result.content.sailings[0].availability_status, "available");
+  assert.deepEqual(result.content.sailings[0].cabin_options, [
+    {
+      id: "price_1",
+      cabin_category_id: "balcony",
+      cabin_category_code: "BAL",
+      occupancy_signature: "2a",
+      fare_code: "BEST",
+      availability_status: "available",
+      price_per_person_cents: 120000,
+      total_price_cents: 240000,
+      currency: "EUR",
+    },
+    {
+      id: "sail_1:suite:2a:REF",
+      cabin_category_id: "suite",
+      cabin_category_code: "STE",
+      occupancy_signature: "2a",
+      fare_code: "REF",
+      availability_status: "sold_out",
+      price_per_person_cents: null,
+      total_price_cents: 480000,
+      currency: "EUR",
+    },
+  ]);
   assert.equal("price_from" in result.content.sailings[0], false);
   assert.equal("lowestPriceCached" in result.content.sailings[0], false);
   assert.equal(
