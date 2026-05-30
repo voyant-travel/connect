@@ -1,5 +1,11 @@
 # @voyantjs/connect-adapter
 
+## 0.2.9
+
+### Patch Changes
+
+- 869ebe5: Emit flattened `lowest_price_cents` and `currency` fields for `cruises/v1` sailing content instead of the nested `price_from` object.
+
 ## 0.2.8
 
 ### Patch Changes
