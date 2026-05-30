@@ -400,6 +400,116 @@ test("connect adapter getContent returns normalized cruise content for flat sear
   assert.equal(result.content.policies[0].kind, "supplier_notes");
 });
 
+test("connect adapter getContent prefers canonical cruise projection fields", async () => {
+  const recorder = createRecorder([
+    {
+      id: "ccr_01kstcv2hefah8sg4p5myhq63v",
+      externalId: "308_54-until-2026",
+      sourceKind: "voyant-connect",
+      sourceProvider: "uniworld",
+      sourceConnectionId: "conn_1",
+      sourceRef: "cruise:308_54-until-2026:en",
+      sourceFreshness: "sync",
+      lastSourcedAt: "2026-05-29T18:00:00.000Z",
+      projectionSchemaVersion: "cruises/v1",
+      projectionEtag: "proj_1",
+      projectionSeenAt: "2026-05-29T18:05:00.000Z",
+      market: "US",
+      currency: "USD",
+      connectionId: "conn_1",
+      cruiseLineExternalId: "uniworld",
+      shipExternalId: "ss_joy",
+      name: "Legacy row name",
+      cruiseType: "river",
+      nights: 11,
+      locale: "en",
+      payload: {
+        description: "Legacy payload description",
+        embarkationPort: { name: "Legacy embark" },
+      },
+      projection: {
+        name: "Wine Roads of France & Portugal",
+        status: "active",
+        description: "Projection description",
+        cruiseType: "river",
+        heroImageUrl: "https://example.com/projected-cruise.jpg",
+        highlights: ["Bordeaux tastings"],
+        cruiseLine: "Uniworld",
+        nights: 12,
+        embarkationPort: "Bordeaux",
+        disembarkationPort: "Lisbon",
+      },
+    },
+    [
+      {
+        id: "sail_1",
+        externalId: "sail_1",
+        departureDate: "2026-06-01",
+        returnDate: "2026-06-13",
+        nights: 12,
+        salesStatus: "available",
+        payload: {
+          itinerary: [{ dayNumber: 1, portName: "Bordeaux" }],
+        },
+      },
+    ],
+    [
+      {
+        externalId: "ss_joy",
+        name: "S.S. Joie de Vivre",
+      },
+    ],
+    [
+      {
+        externalId: "balcony",
+        code: "BAL",
+        name: "Balcony",
+      },
+    ],
+  ]);
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    fetch: recorder.fetch,
+  });
+  const adapter = createVoyantConnectSourceAdapter({
+    client,
+    operatorId: "op_1",
+  });
+
+  const result = await adapter.getContent(
+    { connection_id: "conn_1" },
+    {
+      entity_module: "cruises",
+      entity_id: "cruise:308_54-until-2026:en",
+      locale: "en",
+      market: "US",
+    },
+  );
+
+  assert.equal(
+    recorder.calls[1].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings?cruiseExternalId=308_54-until-2026&limit=200",
+  );
+  assert.equal(result.source_ref, "cruise:308_54-until-2026:en");
+  assert.deepEqual(
+    result.source_updated_at,
+    new Date("2026-05-29T18:00:00.000Z"),
+  );
+  assert.equal(result.content.cruise.name, "Wine Roads of France & Portugal");
+  assert.equal(result.content.cruise.description, "Projection description");
+  assert.equal(
+    result.content.cruise.hero_image_url,
+    "https://example.com/projected-cruise.jpg",
+  );
+  assert.deepEqual(result.content.cruise.highlights, ["Bordeaux tastings"]);
+  assert.equal(result.content.cruise.cruise_line, "Uniworld");
+  assert.equal(result.content.cruise.duration_nights, 12);
+  assert.equal(result.content.cruise.embarkation_port, "Bordeaux");
+  assert.equal(result.content.cruise.disembarkation_port, "Lisbon");
+  assert.equal(result.content.sailings.length, 1);
+  assert.equal(result.content.cabin_categories[0].name, "Balcony");
+});
+
 test("connect adapter keeps cruise itinerary variants scoped to sailings", async () => {
   const recorder = createRecorder([
     {

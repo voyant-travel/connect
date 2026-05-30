@@ -123,5 +123,9 @@ Root groups on `VoyantConnectClient`:
   scalar or array values.
 - `flights.searchStream` returns the raw `Response` so callers can stream the
   Server-Sent Events with whichever parser they prefer
+- per-connection cruise reads return `ConnectCruiseRow` records with canonical
+  cruise projection/provenance fields such as `sourceRef`, `projection`,
+  `projectionSchemaVersion`, `lastSourcedAt`, `market`, and `currency` when
+  present
 
 For repo-level context, see [../../docs/connect.md](../../docs/connect.md).

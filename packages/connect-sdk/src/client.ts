@@ -8,6 +8,7 @@ import type {
   CancelBookingInput,
   CabinPricing,
   ConfirmBookingInput,
+  ConnectCruiseRow,
   CruiseBooking,
   CruiseConfirmInput,
   CruiseInquireInput,
@@ -118,7 +119,9 @@ import type {
   WebhookSubscriptionTestReceipt,
 } from "./types.js";
 
-function withIdempotency(idempotencyKey: string | undefined): HeadersInit | undefined {
+function withIdempotency(
+  idempotencyKey: string | undefined,
+): HeadersInit | undefined {
   if (!idempotencyKey) return undefined;
   return { "idempotency-key": idempotencyKey };
 }
@@ -172,31 +175,48 @@ export class VoyantConnectClient {
   // ── Operators (control plane) ────────────────────────────────────────
 
   readonly operators = {
-    list: () => this.transport.request<OperatorSummary[]>("/connect/v1/operators"),
+    list: () =>
+      this.transport.request<OperatorSummary[]>("/connect/v1/operators"),
     get: (operatorId: string) =>
-      this.transport.request<OperatorSummary>(`/connect/v1/operators/${operatorId}`),
+      this.transport.request<OperatorSummary>(
+        `/connect/v1/operators/${operatorId}`,
+      ),
     create: (input: CreateOperatorInput) =>
       this.transport.request<OperatorSummary>("/connect/v1/operators", {
         body: input,
         method: "POST",
       }),
     update: (operatorId: string, input: UpdateOperatorInput) =>
-      this.transport.request<OperatorSummary>(`/connect/v1/operators/${operatorId}`, {
-        body: input,
-        method: "PATCH",
-      }),
+      this.transport.request<OperatorSummary>(
+        `/connect/v1/operators/${operatorId}`,
+        {
+          body: input,
+          method: "PATCH",
+        },
+      ),
     deactivate: (operatorId: string) =>
-      this.transport.request<OperatorSummary>(`/connect/v1/operators/${operatorId}`, {
-        method: "DELETE",
-      }),
+      this.transport.request<OperatorSummary>(
+        `/connect/v1/operators/${operatorId}`,
+        {
+          method: "DELETE",
+        },
+      ),
     getUsage: (operatorId: string, query?: UsageQuery) =>
-      this.transport.request<UsageSummary>(`/connect/v1/operators/${operatorId}/usage`, {
-        query: query as unknown as Record<string, string | undefined>,
-      }),
+      this.transport.request<UsageSummary>(
+        `/connect/v1/operators/${operatorId}/usage`,
+        {
+          query: query as unknown as Record<string, string | undefined>,
+        },
+      ),
     listSearchDocuments: (operatorId: string, query?: SearchDocumentQuery) =>
       this.transport.request<SearchDocument[]>(
         `/connect/v1/operators/${operatorId}/search-documents`,
-        { query: query as unknown as Record<string, string | number | undefined> },
+        {
+          query: query as unknown as Record<
+            string,
+            string | number | undefined
+          >,
+        },
       ),
     listSearchProjectionChanges: (
       operatorId: string,
@@ -205,7 +225,10 @@ export class VoyantConnectClient {
       this.transport.request<SearchProjectionChangePage>(
         `/connect/v1/operators/${operatorId}/search-projection-changes`,
         {
-          query: query as unknown as Record<string, string | number | undefined>,
+          query: query as unknown as Record<
+            string,
+            string | number | undefined
+          >,
           unwrapData: false,
         },
       ),
@@ -215,7 +238,9 @@ export class VoyantConnectClient {
 
   readonly connectorProviders = {
     list: () =>
-      this.transport.request<ConnectorProviderSummary[]>("/connect/v1/connector-providers"),
+      this.transport.request<ConnectorProviderSummary[]>(
+        "/connect/v1/connector-providers",
+      ),
     update: (providerKey: string, input: UpdateConnectorProviderInput) =>
       this.transport.request<ConnectorProviderSummary>(
         `/connect/v1/connector-providers/${providerKey}`,
@@ -233,7 +258,10 @@ export class VoyantConnectClient {
       this.transport.request<OperatorProviderRegistration>(
         `/connect/v1/operators/${operatorId}/provider-registrations/${registrationId}`,
       ),
-    upsertRegistration: (operatorId: string, input: UpsertProviderRegistrationInput) =>
+    upsertRegistration: (
+      operatorId: string,
+      input: UpsertProviderRegistrationInput,
+    ) =>
       this.transport.request<OperatorProviderRegistration>(
         `/connect/v1/operators/${operatorId}/provider-registrations`,
         { body: input, method: "POST" },
@@ -279,7 +307,11 @@ export class VoyantConnectClient {
         `/connect/v1/operators/${operatorId}/connections`,
         { body: input, method: "POST" },
       ),
-    update: (operatorId: string, connectionId: string, input: UpdateConnectionInput) =>
+    update: (
+      operatorId: string,
+      connectionId: string,
+      input: UpdateConnectionInput,
+    ) =>
       this.transport.request<ConnectionSummary>(
         `/connect/v1/operators/${operatorId}/connections/${connectionId}`,
         { body: input, method: "PATCH" },
@@ -315,7 +347,12 @@ export class VoyantConnectClient {
     ) =>
       this.transport.request<JsonObject[]>(
         `/connect/v1/operators/${operatorId}/connections/${connectionId}/webhook-events`,
-        { query: query as unknown as Record<string, string | number | undefined> },
+        {
+          query: query as unknown as Record<
+            string,
+            string | number | undefined
+          >,
+        },
       ),
     listHealthEvents: (
       operatorId: string,
@@ -324,7 +361,12 @@ export class VoyantConnectClient {
     ) =>
       this.transport.request<JsonObject[]>(
         `/connect/v1/operators/${operatorId}/connections/${connectionId}/health-events`,
-        { query: query as unknown as Record<string, string | number | undefined> },
+        {
+          query: query as unknown as Record<
+            string,
+            string | number | undefined
+          >,
+        },
       ),
     listRequestLogs: (
       operatorId: string,
@@ -336,7 +378,10 @@ export class VoyantConnectClient {
         {
           query: {
             ...query,
-            from: query?.from instanceof Date ? query.from.toISOString() : query?.from,
+            from:
+              query?.from instanceof Date
+                ? query.from.toISOString()
+                : query?.from,
             to: query?.to instanceof Date ? query.to.toISOString() : query?.to,
           } as unknown as Record<string, string | number | undefined>,
         },
@@ -347,18 +392,24 @@ export class VoyantConnectClient {
 
   readonly links = {
     list: (operatorId: string, query?: ListLinksQuery) =>
-      this.transport.request<LinkSummary[]>(`/connect/v1/operators/${operatorId}/links`, {
-        query: query as unknown as Record<string, string | undefined>,
-      }),
+      this.transport.request<LinkSummary[]>(
+        `/connect/v1/operators/${operatorId}/links`,
+        {
+          query: query as unknown as Record<string, string | undefined>,
+        },
+      ),
     get: (operatorId: string, linkId: string) =>
       this.transport.request<LinkSummary>(
         `/connect/v1/operators/${operatorId}/links/${linkId}`,
       ),
     create: (operatorId: string, input: CreateLinkInput) =>
-      this.transport.request<LinkSummary>(`/connect/v1/operators/${operatorId}/links`, {
-        body: input,
-        method: "POST",
-      }),
+      this.transport.request<LinkSummary>(
+        `/connect/v1/operators/${operatorId}/links`,
+        {
+          body: input,
+          method: "POST",
+        },
+      ),
     update: (operatorId: string, linkId: string, input: UpdateLinkInput) =>
       this.transport.request<LinkSummary>(
         `/connect/v1/operators/${operatorId}/links/${linkId}`,
@@ -399,15 +450,25 @@ export class VoyantConnectClient {
 
   readonly grants = {
     listForOperator: (operatorId: string, query?: ListGrantsQuery) =>
-      this.transport.request<GrantSummary[]>(`/connect/v1/operators/${operatorId}/grants`, {
-        query: query as unknown as Record<string, string | undefined>,
-      }),
+      this.transport.request<GrantSummary[]>(
+        `/connect/v1/operators/${operatorId}/grants`,
+        {
+          query: query as unknown as Record<string, string | undefined>,
+        },
+      ),
     create: (operatorId: string, input: CreateOperatorGrantInput) =>
-      this.transport.request<GrantSummary>(`/connect/v1/operators/${operatorId}/grants`, {
-        body: input,
-        method: "POST",
-      }),
-    update: (operatorId: string, grantId: string, input: UpdateOperatorGrantInput) =>
+      this.transport.request<GrantSummary>(
+        `/connect/v1/operators/${operatorId}/grants`,
+        {
+          body: input,
+          method: "POST",
+        },
+      ),
+    update: (
+      operatorId: string,
+      grantId: string,
+      input: UpdateOperatorGrantInput,
+    ) =>
       this.transport.request<GrantSummary>(
         `/connect/v1/operators/${operatorId}/grants/${grantId}`,
         { body: input, method: "PATCH" },
@@ -464,9 +525,12 @@ export class VoyantConnectClient {
     lookup: (token: string) =>
       this.transport.request<PublicInviteInfo>(`/connect/v1/invites/${token}`),
     redeem: (token: string) =>
-      this.transport.request<GrantSummary>(`/connect/v1/invites/${token}/redeem`, {
-        method: "POST",
-      }),
+      this.transport.request<GrantSummary>(
+        `/connect/v1/invites/${token}/redeem`,
+        {
+          method: "POST",
+        },
+      ),
   };
 
   // ── Webhook subscriptions ────────────────────────────────────────────
@@ -502,14 +566,23 @@ export class VoyantConnectClient {
     ) =>
       this.transport.request<WebhookDeliverySummary[]>(
         `/connect/v1/operators/${operatorId}/webhook-subscriptions/${subscriptionId}/deliveries`,
-        { query: query as unknown as Record<string, string | number | undefined> },
+        {
+          query: query as unknown as Record<
+            string,
+            string | number | undefined
+          >,
+        },
       ),
     sendTestEvent: (operatorId: string, subscriptionId: string) =>
       this.transport.request<WebhookSubscriptionTestReceipt>(
         `/connect/v1/operators/${operatorId}/webhook-subscriptions/${subscriptionId}/test`,
         { method: "POST" },
       ),
-    replayDelivery: (operatorId: string, subscriptionId: string, deliveryId: string) =>
+    replayDelivery: (
+      operatorId: string,
+      subscriptionId: string,
+      deliveryId: string,
+    ) =>
       this.transport.request<WebhookDeliveryReplayReceipt>(
         `/connect/v1/operators/${operatorId}/webhook-subscriptions/${subscriptionId}/deliveries/${deliveryId}/replay`,
         { method: "POST" },
@@ -523,7 +596,10 @@ export class VoyantConnectClient {
       this.transport.request<CustomConnectionRequestSummary[]>(
         `/connect/v1/organizations/${organizationId}/custom-connection-requests`,
       ),
-    create: (organizationId: string, input: CreateCustomConnectionRequestInput) =>
+    create: (
+      organizationId: string,
+      input: CreateCustomConnectionRequestInput,
+    ) =>
       this.transport.request<CustomConnectionRequestSummary>(
         `/connect/v1/organizations/${organizationId}/custom-connection-requests`,
         { body: input, method: "POST" },
@@ -555,11 +631,16 @@ export class VoyantConnectClient {
     },
 
     /** Per-connection list (Connect-normalized). Optional `supplierId` filter. */
-    listOnConnection: (connectionId: string, options?: { supplierId?: string }) =>
+    listOnConnection: (
+      connectionId: string,
+      options?: { supplierId?: string },
+    ) =>
       this.transport.request<JsonObject[]>(
         `/connect/v1/connections/${connectionId}/products`,
         {
-          query: options?.supplierId ? { supplierId: options.supplierId } : undefined,
+          query: options?.supplierId
+            ? { supplierId: options.supplierId }
+            : undefined,
           unwrapData: false,
         },
       ),
@@ -656,15 +737,21 @@ export class VoyantConnectClient {
      * Filter by `connectionId`, `providerKey`, status, and/or date range.
      */
     listAll: async (
-      filter?: ConnectionScopeFilter & OperatorScope & ListOperatorBookingsQuery,
+      filter?: ConnectionScopeFilter &
+        OperatorScope &
+        ListOperatorBookingsQuery,
     ) => {
       const operatorId = this.resolveOperatorId(filter);
       const query: Record<string, string | string[] | number | undefined> = {};
-      if (filter?.connectionId !== undefined) query.connectionId = filter.connectionId;
-      if (filter?.providerKey !== undefined) query.providerKey = filter.providerKey;
+      if (filter?.connectionId !== undefined)
+        query.connectionId = filter.connectionId;
+      if (filter?.providerKey !== undefined)
+        query.providerKey = filter.providerKey;
       if (filter?.status !== undefined) query.status = filter.status;
-      if (filter?.localDateStart !== undefined) query.localDateStart = filter.localDateStart;
-      if (filter?.localDateEnd !== undefined) query.localDateEnd = filter.localDateEnd;
+      if (filter?.localDateStart !== undefined)
+        query.localDateStart = filter.localDateStart;
+      if (filter?.localDateEnd !== undefined)
+        query.localDateEnd = filter.localDateEnd;
       if (filter?.limit !== undefined) query.limit = filter.limit;
       return this.transport.request<OperatorBookingSummary[]>(
         `/connect/v1/operators/${operatorId}/bookings`,
@@ -703,13 +790,21 @@ export class VoyantConnectClient {
         },
       ),
 
-    confirm: (connectionId: string, bookingId: string, input?: ConfirmBookingInput) =>
+    confirm: (
+      connectionId: string,
+      bookingId: string,
+      input?: ConfirmBookingInput,
+    ) =>
       this.transport.request<JsonObject>(
         `/connect/v1/connections/${connectionId}/bookings/${bookingId}/confirm`,
         { body: input ?? {}, method: "POST", unwrapData: false },
       ),
 
-    cancel: (connectionId: string, bookingId: string, input?: CancelBookingInput) =>
+    cancel: (
+      connectionId: string,
+      bookingId: string,
+      input?: CancelBookingInput,
+    ) =>
       this.transport.request<JsonObject>(
         `/connect/v1/connections/${connectionId}/bookings/${bookingId}`,
         { body: input ?? {}, method: "DELETE", unwrapData: false },
@@ -725,11 +820,17 @@ export class VoyantConnectClient {
         `/connect/v1/connections/${connectionId}/bookings/${bookingId}/activities`,
         {
           query: {
-            from: query?.from instanceof Date ? query.from.toISOString() : query?.from,
+            from:
+              query?.from instanceof Date
+                ? query.from.toISOString()
+                : query?.from,
             to: query?.to instanceof Date ? query.to.toISOString() : query?.to,
             type: query?.type,
             limit: query?.limit,
-          } as unknown as Record<string, string | string[] | number | undefined>,
+          } as unknown as Record<
+            string,
+            string | string[] | number | undefined
+          >,
           unwrapData: false,
         },
       ),
@@ -759,10 +860,13 @@ export class VoyantConnectClient {
     ) => {
       const operatorId = this.resolveOperatorId(filter);
       const query: Record<string, string | string[] | number | undefined> = {};
-      if (filter?.connectionId !== undefined) query.connectionId = filter.connectionId;
-      if (filter?.providerKey !== undefined) query.providerKey = filter.providerKey;
+      if (filter?.connectionId !== undefined)
+        query.connectionId = filter.connectionId;
+      if (filter?.providerKey !== undefined)
+        query.providerKey = filter.providerKey;
       if (filter?.category !== undefined) query.category = filter.category;
-      if (filter?.countryCode !== undefined) query.countryCode = filter.countryCode;
+      if (filter?.countryCode !== undefined)
+        query.countryCode = filter.countryCode;
       if (filter?.city !== undefined) query.city = filter.city;
       if (filter?.minStars !== undefined) query.minStars = filter.minStars;
       if (filter?.maxPriceFromAmountMinor !== undefined)
@@ -797,7 +901,10 @@ export class VoyantConnectClient {
       this.transport.request<JsonObject[]>(
         `/connect/v1/connections/${connectionId}/accommodations`,
         {
-          query: options as unknown as Record<string, string | number | undefined>,
+          query: options as unknown as Record<
+            string,
+            string | number | undefined
+          >,
           unwrapData: false,
         },
       ),
@@ -866,7 +973,10 @@ export class VoyantConnectClient {
     ) => {
       const operatorId = this.resolveOperatorId(filter);
       const body: Record<string, unknown> = { ...query };
-      if (filter && (filter.connectionId !== undefined || filter.providerKey !== undefined)) {
+      if (
+        filter &&
+        (filter.connectionId !== undefined || filter.providerKey !== undefined)
+      ) {
         body.filter = {
           connectionId: filter.connectionId,
           providerKey: filter.providerKey,
@@ -927,7 +1037,11 @@ export class VoyantConnectClient {
         },
       ),
 
-    cancel: (connectionId: string, bookingId: string, options?: { reason?: string }) =>
+    cancel: (
+      connectionId: string,
+      bookingId: string,
+      options?: { reason?: string },
+    ) =>
       this.transport.request<StayBooking>(
         `/connect/v1/connections/${connectionId}/stays/bookings/${bookingId}`,
         {
@@ -945,12 +1059,20 @@ export class VoyantConnectClient {
 
     list: (
       connectionId: string,
-      query?: { status?: string | string[]; checkInFrom?: string; checkInTo?: string; limit?: number },
+      query?: {
+        status?: string | string[];
+        checkInFrom?: string;
+        checkInTo?: string;
+        limit?: number;
+      },
     ) =>
       this.transport.request<StayBooking[]>(
         `/connect/v1/connections/${connectionId}/stays/bookings`,
         {
-          query: query as unknown as Record<string, string | string[] | number | undefined>,
+          query: query as unknown as Record<
+            string,
+            string | string[] | number | undefined
+          >,
           unwrapData: false,
         },
       ),
@@ -967,16 +1089,20 @@ export class VoyantConnectClient {
     ) => {
       const operatorId = this.resolveOperatorId(filter);
       const query: Record<string, string | string[] | number | undefined> = {};
-      if (filter?.connectionId !== undefined) query.connectionId = filter.connectionId;
-      if (filter?.providerKey !== undefined) query.providerKey = filter.providerKey;
+      if (filter?.connectionId !== undefined)
+        query.connectionId = filter.connectionId;
+      if (filter?.providerKey !== undefined)
+        query.providerKey = filter.providerKey;
       if (filter?.status !== undefined) query.status = filter.status;
-      if (filter?.checkInFrom !== undefined) query.checkInFrom = filter.checkInFrom;
+      if (filter?.checkInFrom !== undefined)
+        query.checkInFrom = filter.checkInFrom;
       if (filter?.checkInTo !== undefined) query.checkInTo = filter.checkInTo;
       if (filter?.limit !== undefined) query.limit = filter.limit;
-      return this.transport.request<Array<StayBooking & { providerKey: string | null; supplierName: string }>>(
-        `/connect/v1/operators/${operatorId}/stays/bookings`,
-        { query },
-      );
+      return this.transport.request<
+        Array<
+          StayBooking & { providerKey: string | null; supplierName: string }
+        >
+      >(`/connect/v1/operators/${operatorId}/stays/bookings`, { query });
     },
   };
 
@@ -993,12 +1119,16 @@ export class VoyantConnectClient {
     ) => {
       const operatorId = this.resolveOperatorId(filter);
       const query: Record<string, string | string[] | number | undefined> = {};
-      if (filter?.connectionId !== undefined) query.connectionId = filter.connectionId;
-      if (filter?.providerKey !== undefined) query.providerKey = filter.providerKey;
-      if (filter?.cruiseType !== undefined) query.cruiseType = filter.cruiseType;
+      if (filter?.connectionId !== undefined)
+        query.connectionId = filter.connectionId;
+      if (filter?.providerKey !== undefined)
+        query.providerKey = filter.providerKey;
+      if (filter?.cruiseType !== undefined)
+        query.cruiseType = filter.cruiseType;
       if (filter?.cruiseLineExternalId !== undefined)
         query.cruiseLineExternalId = filter.cruiseLineExternalId;
-      if (filter?.shipExternalId !== undefined) query.shipExternalId = filter.shipExternalId;
+      if (filter?.shipExternalId !== undefined)
+        query.shipExternalId = filter.shipExternalId;
       if (filter?.minNights !== undefined) query.minNights = filter.minNights;
       if (filter?.maxNights !== undefined) query.maxNights = filter.maxNights;
       if (filter?.locale !== undefined) query.locale = filter.locale;
@@ -1010,7 +1140,10 @@ export class VoyantConnectClient {
     },
 
     /** Look up a cruise by id in the operator's catalog. */
-    get: async (cruiseId: string, scope?: OperatorScope & { locale?: string }) => {
+    get: async (
+      cruiseId: string,
+      scope?: OperatorScope & { locale?: string },
+    ) => {
       const operatorId = this.resolveOperatorId(scope);
       return this.transport.request<OperatorCruiseDetail>(
         `/connect/v1/operators/${operatorId}/cruises/${cruiseId}`,
@@ -1025,10 +1158,13 @@ export class VoyantConnectClient {
       connectionId: string,
       options?: { locale?: string; limit?: number },
     ) =>
-      this.transport.request<JsonObject[]>(
+      this.transport.request<ConnectCruiseRow[]>(
         `/connect/v1/connections/${connectionId}/cruises`,
         {
-          query: options as unknown as Record<string, string | number | undefined>,
+          query: options as unknown as Record<
+            string,
+            string | number | undefined
+          >,
           unwrapData: false,
         },
       ),
@@ -1039,7 +1175,7 @@ export class VoyantConnectClient {
       cruiseId: string,
       options?: { locale?: string },
     ) =>
-      this.transport.request<JsonObject>(
+      this.transport.request<ConnectCruiseRow>(
         `/connect/v1/connections/${connectionId}/cruises/${cruiseId}`,
         {
           query: options as unknown as Record<string, string | undefined>,
@@ -1056,14 +1192,20 @@ export class VoyantConnectClient {
     ) => {
       const operatorId = this.resolveOperatorId(filter);
       const query: Record<string, string | string[] | number | undefined> = {};
-      if (filter?.connectionId !== undefined) query.connectionId = filter.connectionId;
-      if (filter?.providerKey !== undefined) query.providerKey = filter.providerKey;
+      if (filter?.connectionId !== undefined)
+        query.connectionId = filter.connectionId;
+      if (filter?.providerKey !== undefined)
+        query.providerKey = filter.providerKey;
       if (filter?.cruiseExternalId !== undefined)
         query.cruiseExternalId = filter.cruiseExternalId;
-      if (filter?.shipExternalId !== undefined) query.shipExternalId = filter.shipExternalId;
-      if (filter?.salesStatus !== undefined) query.salesStatus = filter.salesStatus;
-      if (filter?.departureFrom !== undefined) query.departureFrom = filter.departureFrom;
-      if (filter?.departureTo !== undefined) query.departureTo = filter.departureTo;
+      if (filter?.shipExternalId !== undefined)
+        query.shipExternalId = filter.shipExternalId;
+      if (filter?.salesStatus !== undefined)
+        query.salesStatus = filter.salesStatus;
+      if (filter?.departureFrom !== undefined)
+        query.departureFrom = filter.departureFrom;
+      if (filter?.departureTo !== undefined)
+        query.departureTo = filter.departureTo;
       if (filter?.limit !== undefined) query.limit = filter.limit;
       return this.transport.request<OperatorSailingSummary[]>(
         `/connect/v1/operators/${operatorId}/sailings`,
@@ -1093,7 +1235,10 @@ export class VoyantConnectClient {
       this.transport.request<JsonObject[]>(
         `/connect/v1/connections/${connectionId}/sailings`,
         {
-          query: options as unknown as Record<string, string | string[] | number | undefined>,
+          query: options as unknown as Record<
+            string,
+            string | string[] | number | undefined
+          >,
           unwrapData: false,
         },
       ),
@@ -1121,7 +1266,10 @@ export class VoyantConnectClient {
       this.transport.request<CabinPricing[]>(
         `/connect/v1/connections/${connectionId}/sailings/${sailingExternalId}/pricing`,
         {
-          query: query as unknown as Record<string, string | number | undefined>,
+          query: query as unknown as Record<
+            string,
+            string | number | undefined
+          >,
           unwrapData: false,
         },
       ),
@@ -1139,12 +1287,19 @@ export class VoyantConnectClient {
     /** Ships on a connection — optionally filter by cruise line. */
     listShips: (
       connectionId: string,
-      options?: { cruiseLineExternalId?: string; locale?: string; limit?: number },
+      options?: {
+        cruiseLineExternalId?: string;
+        locale?: string;
+        limit?: number;
+      },
     ) =>
       this.transport.request<JsonObject[]>(
         `/connect/v1/connections/${connectionId}/ships`,
         {
-          query: options as unknown as Record<string, string | number | undefined>,
+          query: options as unknown as Record<
+            string,
+            string | number | undefined
+          >,
           unwrapData: false,
         },
       ),
@@ -1188,7 +1343,10 @@ export class VoyantConnectClient {
     ) => {
       const operatorId = this.resolveOperatorId(filter);
       const body: Record<string, unknown> = { ...query };
-      if (filter && (filter.connectionId !== undefined || filter.providerKey !== undefined)) {
+      if (
+        filter &&
+        (filter.connectionId !== undefined || filter.providerKey !== undefined)
+      ) {
         body.filter = {
           connectionId: filter.connectionId,
           providerKey: filter.providerKey,
@@ -1310,7 +1468,10 @@ export class VoyantConnectClient {
       this.transport.request<CruiseBooking[]>(
         `/connect/v1/connections/${connectionId}/cruise-bookings`,
         {
-          query: query as unknown as Record<string, string | string[] | number | undefined>,
+          query: query as unknown as Record<
+            string,
+            string | string[] | number | undefined
+          >,
           unwrapData: false,
         },
       ),
@@ -1328,19 +1489,22 @@ export class VoyantConnectClient {
     ) => {
       const operatorId = this.resolveOperatorId(filter);
       const query: Record<string, string | string[] | number | undefined> = {};
-      if (filter?.connectionId !== undefined) query.connectionId = filter.connectionId;
-      if (filter?.providerKey !== undefined) query.providerKey = filter.providerKey;
+      if (filter?.connectionId !== undefined)
+        query.connectionId = filter.connectionId;
+      if (filter?.providerKey !== undefined)
+        query.providerKey = filter.providerKey;
       if (filter?.status !== undefined) query.status = filter.status;
       if (filter?.mode !== undefined) query.mode = filter.mode;
-      if (filter?.departureFrom !== undefined) query.departureFrom = filter.departureFrom;
-      if (filter?.departureTo !== undefined) query.departureTo = filter.departureTo;
+      if (filter?.departureFrom !== undefined)
+        query.departureFrom = filter.departureFrom;
+      if (filter?.departureTo !== undefined)
+        query.departureTo = filter.departureTo;
       if (filter?.limit !== undefined) query.limit = filter.limit;
       return this.transport.request<
-        Array<CruiseBooking & { providerKey: string | null; supplierName: string }>
-      >(
-        `/connect/v1/operators/${operatorId}/cruise-bookings`,
-        { query },
-      );
+        Array<
+          CruiseBooking & { providerKey: string | null; supplierName: string }
+        >
+      >(`/connect/v1/operators/${operatorId}/cruise-bookings`, { query });
     },
   };
 
@@ -1356,7 +1520,10 @@ export class VoyantConnectClient {
      * Server-Sent Events variant of multi-connection search. Returns the raw
      * `Response` so callers can stream events with their preferred parser.
      */
-    searchStream: (input: FlightMultiSearchInput, options?: { signal?: AbortSignal }) =>
+    searchStream: (
+      input: FlightMultiSearchInput,
+      options?: { signal?: AbortSignal },
+    ) =>
       this.transport.fetchRaw("/connect/v1/flights/search-stream", {
         body: input,
         headers: { accept: "text/event-stream" },
@@ -1409,17 +1576,29 @@ export class VoyantConnectClient {
       this.transport.request<FlightAncillaryList>(
         `/connect/v1/connections/${connectionId}/flights/orders/${orderId}/ancillaries`,
       ),
-    addAncillary: (connectionId: string, orderId: string, input: FlightAncillaryInput) =>
+    addAncillary: (
+      connectionId: string,
+      orderId: string,
+      input: FlightAncillaryInput,
+    ) =>
       this.transport.request<FlightOrder>(
         `/connect/v1/connections/${connectionId}/flights/orders/${orderId}/ancillaries`,
         { body: input, method: "POST" },
       ),
-    checkIn: (connectionId: string, orderId: string, input: FlightCheckInInput) =>
+    checkIn: (
+      connectionId: string,
+      orderId: string,
+      input: FlightCheckInInput,
+    ) =>
       this.transport.request<JsonObject>(
         `/connect/v1/connections/${connectionId}/flights/orders/${orderId}/checkin`,
         { body: input, method: "POST" },
       ),
-    exchange: (connectionId: string, orderId: string, input: FlightExchangeInput) =>
+    exchange: (
+      connectionId: string,
+      orderId: string,
+      input: FlightExchangeInput,
+    ) =>
       this.transport.request<FlightOrder>(
         `/connect/v1/connections/${connectionId}/flights/orders/${orderId}/exchange`,
         { body: input, method: "POST" },

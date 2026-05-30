@@ -35,6 +35,7 @@ export type {
   ConnectionSummary,
   ConnectorProviderApplicationSummary,
   ConnectorProviderSummary,
+  ConnectCruiseRow,
   CreateBookingInput,
   CreateConnectionInput,
   CreateCustomConnectionRequestInput,
