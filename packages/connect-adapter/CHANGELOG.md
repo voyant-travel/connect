@@ -1,5 +1,11 @@
 # @voyantjs/connect-adapter
 
+## 0.2.5
+
+### Patch Changes
+
+- 3fccb5b: Keep cruise itinerary variants scoped to their sailings instead of flattening every departure into one top-level itinerary.
+
 ## 0.2.4
 
 ### Patch Changes
