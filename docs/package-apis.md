@@ -66,6 +66,7 @@ Selected public types:
 - `ConnectionScopeFilter`, `OperatorScope`
 - `OperatorProductSummary`, `OperatorProductDetail`,
   `OperatorSupplierSummary`, `OperatorBookingSummary`
+- `ConnectCruiseRow`, `OperatorCruiseSummary`
 - `ConnectChannelHealth`, `ConnectOptionSummary`, `ConnectUnitSummary`,
   `ConnectProductExtraSummary`, `ConnectOptionExtraConfigSummary`
 - `FlightMultiSearchInput`, `FlightSearchInput`, `FlightSearchResult`,

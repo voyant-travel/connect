@@ -649,8 +649,15 @@ async function getCruiseContentFromConnect(
   request: GetContentRequest,
 ): Promise<GetContentResult> {
   const cruise = await resolveCruiseRow(client, connectionId, request);
+  const canonicalSourceRef =
+    getString(cruise, "sourceRef") ??
+    getString(getRecord(cruise, "projection"), "sourceRef") ??
+    getString(cruise, "externalId") ??
+    preferredSourceRefForEntityId(request.entity_id) ??
+    request.entity_id;
   const cruiseExternalId =
     getString(cruise, "externalId") ??
+    externalIdFromSourceRef(canonicalSourceRef) ??
     preferredSourceRefForEntityId(request.entity_id) ??
     request.entity_id;
   const cruiseLineExternalId =
@@ -699,7 +706,7 @@ async function getCruiseContentFromConnect(
   return {
     entity_module: request.entity_module,
     entity_id: request.entity_id,
-    source_ref: cruiseExternalId,
+    source_ref: canonicalSourceRef,
     returned_locale: getString(cruise, "locale") ?? request.locale,
     content: {
       cruise: toCruiseContentSummary(cruise, request.entity_id),
@@ -716,6 +723,7 @@ async function getCruiseContentFromConnect(
     },
     content_schema_version: "cruises/v1",
     source_updated_at:
+      dateFromString(getString(cruise, "lastSourcedAt")) ??
       dateFromString(getString(cruise, "updatedAt")) ??
       dateFromString(getString(cruise, "lastSyncedAt")) ??
       new Date(),
@@ -841,41 +849,62 @@ function toCruiseContentSummary(
   cruise: JsonRecord,
   entityId: string,
 ): JsonRecord {
+  const projection = getRecord(cruise, "projection");
   const payload = getRecord(cruise, "payload");
   return {
     id: entityId,
-    name: getString(cruise, "name") ?? getString(payload, "name") ?? entityId,
-    status: getString(cruise, "status") ?? getString(payload, "status"),
+    name:
+      getString(projection, "name") ??
+      getString(projection, "title") ??
+      getString(cruise, "name") ??
+      getString(payload, "name") ??
+      entityId,
+    status:
+      getString(projection, "status") ??
+      getString(cruise, "status") ??
+      getString(payload, "status"),
     description:
+      getString(projection, "description") ??
+      getString(projection, "summary") ??
       getString(payload, "description") ??
       getString(cruise, "description") ??
       getString(payload, "summary") ??
       null,
     cruise_type:
+      getString(projection, "cruise_type") ??
+      getString(projection, "cruiseType") ??
       getString(cruise, "cruiseType") ??
       getString(payload, "cruiseType") ??
       null,
     hero_image_url: getCruiseHeroImageUrl(cruise) ?? null,
-    highlights: getStringArray(payload, "highlights") ?? [],
+    highlights:
+      getStringArray(projection, "highlights") ??
+      getStringArray(payload, "highlights") ??
+      [],
     cruise_line:
+      getString(projection, "cruise_line") ??
+      getString(projection, "cruiseLine") ??
+      getString(projection, "cruiseLineName") ??
       getString(payload, "cruiseLineName") ??
       getString(payload, "cruiseLine") ??
       getString(cruise, "cruiseLineExternalId") ??
       null,
     duration_nights:
-      getNumber(cruise, "nights") ?? getNumber(payload, "nights"),
-    embarkation_port: getPortLabel(
-      cruise,
-      payload,
-      "embarkationPort",
-      "embarkationPortCode",
-    ),
-    disembarkation_port: getPortLabel(
-      cruise,
-      payload,
-      "disembarkationPort",
-      "disembarkationPortCode",
-    ),
+      getNumber(projection, "duration_nights") ??
+      getNumber(projection, "nights") ??
+      getNumber(cruise, "nights") ??
+      getNumber(payload, "nights"),
+    embarkation_port:
+      getProjectionPortLabel(projection, "embarkation") ??
+      getPortLabel(cruise, payload, "embarkationPort", "embarkationPortCode"),
+    disembarkation_port:
+      getProjectionPortLabel(projection, "disembarkation") ??
+      getPortLabel(
+        cruise,
+        payload,
+        "disembarkationPort",
+        "disembarkationPortCode",
+      ),
   };
 }
 
@@ -1228,6 +1257,11 @@ function preferredSourceRefForEntityId(entityId: string): string | undefined {
   );
 }
 
+function externalIdFromSourceRef(sourceRef: string): string | undefined {
+  const candidates = sourceRefCandidatesForEntityId(sourceRef);
+  return candidates.find((candidate) => candidate !== sourceRef);
+}
+
 function isLocaleTag(value: string | undefined): boolean {
   return value ? /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(value) : false;
 }
@@ -1242,6 +1276,7 @@ function cruiseRowMatchesSourceRef(
 function recordMatchesAnyRef(row: JsonRecord, candidates: string[]): boolean {
   const refs = new Set(candidates);
   const payload = getRecord(row, "payload");
+  const projection = getRecord(row, "projection");
   for (const ref of [
     getString(row, "id"),
     getString(row, "externalId"),
@@ -1251,6 +1286,9 @@ function recordMatchesAnyRef(row: JsonRecord, candidates: string[]): boolean {
     getString(payload, "externalId"),
     getString(payload, "sourceRef"),
     getString(payload, "documentExternalId"),
+    getString(projection, "id"),
+    getString(projection, "sourceRef"),
+    getString(projection, "source_ref"),
   ]) {
     if (!ref) continue;
     if (
@@ -1265,13 +1303,18 @@ function recordMatchesAnyRef(row: JsonRecord, candidates: string[]): boolean {
 }
 
 function getCruiseHeroImageUrl(cruise: JsonRecord): string | undefined {
+  const projection = getRecord(cruise, "projection");
   const payload = getRecord(cruise, "payload");
   const direct =
+    getString(projection, "hero_image_url") ??
+    getString(projection, "heroImageUrl") ??
+    getString(projection, "imageUrl") ??
     getString(cruise, "heroImageUrl") ??
     getString(payload, "heroImageUrl") ??
     getString(payload, "imageUrl");
   if (direct) return direct;
   for (const item of [
+    ...getRecordArray(projection, "media"),
     ...getRecordArray(cruise, "media"),
     ...getRecordArray(payload, "media"),
   ]) {
@@ -1279,6 +1322,31 @@ function getCruiseHeroImageUrl(cruise: JsonRecord): string | undefined {
     if (url) return url;
   }
   return undefined;
+}
+
+function getProjectionPortLabel(
+  projection: JsonRecord,
+  prefix: "embarkation" | "disembarkation",
+): string | null {
+  const snakeKey = `${prefix}_port`;
+  const camelKey = `${prefix}Port`;
+  const snakeCodeKey = `${prefix}_port_code`;
+  const camelCodeKey = `${prefix}PortCode`;
+  const snakeValue = projection[snakeKey];
+  const camelValue = projection[camelKey];
+  if (typeof snakeValue === "string" && snakeValue.length > 0) {
+    return snakeValue;
+  }
+  if (typeof camelValue === "string" && camelValue.length > 0) {
+    return camelValue;
+  }
+  return (
+    getString(getRecord(projection, snakeKey), "name") ??
+    getString(getRecord(projection, camelKey), "name") ??
+    getString(projection, snakeCodeKey) ??
+    getString(projection, camelCodeKey) ??
+    null
+  );
 }
 
 function getPortLabel(

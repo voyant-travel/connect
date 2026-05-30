@@ -257,7 +257,11 @@ export interface CreateLinkInput {
   partnerOrganizationId?: string;
   direction: LinkDirection;
   mode?: LinkMode;
-  connection?: { id?: string; credentials?: JsonObject; [key: string]: unknown };
+  connection?: {
+    id?: string;
+    credentials?: JsonObject;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 
@@ -670,7 +674,11 @@ export interface AvailabilityCalendarQueryInput {
 export interface CreateBookingInput {
   productId: string;
   optionId?: string;
-  unitItems: Array<{ unitId: string; quantity?: number; [key: string]: unknown }>;
+  unitItems: Array<{
+    unitId: string;
+    quantity?: number;
+    [key: string]: unknown;
+  }>;
   contact?: JsonObject;
   resellerReference?: string;
   notes?: string;
@@ -1133,7 +1141,11 @@ export interface StayBooking {
   contact: StayBookingContact;
   totals: StayOfferTotals;
   cancellationPolicy: CancellationPolicy;
-  cancellation?: { cancelledAt: IsoDateTime; reason?: string; refundAmount?: ConnectMoney };
+  cancellation?: {
+    cancelledAt: IsoDateTime;
+    reason?: string;
+    refundAmount?: ConnectMoney;
+  };
   payment?: PaymentReference;
   notes?: string;
   createdAt: IsoDateTime;
@@ -1597,6 +1609,7 @@ export interface OperatorCruiseSummary {
   shipExternalId: string;
   name: string;
   slug: string | null;
+  status: string | null;
   cruiseType: string;
   nights: number;
   destinations: string[] | null;
@@ -1604,6 +1617,18 @@ export interface OperatorCruiseSummary {
   disembarkationPortCode: string | null;
   locale: string;
   payload: JsonObject;
+  sourceKind: string | null;
+  sourceProvider: string | null;
+  sourceConnectionId: string | null;
+  sourceRef: string | null;
+  sourceFreshness: string | null;
+  lastSourcedAt: IsoDateTime | null;
+  projection: JsonObject | null;
+  projectionSchemaVersion: string | null;
+  projectionEtag: string | null;
+  projectionSeenAt: IsoDateTime | null;
+  market: string | null;
+  currency: string | null;
   lastSyncedAt: IsoDateTime;
   updatedAt: IsoDateTime;
   providerKey: string | null;
@@ -1611,8 +1636,10 @@ export interface OperatorCruiseSummary {
   [key: string]: unknown;
 }
 
+export type ConnectCruiseRow = OperatorCruiseSummary;
+
 export interface OperatorCruiseDetail {
-  cruise: JsonObject;
+  cruise: ConnectCruiseRow;
   providerKey: string | null;
   supplierName: string;
 }

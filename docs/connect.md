@@ -42,6 +42,11 @@ data plane for inventory, bookings, and flights.
   booking lifecycle routes
 - `health` — per-connection sync status
 
+Per-connection cruise reads return `ConnectCruiseRow` records, including
+canonical projection/provenance fields such as `sourceRef`, `projection`,
+`projectionSchemaVersion`, `lastSourcedAt`, `market`, and `currency` when the
+Connect API includes them.
+
 **Flights**
 
 - `flights` — multi-connection and per-connection search, price, book, manage
