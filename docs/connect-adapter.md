@@ -93,7 +93,12 @@ shape with `content_schema_version: "cruises/v1"`:
 Each sailing emits flattened sourced-content browse price fields:
 `lowest_price_cents` and `currency`. Both are populated from the same Connect
 minor-unit money object when a browse price is available; otherwise both are
-`null`.
+`null`. When Connect exposes a sailing/category/occupancy/fare pricing grid,
+the sailing also includes `availability_status` plus `cabin_options` entries
+with qualitative availability and integer minor-unit price fields. Cabin
+categories remain structural category definitions; `cabin_options` represent
+bookable category offers, not physical cabin numbers or invented inventory
+counts.
 
 When Connect has no sailings or prices for a cruise, those arrays remain empty
 while the durable cruise description, media, ship, and policy content still
