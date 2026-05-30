@@ -1,5 +1,11 @@
 # @voyantjs/connect-adapter
 
+## 0.2.8
+
+### Patch Changes
+
+- f4e8e75: Upgrade Voyant framework package peers and dev installs to the latest 0.85.3 line.
+
 ## 0.2.7
 
 ### Patch Changes

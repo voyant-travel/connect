@@ -1,5 +1,11 @@
 # @voyantjs/connect-cruises
 
+## 0.1.6
+
+### Patch Changes
+
+- f4e8e75: Upgrade Voyant framework package peers and dev installs to the latest 0.85.3 line.
+
 ## 0.1.5
 
 ### Patch Changes
