@@ -34,7 +34,12 @@ export type ConnectCruiseAdapterOptions = {
 
 export type ExternalCruiseType = "ocean" | "river" | "expedition" | "coastal";
 export type ExternalShipType = ExternalCruiseType | "yacht" | "sailing";
-export type ExternalSalesStatus = "open" | "on_request" | "wait_list" | "sold_out" | "closed";
+export type ExternalSalesStatus =
+  | "open"
+  | "on_request"
+  | "wait_list"
+  | "sold_out"
+  | "closed";
 
 export type ConnectExternalCruiseSummary = {
   sourceRef: ConnectCruiseSourceRef;
@@ -50,15 +55,28 @@ export type ConnectExternalCruiseSummary = {
   heroImageUrl?: string | null;
 };
 
-export type ConnectCruiseSearchProjectionEntry = ConnectExternalCruiseSummary & {
-  shipName: string;
-  embarkPortName?: string | null;
-  disembarkPortName?: string | null;
-  regions?: string[];
-  themes?: string[];
-  latestDeparture?: string | null;
-  salesStatus?: string | null;
-};
+export type ConnectCruiseSearchProjectionEntry =
+  ConnectExternalCruiseSummary & {
+    shipName: string;
+    embarkPortName?: string | null;
+    disembarkPortName?: string | null;
+    regions?: string[];
+    themes?: string[];
+    latestDeparture?: string | null;
+    salesStatus?: string | null;
+    // Canonical geography resolved via the data-geo product, carried on the
+    // catalog projection. The id arrays are stable facet/filter keys
+    // (`river:Q1653`, `HU`); the parallel name arrays are facet labels in the
+    // catalog locale. Downstream catalog adapters index these for destination
+    // faceting.
+    regionIds?: string[];
+    waterwayIds?: string[];
+    portIds?: string[];
+    countryIso?: string[];
+    waterways?: string[];
+    ports?: string[];
+    countries?: string[];
+  };
 
 export type ConnectExternalCruise = {
   sourceRef: ConnectCruiseSourceRef;
@@ -110,7 +128,12 @@ export type ConnectExternalPriceRow = {
   fareCode?: string | null;
   currency: string;
   pricePerPerson: string;
-  availability: "available" | "limited" | "on_request" | "wait_list" | "sold_out";
+  availability:
+    | "available"
+    | "limited"
+    | "on_request"
+    | "wait_list"
+    | "sold_out";
   components?: Array<{
     kind: string;
     label?: string | null;
@@ -167,14 +190,31 @@ export type ConnectCruiseAdapter = {
     entries: ConnectExternalCruiseSummary[];
     nextCursor?: string;
   }>;
-  searchProjection(options?: { limit?: number; cursor?: string }): AsyncIterable<ConnectCruiseSearchProjectionEntry>;
-  fetchCruise(sourceRef: ConnectCruiseSourceRef): Promise<ConnectExternalCruise | null>;
-  fetchSailing(sourceRef: ConnectCruiseSourceRef): Promise<ConnectExternalSailing | null>;
-  fetchSailingPricing(sourceRef: ConnectCruiseSourceRef): Promise<ConnectExternalPriceRow[]>;
-  fetchSailingItinerary(sourceRef: ConnectCruiseSourceRef): Promise<ConnectExternalItineraryDay[]>;
-  fetchShip(sourceRef: ConnectCruiseSourceRef): Promise<ConnectExternalShip | null>;
-  listSailingsForCruise(cruiseRef: ConnectCruiseSourceRef): Promise<ConnectExternalSailing[]>;
-  createBooking(input: ConnectExternalBookingInput): Promise<ConnectExternalBookingResult>;
+  searchProjection(options?: {
+    limit?: number;
+    cursor?: string;
+  }): AsyncIterable<ConnectCruiseSearchProjectionEntry>;
+  fetchCruise(
+    sourceRef: ConnectCruiseSourceRef,
+  ): Promise<ConnectExternalCruise | null>;
+  fetchSailing(
+    sourceRef: ConnectCruiseSourceRef,
+  ): Promise<ConnectExternalSailing | null>;
+  fetchSailingPricing(
+    sourceRef: ConnectCruiseSourceRef,
+  ): Promise<ConnectExternalPriceRow[]>;
+  fetchSailingItinerary(
+    sourceRef: ConnectCruiseSourceRef,
+  ): Promise<ConnectExternalItineraryDay[]>;
+  fetchShip(
+    sourceRef: ConnectCruiseSourceRef,
+  ): Promise<ConnectExternalShip | null>;
+  listSailingsForCruise(
+    cruiseRef: ConnectCruiseSourceRef,
+  ): Promise<ConnectExternalSailing[]>;
+  createBooking(
+    input: ConnectExternalBookingInput,
+  ): Promise<ConnectExternalBookingResult>;
 };
 
 export class ConnectCruisesNotImplementedError extends Error {
@@ -184,7 +224,9 @@ export class ConnectCruisesNotImplementedError extends Error {
   }
 }
 
-export function createConnectCruiseAdapter(options: ConnectCruiseAdapterOptions): ConnectCruiseAdapter {
+export function createConnectCruiseAdapter(
+  options: ConnectCruiseAdapterOptions,
+): ConnectCruiseAdapter {
   const client = options.client ?? createClient(options);
   const sourceProvider = options.sourceProvider ?? "connect";
   const version = options.version ?? "0.1.0";
@@ -221,9 +263,13 @@ export function createConnectCruiseAdapter(options: ConnectCruiseAdapterOptions)
     },
 
     async fetchCruise(sourceRef) {
-      const row = await client.cruises.getOnConnection(sourceRef.connectionId, sourceRef.externalId, {
-        locale: options.locale,
-      });
+      const row = await client.cruises.getOnConnection(
+        sourceRef.connectionId,
+        sourceRef.externalId,
+        {
+          locale: options.locale,
+        },
+      );
       return toCruise(sourceRef, row);
     },
 
@@ -244,7 +290,10 @@ export function createConnectCruiseAdapter(options: ConnectCruiseAdapterOptions)
     },
 
     async fetchSailingItinerary(sourceRef) {
-      const rows = await client.cruises.listItinerary(sourceRef.connectionId, sourceRef.externalId);
+      const rows = await client.cruises.listItinerary(
+        sourceRef.connectionId,
+        sourceRef.externalId,
+      );
       return rows.map((row) => ({
         dayNumber: row.dayNumber,
         title: row.title,
@@ -258,40 +307,56 @@ export function createConnectCruiseAdapter(options: ConnectCruiseAdapterOptions)
     },
 
     async fetchShip(sourceRef) {
-      const row = await client.cruises.getShip(sourceRef.connectionId, sourceRef.externalId);
+      const row = await client.cruises.getShip(
+        sourceRef.connectionId,
+        sourceRef.externalId,
+      );
       return toShip(sourceRef, row);
     },
 
     async listSailingsForCruise(cruiseRef) {
-      const rows = await client.cruises.listSailingsOnConnection(cruiseRef.connectionId, {
-        cruiseExternalId: cruiseRef.externalId,
-        limit: 500,
-      });
+      const rows = await client.cruises.listSailingsOnConnection(
+        cruiseRef.connectionId,
+        {
+          cruiseExternalId: cruiseRef.externalId,
+          limit: 500,
+        },
+      );
       return rows
-        .map((row) => toSailing(sourceRefFromRow(row, cruiseRef.connectionId, "sailing"), row))
-        .filter((sailing): sailing is ConnectExternalSailing => sailing !== null);
+        .map((row) =>
+          toSailing(
+            sourceRefFromRow(row, cruiseRef.connectionId, "sailing"),
+            row,
+          ),
+        )
+        .filter(
+          (sailing): sailing is ConnectExternalSailing => sailing !== null,
+        );
     },
 
     async createBooking(input) {
       const quoteId =
         getString(input.cabinCategoryRef, "quoteId") ??
         (await createQuoteForBooking(client, input, options.quoteTtlHours));
-      const result = await client.cruiseBookings.confirm(input.sailingRef.connectionId, {
-        quoteId,
-        leadPassenger: toLeadPassenger(input),
-        contact: {
-          email: input.contact.email ?? "",
-          phone: input.contact.phone ?? undefined,
-        },
-        passengers: input.passengers.map((passenger) => ({
-          type: passengerTypeFromTravelerCategory(passenger.travelerCategory),
-          firstName: passenger.firstName,
-          lastName: passenger.lastName,
-          email: passenger.email ?? undefined,
-          phone: passenger.phone ?? undefined,
-        })),
-        notes: input.notes ?? undefined,
-      } satisfies CruiseConfirmInput);
+      const result = await client.cruiseBookings.confirm(
+        input.sailingRef.connectionId,
+        {
+          quoteId,
+          leadPassenger: toLeadPassenger(input),
+          contact: {
+            email: input.contact.email ?? "",
+            phone: input.contact.phone ?? undefined,
+          },
+          passengers: input.passengers.map((passenger) => ({
+            type: passengerTypeFromTravelerCategory(passenger.travelerCategory),
+            firstName: passenger.firstName,
+            lastName: passenger.lastName,
+            email: passenger.email ?? undefined,
+            phone: passenger.phone ?? undefined,
+          })),
+          notes: input.notes ?? undefined,
+        } satisfies CruiseConfirmInput,
+      );
       return {
         connectorBookingRef: result.externalReference ?? result.reference,
         connectorStatus: result.status,
@@ -305,19 +370,26 @@ async function createQuoteForBooking(
   input: ConnectExternalBookingInput,
   quoteTtlHours: number | undefined,
 ): Promise<string> {
-  const quote = await client.cruiseBookings.lockSelection(input.sailingRef.connectionId, {
-    sailingExternalId: input.sailingRef.externalId,
-    cabinCategoryExternalId: input.cabinCategoryRef.externalId,
-    fareCode: input.fareCode ?? undefined,
-    occupancy: occupancyFromBookingInput(input),
-    ttlHours: quoteTtlHours,
-  });
+  const quote = await client.cruiseBookings.lockSelection(
+    input.sailingRef.connectionId,
+    {
+      sailingExternalId: input.sailingRef.externalId,
+      cabinCategoryExternalId: input.cabinCategoryRef.externalId,
+      fareCode: input.fareCode ?? undefined,
+      occupancy: occupancyFromBookingInput(input),
+      ttlHours: quoteTtlHours,
+    },
+  );
   return quote.id;
 }
 
-function createClient(options: ConnectCruiseAdapterOptions): VoyantConnectClient {
+function createClient(
+  options: ConnectCruiseAdapterOptions,
+): VoyantConnectClient {
   if (!options.connect) {
-    throw new Error("createConnectCruiseAdapter requires either client or connect options");
+    throw new Error(
+      "createConnectCruiseAdapter requires either client or connect options",
+    );
   }
   return createVoyantConnectClient(options.connect);
 }
@@ -335,7 +407,13 @@ function toSummary(row: OperatorCruiseSummary): ConnectExternalCruiseSummary {
   };
 }
 
-function toSearchProjection(row: OperatorCruiseSummary): ConnectCruiseSearchProjectionEntry {
+function toSearchProjection(
+  row: OperatorCruiseSummary,
+): ConnectCruiseSearchProjectionEntry {
+  // Canonical geography rides on the catalog projection (data-geo resolved at
+  // sync). Lift it onto the entry so downstream catalog adapters can index it
+  // for destination faceting.
+  const projection = (row.projection ?? {}) as JsonObject;
   return {
     ...toSummary(row),
     shipName: row.shipExternalId,
@@ -345,10 +423,20 @@ function toSearchProjection(row: OperatorCruiseSummary): ConnectCruiseSearchProj
     themes: undefined,
     latestDeparture: null,
     salesStatus: null,
+    regionIds: getStringArray(projection, "region_ids"),
+    waterwayIds: getStringArray(projection, "waterway_ids"),
+    portIds: getStringArray(projection, "port_ids"),
+    countryIso: getStringArray(projection, "country_iso"),
+    waterways: getStringArray(projection, "waterways"),
+    ports: getStringArray(projection, "ports"),
+    countries: getStringArray(projection, "countries"),
   };
 }
 
-function toCruise(sourceRef: ConnectCruiseSourceRef, row: JsonObject): ConnectExternalCruise | null {
+function toCruise(
+  sourceRef: ConnectCruiseSourceRef,
+  row: JsonObject,
+): ConnectExternalCruise | null {
   const name = getString(row, "name");
   if (!name) return null;
   return {
@@ -356,8 +444,16 @@ function toCruise(sourceRef: ConnectCruiseSourceRef, row: JsonObject): ConnectEx
     name,
     slug: getString(row, "slug") ?? slugify(name),
     cruiseType: normalizeCruiseType(getString(row, "cruiseType")),
-    lineName: getString(row, "cruiseLineName") ?? getString(row, "cruiseLineExternalId") ?? "Cruise line",
-    defaultShipRef: sourceRefFromMaybe(row, "shipId", sourceRef.connectionId, "ship"),
+    lineName:
+      getString(row, "cruiseLineName") ??
+      getString(row, "cruiseLineExternalId") ??
+      "Cruise line",
+    defaultShipRef: sourceRefFromMaybe(
+      row,
+      "shipId",
+      sourceRef.connectionId,
+      "ship",
+    ),
     nights: getNumber(row, "nights") ?? 0,
     embarkPortName: getNestedString(row, "embarkationPort", "name"),
     disembarkPortName: getNestedString(row, "disembarkationPort", "name"),
@@ -378,12 +474,22 @@ function toSailing(
   if (!departureDate || !returnDate) return null;
   return {
     sourceRef,
-    cruiseRef: sourceRefFromMaybe(row, "cruiseId", sourceRef.connectionId, "cruise") ?? {
+    cruiseRef: sourceRefFromMaybe(
+      row,
+      "cruiseId",
+      sourceRef.connectionId,
+      "cruise",
+    ) ?? {
       connectionId: sourceRef.connectionId,
       externalId: getString(row, "cruiseExternalId") ?? "",
       kind: "cruise",
     },
-    shipRef: sourceRefFromMaybe(row, "shipId", sourceRef.connectionId, "ship") ?? {
+    shipRef: sourceRefFromMaybe(
+      row,
+      "shipId",
+      sourceRef.connectionId,
+      "ship",
+    ) ?? {
       connectionId: sourceRef.connectionId,
       externalId: getString(row, "shipExternalId") ?? "",
       kind: "ship",
@@ -396,7 +502,10 @@ function toSailing(
   };
 }
 
-function toShip(sourceRef: ConnectCruiseSourceRef, row: JsonObject): ConnectExternalShip | null {
+function toShip(
+  sourceRef: ConnectCruiseSourceRef,
+  row: JsonObject,
+): ConnectExternalShip | null {
   const name = getString(row, "name");
   if (!name) return null;
   return {
@@ -472,7 +581,9 @@ function sourceRefFromMaybe(
 }
 
 function toLeadPassenger(input: ConnectExternalBookingInput): CruisePassenger {
-  const lead = input.passengers.find((passenger) => passenger.isPrimary) ?? input.passengers[0];
+  const lead =
+    input.passengers.find((passenger) => passenger.isPrimary) ??
+    input.passengers[0];
   if (!lead) {
     throw new Error("createBooking requires at least one passenger");
   }
@@ -485,7 +596,9 @@ function toLeadPassenger(input: ConnectExternalBookingInput): CruisePassenger {
   };
 }
 
-function occupancyFromBookingInput(input: ConnectExternalBookingInput): CruisePassengerOccupancy {
+function occupancyFromBookingInput(
+  input: ConnectExternalBookingInput,
+): CruisePassengerOccupancy {
   let adults = 0;
   let children = 0;
   let infants = 0;
@@ -525,7 +638,8 @@ function passengerTypeFromTravelerCategory(
 }
 
 function normalizeCruiseType(value: unknown): ExternalCruiseType {
-  if (value === "river" || value === "expedition" || value === "coastal") return value;
+  if (value === "river" || value === "expedition" || value === "coastal")
+    return value;
   return "ocean";
 }
 
@@ -567,11 +681,17 @@ function getNumber(record: JsonObject, key: string): number | null {
 function getStringArray(record: JsonObject, key: string): string[] | undefined {
   const value = record[key];
   if (!Array.isArray(value)) return undefined;
-  const strings = value.filter((item): item is string => typeof item === "string");
+  const strings = value.filter(
+    (item): item is string => typeof item === "string",
+  );
   return strings.length > 0 ? strings : undefined;
 }
 
-function getNestedString(record: JsonObject, key: string, nestedKey: string): string | null {
+function getNestedString(
+  record: JsonObject,
+  key: string,
+  nestedKey: string,
+): string | null {
   const nested = record[key];
   if (!nested || typeof nested !== "object") return null;
   return getString(nested as JsonObject, nestedKey) ?? null;
@@ -581,7 +701,11 @@ function mediaUrls(record: JsonObject): string[] {
   const media = record.media;
   if (!Array.isArray(media)) return [];
   return media
-    .map((item) => (item && typeof item === "object" ? getString(item as JsonObject, "url") : undefined))
+    .map((item) =>
+      item && typeof item === "object"
+        ? getString(item as JsonObject, "url")
+        : undefined,
+    )
     .filter((url): url is string => Boolean(url));
 }
 
@@ -599,14 +723,25 @@ function slugify(value: string): string {
   );
 }
 
-export function passengerCountFromConnectOccupancy(occupancy: CruisePassengerOccupancy): number {
-  return occupancy.adults + (occupancy.children ?? 0) + (occupancy.infants ?? 0);
+export function passengerCountFromConnectOccupancy(
+  occupancy: CruisePassengerOccupancy,
+): number {
+  return (
+    occupancy.adults + (occupancy.children ?? 0) + (occupancy.infants ?? 0)
+  );
 }
 
-export function connectFareComponentAmount(component: CruiseFareComponent): string {
+export function connectFareComponentAmount(
+  component: CruiseFareComponent,
+): string {
   return (component.amount.amountMinor / 100).toFixed(2);
 }
 
-function moneyToDecimal(money: { amountMinor: number; currencyPrecision: number }): string {
-  return (money.amountMinor / 10 ** money.currencyPrecision).toFixed(money.currencyPrecision);
+function moneyToDecimal(money: {
+  amountMinor: number;
+  currencyPrecision: number;
+}): string {
+  return (money.amountMinor / 10 ** money.currencyPrecision).toFixed(
+    money.currencyPrecision,
+  );
 }
