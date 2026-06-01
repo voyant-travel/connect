@@ -58,7 +58,10 @@ export class ConnectProviderSdkError extends Error {
   readonly code: string;
   readonly status?: number;
 
-  constructor(message: string, options: { code?: string; status?: number } = {}) {
+  constructor(
+    message: string,
+    options: { code?: string; status?: number } = {},
+  ) {
     super(message);
     this.name = "ConnectProviderSdkError";
     this.code = options.code ?? "connect_provider_sdk_error";
@@ -76,14 +79,20 @@ export function defineConnectProvider<TCredentials>(
     });
   }
   if (descriptor.supportedDirections.length === 0) {
-    throw new ConnectProviderSdkError("Provider must declare at least one direction", {
-      code: "invalid_provider_directions",
-    });
+    throw new ConnectProviderSdkError(
+      "Provider must declare at least one direction",
+      {
+        code: "invalid_provider_directions",
+      },
+    );
   }
   if (descriptor.categoryCoverage.length === 0) {
-    throw new ConnectProviderSdkError("Provider must declare at least one category", {
-      code: "invalid_provider_categories",
-    });
+    throw new ConnectProviderSdkError(
+      "Provider must declare at least one category",
+      {
+        code: "invalid_provider_categories",
+      },
+    );
   }
   return Object.freeze({ ...descriptor });
 }

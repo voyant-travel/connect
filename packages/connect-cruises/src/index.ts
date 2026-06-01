@@ -130,11 +130,22 @@ export type ConnectExternalCabinCategory = {
   name: string;
   roomType: ExternalRoomType;
   description?: string | null;
+  // Provider booking/pricing grades that roll up to this one bookable category
+  // (e.g. `DV1`..`DV6` under `DV`); pricing stays per grade via the fare code.
+  gradeCodes?: string[];
   minOccupancy: number;
   maxOccupancy: number;
   squareFeet?: string | null;
+  wheelchairAccessible?: boolean | null;
   amenities?: string[];
   images?: string[];
+  // Floor-plan / room-layout schematics, distinct from the photo gallery.
+  roomLayoutImages?: string[];
+};
+
+export type ConnectExternalShipDeck = {
+  name?: string | null;
+  imageUrl: string;
 };
 
 export type ConnectExternalShip = {
@@ -147,6 +158,9 @@ export type ConnectExternalShip = {
   deckCount?: number | null;
   yearBuilt?: number | null;
   yearRefurbished?: number | null;
+  description?: string | null;
+  deckPlanUrl?: string | null;
+  decks?: ConnectExternalShipDeck[];
   gallery?: string[];
   amenities?: Record<string, unknown>;
   categories?: ConnectExternalCabinCategory[];
@@ -620,10 +634,31 @@ function toShip(
     yearRefurbished:
       getNumber(row, "yearRefurbished") ??
       getNumber(payload, "yearRefurbished"),
+    description:
+      getString(row, "description") ?? getString(payload, "description"),
+    deckPlanUrl:
+      getString(row, "deckPlanUrl") ?? getString(payload, "deckPlanUrl"),
+    decks: shipDecks(payload),
     // The ship's gallery lives under payload.images[].url (a Ship has no
     // top-level `media`), so read from the payload, with a top-level fallback.
     gallery: gallery.length > 0 ? gallery : mediaUrls(row),
   };
+}
+
+function shipDecks(payload: JsonObject): ConnectExternalShipDeck[] | undefined {
+  const decks = payload.decks;
+  if (!Array.isArray(decks)) return undefined;
+  const mapped: ConnectExternalShipDeck[] = [];
+  for (const item of decks) {
+    if (!item || typeof item !== "object") continue;
+    const imageUrl = getString(item as JsonObject, "imageUrl");
+    if (!imageUrl) continue;
+    mapped.push({
+      name: getString(item as JsonObject, "name") ?? null,
+      imageUrl,
+    });
+  }
+  return mapped.length > 0 ? mapped : undefined;
 }
 
 function toCabinCategory(
@@ -649,15 +684,37 @@ function toCabinCategory(
       getString(row, "roomType") ?? getString(payload, "roomType"),
     ),
     description: getString(payload, "description"),
+    gradeCodes: getStringArray(payload, "gradeCodes"),
     minOccupancy: 1,
     maxOccupancy:
       getNumber(row, "maxTotal") ?? getNumber(occupancy, "total") ?? 2,
     squareFeet,
+    wheelchairAccessible:
+      typeof payload.wheelchairAccessible === "boolean"
+        ? payload.wheelchairAccessible
+        : undefined,
     amenities:
       getStringArray(payload, "features") ??
       getStringArray(payload, "amenities"),
     images: galleryUrls(payload),
+    roomLayoutImages: urlArray(payload, "roomLayoutImages"),
   };
+}
+
+// Image urls from an array of `{ url }` objects (or bare strings) under `key`.
+function urlArray(record: JsonObject, key: string): string[] | undefined {
+  const arr = record[key];
+  if (!Array.isArray(arr)) return undefined;
+  const urls: string[] = [];
+  for (const item of arr) {
+    if (item && typeof item === "object") {
+      const url = getString(item as JsonObject, "url");
+      if (url) urls.push(url);
+    } else if (typeof item === "string") {
+      urls.push(item);
+    }
+  }
+  return urls.length > 0 ? urls : undefined;
 }
 
 function toPriceRow(row: CabinPricing): ConnectExternalPriceRow {

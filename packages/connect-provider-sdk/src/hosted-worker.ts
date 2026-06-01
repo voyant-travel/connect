@@ -1,5 +1,6 @@
 export const CONNECTOR_WORKER_PROTOCOL_VERSION = "2026-05-28" as const;
-export const connectorWorkerManifestPath = "/.well-known/voyant-connect/manifest" as const;
+export const connectorWorkerManifestPath =
+  "/.well-known/voyant-connect/manifest" as const;
 
 export type ConnectorWorkerOperation =
   | "validateCredentials"
@@ -13,7 +14,10 @@ export type ConnectorWorkerOperation =
   | "getCruiseBooking"
   | "health";
 
-export const connectorWorkerOperationPaths: Record<ConnectorWorkerOperation, string> = {
+export const connectorWorkerOperationPaths: Record<
+  ConnectorWorkerOperation,
+  string
+> = {
   validateCredentials: "/validate-credentials",
   syncCatalog: "/sync/catalog",
   syncPricing: "/sync/pricing",

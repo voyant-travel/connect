@@ -14,7 +14,10 @@ pnpm add @voyantjs/connect-provider-sdk
 ## Usage
 
 ```ts
-import { defineConnectProvider, parseJsonCredentials } from "@voyantjs/connect-provider-sdk";
+import {
+  defineConnectProvider,
+  parseJsonCredentials,
+} from "@voyantjs/connect-provider-sdk";
 
 const provider = defineConnectProvider({
   key: "example-cruises",
