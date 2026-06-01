@@ -110,6 +110,10 @@ export type ConnectExternalSailing = {
   embarkPortName?: string | null;
   disembarkPortName?: string | null;
   salesStatus?: ExternalSalesStatus;
+  // Cheapest bookable price (minor units) for the sailing. The platform's
+  // rollup already computes it onto the sailing row, so departure prices need
+  // no per-sailing pricing fetch.
+  lowestPriceCents?: number | null;
 };
 
 export type ExternalRoomType =
@@ -585,6 +589,8 @@ function toSailing(
       getNestedString(row, "disembarkationPort", "name") ??
       getString(row, "disembarkationPortCode"),
     salesStatus: normalizeSalesStatus(getString(row, "salesStatus")),
+    // The sailing list/read already carries the rollup's from-price.
+    lowestPriceCents: getNumber(row, "priceFromAmountMinor"),
   };
 }
 
