@@ -1,5 +1,12 @@
 # @voyantjs/connect-cruises
 
+## 0.3.3
+
+### Patch Changes
+
+- 2919ca8: Read itinerary day descriptions + times from `payload`. `fetchSailingItinerary` substituted the port `title` for each day's `description` (so days repeated the port name and the real narrative was dropped) and hardcoded `arrivalTime`/`departureTime` to null. It now reads `payload.description` and the row's `arriveAt`/`departAt`.
+- d9a58cf: Carry the sailing "from" price onto the sailing entry. `toSailing` now maps the sailing row's `priceFromAmountMinor` (the platform's rollup-computed cheapest bookable price, already returned by the sailing list/read endpoints) onto `lowestPriceCents`. Departure prices in the cruise content / sailing list no longer require a separate `fetchSailingPricing` call per sailing.
+
 ## 0.3.2
 
 ### Patch Changes
