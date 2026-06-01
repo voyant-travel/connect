@@ -464,30 +464,49 @@ function toCruise(
   sourceRef: ConnectCruiseSourceRef,
   row: JsonObject,
 ): ConnectExternalCruise | null {
-  const name = getString(row, "name");
+  // The read endpoint returns the cruise row: structural columns are top-level
+  // (shipExternalId, embarkationPortCode, …) but the rich content (description,
+  // highlights, ports, media) lives under `payload`. Read payload first, fall
+  // back to the column.
+  const payload = getRowPayload(row);
+  const name = getString(row, "name") ?? getString(payload, "name");
   if (!name) return null;
   return {
     sourceRef,
     name,
-    slug: getString(row, "slug") ?? slugify(name),
-    cruiseType: normalizeCruiseType(getString(row, "cruiseType")),
+    slug: getString(row, "slug") ?? getString(payload, "slug") ?? slugify(name),
+    cruiseType: normalizeCruiseType(
+      getString(row, "cruiseType") ?? getString(payload, "cruiseType"),
+    ),
     lineName:
-      getString(row, "cruiseLineName") ??
+      getString(row, "supplierName") ??
+      getString(payload, "cruiseLineName") ??
       getString(row, "cruiseLineExternalId") ??
       "Cruise line",
     defaultShipRef: sourceRefFromMaybe(
       row,
-      "shipId",
+      "shipExternalId",
       sourceRef.connectionId,
       "ship",
     ),
-    nights: getNumber(row, "nights") ?? 0,
-    embarkPortName: getNestedString(row, "embarkationPort", "name"),
-    disembarkPortName: getNestedString(row, "disembarkationPort", "name"),
-    description: getString(row, "description"),
-    highlights: getStringArray(row, "highlights"),
-    regions: getStringArray(row, "destinations"),
-    heroImageUrl: firstMediaUrl(row),
+    nights: getNumber(row, "nights") ?? getNumber(payload, "nights") ?? 0,
+    embarkPortName:
+      getNestedString(payload, "embarkationPort", "name") ??
+      getString(row, "embarkationPortCode"),
+    disembarkPortName:
+      getNestedString(payload, "disembarkationPort", "name") ??
+      getString(row, "disembarkationPortCode"),
+    description:
+      getString(payload, "description") ?? getString(row, "description"),
+    shortDescription:
+      getString(payload, "summary") ?? getString(payload, "shortDescription"),
+    highlights:
+      getStringArray(payload, "highlights") ??
+      getStringArray(row, "highlights"),
+    regions:
+      getStringArray(row, "destinations") ??
+      getStringArray(payload, "destinations"),
+    heroImageUrl: firstMediaUrl(payload) ?? getString(payload, "heroImageUrl"),
     status: "live",
   };
 }
@@ -523,8 +542,14 @@ function toSailing(
     },
     departureDate,
     returnDate,
-    embarkPortName: getNestedString(row, "embarkationPort", "name"),
-    disembarkPortName: getNestedString(row, "disembarkationPort", "name"),
+    embarkPortName:
+      getNestedString(getRowPayload(row), "embarkationPort", "name") ??
+      getNestedString(row, "embarkationPort", "name") ??
+      getString(row, "embarkationPortCode"),
+    disembarkPortName:
+      getNestedString(getRowPayload(row), "disembarkationPort", "name") ??
+      getNestedString(row, "disembarkationPort", "name") ??
+      getString(row, "disembarkationPortCode"),
     salesStatus: normalizeSalesStatus(getString(row, "salesStatus")),
   };
 }
@@ -533,19 +558,29 @@ function toShip(
   sourceRef: ConnectCruiseSourceRef,
   row: JsonObject,
 ): ConnectExternalShip | null {
-  const name = getString(row, "name");
+  const payload = getRowPayload(row);
+  const name = getString(row, "name") ?? getString(payload, "name");
   if (!name) return null;
+  const gallery = galleryUrls(payload);
   return {
     sourceRef,
     name,
-    slug: getString(row, "slug") ?? slugify(name),
-    shipType: normalizeShipType(getString(row, "shipType")),
-    capacityGuests: getNumber(row, "capacityGuests"),
-    cabinCount: getNumber(row, "cabinCount"),
-    deckCount: getNumber(row, "deckCount"),
-    yearBuilt: getNumber(row, "yearBuilt"),
-    yearRefurbished: getNumber(row, "yearRefurbished"),
-    gallery: mediaUrls(row),
+    slug: getString(row, "slug") ?? getString(payload, "slug") ?? slugify(name),
+    shipType: normalizeShipType(
+      getString(row, "shipType") ?? getString(payload, "shipType"),
+    ),
+    capacityGuests:
+      getNumber(row, "capacityGuests") ?? getNumber(payload, "capacityGuests"),
+    cabinCount:
+      getNumber(row, "cabinCount") ?? getNumber(payload, "cabinCount"),
+    deckCount: getNumber(row, "deckCount") ?? getNumber(payload, "deckCount"),
+    yearBuilt: getNumber(row, "yearBuilt") ?? getNumber(payload, "yearBuilt"),
+    yearRefurbished:
+      getNumber(row, "yearRefurbished") ??
+      getNumber(payload, "yearRefurbished"),
+    // The ship's gallery lives under payload.images[].url (a Ship has no
+    // top-level `media`), so read from the payload, with a top-level fallback.
+    gallery: gallery.length > 0 ? gallery : mediaUrls(row),
   };
 }
 
@@ -724,6 +759,11 @@ function getNestedString(
   return getString(nested as JsonObject, nestedKey) ?? null;
 }
 
+function getRowPayload(record: JsonObject): JsonObject {
+  const payload = record.payload;
+  return payload && typeof payload === "object" ? (payload as JsonObject) : {};
+}
+
 function mediaUrls(record: JsonObject): string[] {
   const media = record.media;
   if (!Array.isArray(media)) return [];
@@ -734,6 +774,25 @@ function mediaUrls(record: JsonObject): string[] {
         : undefined,
     )
     .filter((url): url is string => Boolean(url));
+}
+
+// Collect image urls from any of the array shapes a payload may use for a
+// gallery (`images` for ships, `media` for cruises), de-duplicated.
+function galleryUrls(record: JsonObject): string[] {
+  const urls = new Set<string>();
+  for (const key of ["images", "media", "gallery"]) {
+    const arr = record[key];
+    if (!Array.isArray(arr)) continue;
+    for (const item of arr) {
+      if (item && typeof item === "object") {
+        const url = getString(item as JsonObject, "url");
+        if (url) urls.add(url);
+      } else if (typeof item === "string") {
+        urls.add(item);
+      }
+    }
+  }
+  return [...urls];
 }
 
 function firstMediaUrl(record: JsonObject): string | null {

@@ -90,3 +90,76 @@ test("cruise search projection falls back to legacy snake_case geo keys", async 
   assert.deepEqual(entry.portIds, ["port:MIA"]);
   assert.deepEqual(entry.countryIso, ["US"]);
 });
+
+test("fetchCruise reads rich detail from payload.*", async () => {
+  const row = {
+    name: "A Portrait of Majestic France",
+    slug: null,
+    cruiseType: "river",
+    cruiseLineExternalId: "uniworld",
+    supplierName: "Uniworld",
+    shipExternalId: "49-from-2027",
+    nights: 14,
+    destinations: ["France"],
+    embarkationPortCode: "BOD",
+    disembarkationPortCode: "OPO",
+    // Structural columns are top-level; the rich content is under payload.
+    payload: {
+      description: "x".repeat(995),
+      summary: "A wine-focused river cruise.",
+      highlights: ["Bordeaux", "Porto"],
+      embarkationPort: { name: "Bordeaux" },
+      disembarkationPort: { name: "Porto" },
+      media: [{ url: "https://example.com/cover.jpg", isCover: true }],
+    },
+  };
+  const adapter = createConnectCruiseAdapter({
+    client: { cruises: { getOnConnection: async () => row } },
+    operatorId: "opr_1",
+  });
+  const cruise = await adapter.fetchCruise({
+    connectionId: "conn_1",
+    externalId: "173_49-from-2027",
+    kind: "cruise",
+  });
+  assert.ok(cruise);
+  assert.equal(cruise.description?.length, 995); // was "" (read top-level)
+  assert.equal(cruise.shortDescription, "A wine-focused river cruise.");
+  assert.deepEqual(cruise.highlights, ["Bordeaux", "Porto"]);
+  assert.ok(cruise.defaultShipRef); // was null → ship/cabins were skipped
+  assert.equal(cruise.defaultShipRef.externalId, "49-from-2027");
+  assert.equal(cruise.embarkPortName, "Bordeaux");
+  assert.equal(cruise.disembarkPortName, "Porto");
+  assert.equal(cruise.heroImageUrl, "https://example.com/cover.jpg");
+  assert.equal(cruise.lineName, "Uniworld");
+});
+
+test("fetchShip reads the gallery from payload.images", async () => {
+  const row = {
+    name: "S.S. Joie de Vivre",
+    shipType: "river",
+    capacityGuests: 128,
+    payload: {
+      images: [
+        { url: "https://example.com/ship-1.jpg" },
+        { url: "https://example.com/ship-2.jpg" },
+      ],
+    },
+  };
+  const adapter = createConnectCruiseAdapter({
+    client: { cruises: { getShip: async () => row } },
+    operatorId: "opr_1",
+  });
+  const ship = await adapter.fetchShip({
+    connectionId: "conn_1",
+    externalId: "49-from-2027",
+    kind: "ship",
+  });
+  assert.ok(ship);
+  assert.equal(ship.name, "S.S. Joie de Vivre");
+  assert.equal(ship.capacityGuests, 128);
+  assert.deepEqual(ship.gallery, [
+    "https://example.com/ship-1.jpg",
+    "https://example.com/ship-2.jpg",
+  ]);
+});
