@@ -3,7 +3,10 @@ export class VoyantApiError extends Error {
   readonly requestId: string | null;
   readonly status: number;
 
-  constructor(message: string, options: { body: unknown; requestId: string | null; status: number }) {
+  constructor(
+    message: string,
+    options: { body: unknown; requestId: string | null; status: number },
+  ) {
     super(message);
     this.name = "VoyantApiError";
     this.status = options.status;

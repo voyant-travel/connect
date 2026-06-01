@@ -140,6 +140,9 @@ test("fetchShip reads the gallery from payload.images", async () => {
     shipType: "river",
     capacityGuests: 128,
     payload: {
+      description: "An intimate river ship.",
+      deckPlanUrl: "https://example.com/deckplan.jpg",
+      decks: [{ name: "Main Deck", imageUrl: "https://example.com/deck-main.jpg" }],
       images: [
         { url: "https://example.com/ship-1.jpg" },
         { url: "https://example.com/ship-2.jpg" },
@@ -154,9 +157,13 @@ test("fetchShip reads the gallery from payload.images", async () => {
       roomType: "inside",
       maxTotal: 2,
       payload: {
+        description: "Cozy inside stateroom.",
+        gradeCodes: ["I1", "I2"],
+        wheelchairAccessible: true,
         features: ["wifi"],
         area: { value: 150, unit: "sqft" },
         images: [{ url: "https://example.com/cabin.jpg" }],
+        roomLayoutImages: [{ url: "https://example.com/cabin-floor.jpg" }],
       },
     },
     {
@@ -185,6 +192,11 @@ test("fetchShip reads the gallery from payload.images", async () => {
   assert.ok(ship);
   assert.equal(ship.name, "S.S. Joie de Vivre");
   assert.equal(ship.capacityGuests, 128);
+  assert.equal(ship.description, "An intimate river ship.");
+  assert.equal(ship.deckPlanUrl, "https://example.com/deckplan.jpg");
+  assert.deepEqual(ship.decks, [
+    { name: "Main Deck", imageUrl: "https://example.com/deck-main.jpg" },
+  ]);
   assert.deepEqual(ship.gallery, [
     "https://example.com/ship-1.jpg",
     "https://example.com/ship-2.jpg",
@@ -193,10 +205,16 @@ test("fetchShip reads the gallery from payload.images", async () => {
   assert.equal(ship.categories?.length, 2);
   assert.equal(ship.categories[0].code, "I1");
   assert.equal(ship.categories[0].roomType, "inside");
+  assert.equal(ship.categories[0].description, "Cozy inside stateroom.");
+  assert.deepEqual(ship.categories[0].gradeCodes, ["I1", "I2"]);
+  assert.equal(ship.categories[0].wheelchairAccessible, true);
   assert.equal(ship.categories[0].maxOccupancy, 2);
   assert.equal(ship.categories[0].squareFeet, "150");
   assert.deepEqual(ship.categories[0].amenities, ["wifi"]);
   assert.deepEqual(ship.categories[0].images, ["https://example.com/cabin.jpg"]);
+  assert.deepEqual(ship.categories[0].roomLayoutImages, [
+    "https://example.com/cabin-floor.jpg",
+  ]);
   // studio is normalized to a catalog room type.
   assert.equal(ship.categories[1].roomType, "single");
 });
