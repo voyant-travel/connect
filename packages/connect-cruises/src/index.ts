@@ -58,6 +58,10 @@ export type ConnectExternalCruiseSummary = {
 export type ConnectCruiseSearchProjectionEntry =
   ConnectExternalCruiseSummary & {
     shipName: string;
+    // External ids so downstream catalog field policies can bind supplier/ship
+    // columns to ids (not just the display names).
+    lineExternalId: string;
+    shipExternalId: string;
     embarkPortName?: string | null;
     disembarkPortName?: string | null;
     regions?: string[];
@@ -395,15 +399,28 @@ function createClient(
 }
 
 function toSummary(row: OperatorCruiseSummary): ConnectExternalCruiseSummary {
+  const projection = (row.projection ?? {}) as JsonObject;
   return {
     sourceRef: sourceRefFromOperatorCruise(row, "cruise"),
     name: row.name,
     slug: row.slug ?? slugify(row.name),
     cruiseType: normalizeCruiseType(row.cruiseType),
     lineName: row.supplierName || row.cruiseLineExternalId,
-    shipName: row.shipExternalId,
+    // Prefer the resolved ship name from the projection; fall back to the id.
+    shipName: getString(projection, "shipName") ?? row.shipExternalId,
     nights: row.nights,
-    heroImageUrl: getString(row.payload, "heroImageUrl"),
+    // Lift the catalog's "from" price (stored in minor units) onto the summary.
+    lowestPrice:
+      row.priceFromAmountMinor != null
+        ? (row.priceFromAmountMinor / 100).toFixed(2)
+        : null,
+    lowestPriceCurrency: row.priceFromCurrency,
+    // The cover lives in media[].url (the projection's computed heroImageUrl, or
+    // the payload's media), not payload.heroImageUrl.
+    heroImageUrl:
+      getString(projection, "heroImageUrl") ??
+      firstMediaUrl(row.payload) ??
+      getString(row.payload, "heroImageUrl"),
   };
 }
 
@@ -414,19 +431,29 @@ function toSearchProjection(
   // sync). Lift it onto the entry so downstream catalog adapters can index it
   // for destination faceting.
   const projection = (row.projection ?? {}) as JsonObject;
+  // The catalog projection is camelCase (schema v2); fall back to the legacy
+  // snake_case keys so this keeps working against an un-migrated catalog.
+  const geo = (camelKey: string, snakeKey: string): string[] | undefined => {
+    const camel = getStringArray(projection, camelKey);
+    if (camel && camel.length > 0) return camel;
+    return getStringArray(projection, snakeKey);
+  };
+  const summary = toSummary(row);
   return {
-    ...toSummary(row),
-    shipName: row.shipExternalId,
+    ...summary,
+    shipName: summary.shipName ?? row.shipExternalId,
+    lineExternalId: row.cruiseLineExternalId,
+    shipExternalId: row.shipExternalId,
     embarkPortName: row.embarkationPortCode,
     disembarkPortName: row.disembarkationPortCode,
     regions: row.destinations ?? undefined,
     themes: undefined,
     latestDeparture: null,
-    salesStatus: null,
-    regionIds: getStringArray(projection, "region_ids"),
-    waterwayIds: getStringArray(projection, "waterway_ids"),
-    portIds: getStringArray(projection, "port_ids"),
-    countryIso: getStringArray(projection, "country_iso"),
+    salesStatus: row.status,
+    regionIds: geo("regionIds", "region_ids"),
+    waterwayIds: geo("waterwayIds", "waterway_ids"),
+    portIds: geo("portIds", "port_ids"),
+    countryIso: geo("countryIso", "country_iso"),
     waterways: getStringArray(projection, "waterways"),
     ports: getStringArray(projection, "ports"),
     countries: getStringArray(projection, "countries"),
