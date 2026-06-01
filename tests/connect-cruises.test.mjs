@@ -163,3 +163,27 @@ test("fetchShip reads the gallery from payload.images", async () => {
     "https://example.com/ship-2.jpg",
   ]);
 });
+
+test("fetchSailing maps the rollup from-price without an extra pricing call", async () => {
+  const row = {
+    externalId: "sail_1",
+    cruiseExternalId: "173_49-from-2027",
+    shipExternalId: "49-from-2027",
+    departureDate: "2027-04-10",
+    returnDate: "2027-04-24",
+    salesStatus: "open",
+    priceFromAmountMinor: 1295900, // $12,959 — already on the sailing row
+    priceFromCurrency: "USD",
+  };
+  const adapter = createConnectCruiseAdapter({
+    client: { cruises: { getSailingOnConnection: async () => row } },
+    operatorId: "opr_1",
+  });
+  const sailing = await adapter.fetchSailing({
+    connectionId: "conn_1",
+    externalId: "sail_1",
+    kind: "sailing",
+  });
+  assert.ok(sailing);
+  assert.equal(sailing.lowestPriceCents, 1295900);
+});
