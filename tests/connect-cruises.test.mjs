@@ -163,3 +163,45 @@ test("fetchShip reads the gallery from payload.images", async () => {
     "https://example.com/ship-2.jpg",
   ]);
 });
+
+test("fetchSailingItinerary reads day descriptions + times from payload", async () => {
+  const days = [
+    {
+      dayNumber: 1,
+      title: "Bordeaux",
+      portName: "Bordeaux",
+      isSeaDay: false,
+      isOvernight: true,
+      arriveAt: null,
+      departAt: "2027-04-10T18:00:00.000Z",
+      payload: {
+        description: "Arrive at Bordeaux-Mérignac International Airport…",
+      },
+    },
+    {
+      dayNumber: 2,
+      title: "Cadillac",
+      portName: "Cadillac",
+      isSeaDay: false,
+      isOvernight: false,
+      arriveAt: "2027-04-11T08:00:00.000Z",
+      departAt: "2027-04-11T22:00:00.000Z",
+      payload: { description: "The French phrase 'la douceur de vivre'…" },
+    },
+  ];
+  const adapter = createConnectCruiseAdapter({
+    client: { cruises: { listItinerary: async () => days } },
+    operatorId: "opr_1",
+  });
+  const itinerary = await adapter.fetchSailingItinerary({
+    connectionId: "conn_1",
+    externalId: "sail_1",
+    kind: "sailing",
+  });
+  assert.equal(itinerary.length, 2);
+  // The narrative comes from payload.description, not the port title.
+  assert.ok(itinerary[0].description.startsWith("Arrive at Bordeaux"));
+  assert.notEqual(itinerary[0].description, itinerary[0].title);
+  assert.equal(itinerary[1].arrivalTime, "2027-04-11T08:00:00.000Z");
+  assert.equal(itinerary[1].departureTime, "2027-04-11T22:00:00.000Z");
+});
