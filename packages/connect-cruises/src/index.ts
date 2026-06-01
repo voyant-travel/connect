@@ -327,10 +327,12 @@ export function createConnectCruiseAdapter(
       return rows.map((row) => ({
         dayNumber: row.dayNumber,
         title: row.title,
-        description: row.title,
+        // The per-day narrative lives in payload.description; `title` is the
+        // port name (don't substitute it for the description).
+        description: getString(row.payload, "description") ?? null,
         portName: row.portName,
-        arrivalTime: null,
-        departureTime: null,
+        arrivalTime: row.arriveAt,
+        departureTime: row.departAt,
         isOvernight: row.isOvernight,
         isSeaDay: row.isSeaDay,
       }));
