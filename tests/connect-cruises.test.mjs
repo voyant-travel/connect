@@ -146,8 +146,35 @@ test("fetchShip reads the gallery from payload.images", async () => {
       ],
     },
   };
+  const cabins = [
+    {
+      externalId: "cat_inside",
+      code: "I1",
+      name: "Inside Stateroom",
+      roomType: "inside",
+      maxTotal: 2,
+      payload: {
+        features: ["wifi"],
+        area: { value: 150, unit: "sqft" },
+        images: [{ url: "https://example.com/cabin.jpg" }],
+      },
+    },
+    {
+      externalId: "cat_studio",
+      code: "S1",
+      name: "Studio",
+      roomType: "studio",
+      maxTotal: 1,
+      payload: {},
+    },
+  ];
   const adapter = createConnectCruiseAdapter({
-    client: { cruises: { getShip: async () => row } },
+    client: {
+      cruises: {
+        getShip: async () => row,
+        listCabinCategories: async () => cabins,
+      },
+    },
     operatorId: "opr_1",
   });
   const ship = await adapter.fetchShip({
@@ -162,4 +189,14 @@ test("fetchShip reads the gallery from payload.images", async () => {
     "https://example.com/ship-1.jpg",
     "https://example.com/ship-2.jpg",
   ]);
+  // Cabin categories are fetched + attached (the Options tab).
+  assert.equal(ship.categories?.length, 2);
+  assert.equal(ship.categories[0].code, "I1");
+  assert.equal(ship.categories[0].roomType, "inside");
+  assert.equal(ship.categories[0].maxOccupancy, 2);
+  assert.equal(ship.categories[0].squareFeet, "150");
+  assert.deepEqual(ship.categories[0].amenities, ["wifi"]);
+  assert.deepEqual(ship.categories[0].images, ["https://example.com/cabin.jpg"]);
+  // studio is normalized to a catalog room type.
+  assert.equal(ship.categories[1].roomType, "single");
 });

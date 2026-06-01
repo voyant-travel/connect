@@ -112,6 +112,27 @@ export type ConnectExternalSailing = {
   salesStatus?: ExternalSalesStatus;
 };
 
+export type ExternalRoomType =
+  | "inside"
+  | "oceanview"
+  | "balcony"
+  | "suite"
+  | "penthouse"
+  | "single";
+
+export type ConnectExternalCabinCategory = {
+  sourceRef: ConnectCruiseSourceRef;
+  code: string;
+  name: string;
+  roomType: ExternalRoomType;
+  description?: string | null;
+  minOccupancy: number;
+  maxOccupancy: number;
+  squareFeet?: string | null;
+  amenities?: string[];
+  images?: string[];
+};
+
 export type ConnectExternalShip = {
   sourceRef: ConnectCruiseSourceRef;
   name: string;
@@ -124,6 +145,7 @@ export type ConnectExternalShip = {
   yearRefurbished?: number | null;
   gallery?: string[];
   amenities?: Record<string, unknown>;
+  categories?: ConnectExternalCabinCategory[];
 };
 
 export type ConnectExternalPriceRow = {
@@ -315,7 +337,19 @@ export function createConnectCruiseAdapter(
         sourceRef.connectionId,
         sourceRef.externalId,
       );
-      return toShip(sourceRef, row);
+      const ship = toShip(sourceRef, row);
+      if (!ship) return null;
+      // The ship read doesn't include cabin categories; fetch and attach them
+      // so the content's "Options" tab + cabin pricing have a catalog to bind.
+      const cabinRows = await client.cruises.listCabinCategories(
+        sourceRef.connectionId,
+        sourceRef.externalId,
+        { locale: options.locale },
+      );
+      ship.categories = cabinRows.map((cabin) =>
+        toCabinCategory(sourceRef.connectionId, cabin),
+      );
+      return ship;
     },
 
     async listSailingsForCruise(cruiseRef) {
@@ -584,6 +618,40 @@ function toShip(
   };
 }
 
+function toCabinCategory(
+  connectionId: string,
+  row: JsonObject,
+): ConnectExternalCabinCategory {
+  const payload = getRowPayload(row);
+  const occupancy = (payload.maxOccupancy ?? {}) as JsonObject;
+  const area = (payload.area ?? {}) as JsonObject;
+  const squareFeet =
+    getString(area, "unit") === "sqft" && getNumber(area, "value") !== null
+      ? String(getNumber(area, "value"))
+      : null;
+  return {
+    sourceRef: {
+      connectionId,
+      externalId: getString(row, "externalId") ?? "",
+      kind: "cabin_category",
+    },
+    code: getString(row, "code") ?? getString(payload, "code") ?? "",
+    name: getString(row, "name") ?? getString(payload, "name") ?? "",
+    roomType: normalizeRoomType(
+      getString(row, "roomType") ?? getString(payload, "roomType"),
+    ),
+    description: getString(payload, "description"),
+    minOccupancy: 1,
+    maxOccupancy:
+      getNumber(row, "maxTotal") ?? getNumber(occupancy, "total") ?? 2,
+    squareFeet,
+    amenities:
+      getStringArray(payload, "features") ??
+      getStringArray(payload, "amenities"),
+    images: galleryUrls(payload),
+  };
+}
+
 function toPriceRow(row: CabinPricing): ConnectExternalPriceRow {
   return {
     cabinCategoryRef: {
@@ -716,6 +784,21 @@ function normalizeShipType(value: unknown): ExternalShipType {
     return value;
   }
   return "ocean";
+}
+
+function normalizeRoomType(value: unknown): ExternalRoomType {
+  if (
+    value === "oceanview" ||
+    value === "balcony" ||
+    value === "suite" ||
+    value === "penthouse" ||
+    value === "single"
+  ) {
+    return value;
+  }
+  // `studio` (solo cabins) isn't in the catalog room-type set — treat as single.
+  if (value === "studio") return "single";
+  return "inside";
 }
 
 function normalizeSalesStatus(value: unknown): ExternalSalesStatus {
