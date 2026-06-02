@@ -6,12 +6,19 @@ export type ConnectorWorkerOperation =
   | "validateCredentials"
   | "syncCatalog"
   | "syncPricing"
+  // Cruise data plane
   | "searchCruises"
   | "quoteCruise"
   | "lockCruise"
   | "confirmCruise"
   | "cancelCruise"
   | "getCruiseBooking"
+  // Accommodations (stays) data plane
+  | "searchStays"
+  | "lockStay"
+  | "confirmStay"
+  | "cancelStay"
+  | "getStayBooking"
   | "health";
 
 export const connectorWorkerOperationPaths: Record<
@@ -27,6 +34,11 @@ export const connectorWorkerOperationPaths: Record<
   confirmCruise: "/cruises/confirm",
   cancelCruise: "/cruises/cancel",
   getCruiseBooking: "/cruises/bookings/get",
+  searchStays: "/stays/search",
+  lockStay: "/stays/lock",
+  confirmStay: "/stays/confirm",
+  cancelStay: "/stays/cancel",
+  getStayBooking: "/stays/bookings/get",
   health: "/health",
 };
 
