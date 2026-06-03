@@ -1267,7 +1267,13 @@ export interface PackageOffer {
 }
 
 export interface PackageConfirmInput {
-  holdId?: string;
+  /**
+   * The Connect hold being confirmed. Connect always materialises a hold
+   * before confirm (whether or not the provider has a native one), so this
+   * binds the booking to the locked inventory + price snapshot — mirrors
+   * `StayConfirmInput.holdId` / `CruiseConfirmInput.quoteId`.
+   */
+  holdId: string;
   leadTraveler: Traveler;
   travelers: Traveler[];
   contact: StayBookingContact;
