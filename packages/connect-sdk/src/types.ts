@@ -1174,6 +1174,148 @@ export interface StaySearchResponse {
   nextCursor?: string | null;
 }
 
+// ─── Packages (composed flight + stay data plane) ─────────────────────────
+
+export type TravelerCategory = "adult" | "child" | "infant" | "senior";
+
+export type TravelerSex = "male" | "female" | "unspecified";
+
+export interface Traveler {
+  category: TravelerCategory;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  sex?: TravelerSex;
+  title?: string;
+  nationality?: string;
+  email?: string;
+  phone?: string;
+  isPrimary?: boolean;
+}
+
+export interface ComponentRef {
+  entityModule: string;
+  entityId: string;
+  sourceKind?: string | null;
+  sourceConnectionId?: string | null;
+  sourceRef?: string | null;
+  label?: string | null;
+}
+
+export type PackageFlightType = "charter" | "scheduled" | "lowcost";
+
+export interface FlightSegment {
+  origin: string;
+  destination: string;
+  departureAt?: IsoDateTime;
+  arrivalAt?: IsoDateTime;
+  carrier?: string;
+  flightNumber?: string;
+  cabinClass?: string;
+  flightType?: PackageFlightType;
+}
+
+export interface StayComponent {
+  ref: ComponentRef;
+  name?: string;
+  roomTypeId?: string;
+  ratePlanId?: string;
+  board: BoardCode;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  occupancy: StaySearchRoom;
+}
+
+export interface PackagePricing {
+  perPerson: ConnectMoney;
+  total: ConnectMoney;
+}
+
+export interface PackageSearchQuery {
+  departure?: { airportCodes?: string[]; cities?: string[] };
+  destination?: {
+    countryCode?: string;
+    region?: string;
+    city?: string;
+    destinationCodes?: string[];
+  };
+  departureDateFrom: string;
+  departureDateTo: string;
+  nights?: { min: number; max: number };
+  occupancy: StaySearchRoom;
+  boards?: BoardCode[];
+  accommodationIds?: string[];
+  flightIncluded?: boolean;
+  maxPrice?: ConnectMoney;
+  locale?: string;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface PackageOffer {
+  id: string;
+  connectionId: string;
+  supplierId: string;
+  productRef: ComponentRef;
+  title?: string;
+  stay: StayComponent;
+  flights: FlightSegment[];
+  pricing: PackagePricing;
+  cancellationPolicy: CancellationPolicy;
+  expiresAt: IsoDateTime;
+}
+
+export interface PackageConfirmInput {
+  /**
+   * The Connect hold being confirmed. Connect always materialises a hold
+   * before confirm (whether or not the provider has a native one), so this
+   * binds the booking to the locked inventory + price snapshot — mirrors
+   * `StayConfirmInput.holdId` / `CruiseConfirmInput.quoteId`.
+   */
+  holdId: string;
+  leadTraveler: Traveler;
+  travelers: Traveler[];
+  contact: StayBookingContact;
+  paymentReference?: PaymentReference;
+  notes?: string;
+}
+
+export type PackageBookingStatus = StayBookingStatus;
+
+export interface PackageBookingCancellation {
+  cancelledAt: IsoDateTime;
+  reason?: string;
+  refundAmount?: ConnectMoney;
+}
+
+export interface PackageBooking {
+  id: string;
+  connectionId: string;
+  supplierId: string;
+  productRef: ComponentRef;
+  status: PackageBookingStatus;
+  reference: string;
+  externalReference?: string;
+  offer: PackageOffer;
+  leadTraveler: Traveler;
+  travelers: Traveler[];
+  contact: StayBookingContact;
+  pricing: PackagePricing;
+  cancellationPolicy: CancellationPolicy;
+  cancellation?: PackageBookingCancellation;
+  payment?: PaymentReference;
+  notes?: string;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+}
+
+export interface PackageSearchResponse {
+  offers: PackageOffer[];
+  connectionDiagnostics?: ConnectionDiagnostic[];
+  nextCursor?: string | null;
+}
+
 // ─── Cruises (cruise data plane) ──────────────────────────────────────────
 
 export type CruiseType =
