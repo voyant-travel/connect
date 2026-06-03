@@ -185,6 +185,8 @@ export type {
   PackageBookingStatus,
   PackageConfirmInput,
   PackageFlightType,
+  PackageHold,
+  PackageHoldStatus,
   PackageOffer,
   PackagePricing,
   PackageSearchQuery,
