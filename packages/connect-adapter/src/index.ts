@@ -491,13 +491,36 @@ async function liveResolveFromConnect(
   request: LiveResolveRequest,
 ): Promise<LiveResolveResult> {
   const connectionId = requireConnectConnectionId(ctx);
-  if (request.parameters?.connectRoute === "stays") {
+  // Prefer an explicit `connectRoute`, but fall back to inferring it from the
+  // query shape so a caller that forgets to set it still routes correctly
+  // (sourced stay quotes otherwise fell through to the generic availability
+  // path and resolved no offers).
+  const route =
+    (request.parameters?.connectRoute as string | undefined) ??
+    inferConnectRoute(request.parameters);
+  if (route === "stays") {
     return liveResolveStays(client, connectionId, request);
   }
-  if (request.parameters?.connectRoute === "cruises") {
+  if (route === "cruises") {
     return liveResolveCruises(client, connectionId, request);
   }
   return liveResolveAvailability(client, connectionId, request);
+}
+
+/**
+ * Infer the Connect route from the live-resolve query shape when no explicit
+ * `connectRoute` is provided. A stay search is distinctively shaped — `rooms[]`
+ * plus check-in/out dates — which the generic availability query never carries.
+ */
+function inferConnectRoute(
+  parameters: LiveResolveRequest["parameters"],
+): "stays" | "cruises" | undefined {
+  if (!parameters || typeof parameters !== "object") return undefined;
+  const p = parameters as Record<string, unknown>;
+  if (Array.isArray(p.rooms) && (p.checkIn != null || p.checkOut != null)) {
+    return "stays";
+  }
+  return undefined;
 }
 
 async function liveResolveAvailability(
@@ -551,6 +574,11 @@ async function liveResolveStays(
         available: true,
         offer,
         price: offer.totals.total,
+        // Flat fields the catalog quote engine's `liveValuesToPricing` reads
+        // (it expects a numeric `priceCents` + string `currency`, not a money
+        // object). Without these, sourced stay quotes extract no pricing.
+        priceCents: offer.totals.total.amountMinor,
+        currency: offer.totals.total.currency,
         expires_at: offer.expiresAt,
       };
       values[offer.accommodationId] = value;
