@@ -1,5 +1,11 @@
 # @voyantjs/connect-provider-sdk
 
+## 0.4.0
+
+### Minor Changes
+
+- d6c8190: Add the `quoteStay` / `quotePackage` hosted-worker operations (→ `/stays/quote` / `/packages/quote`) — an optional re-price of an offer against the provider's live price just before lock, alongside the existing cruise/stays/packages operations. Protocol version unchanged.
+
 ## 0.3.0
 
 ### Minor Changes

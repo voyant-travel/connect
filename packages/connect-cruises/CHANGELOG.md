@@ -1,5 +1,12 @@
 # @voyantjs/connect-cruises
 
+## 0.3.6
+
+### Patch Changes
+
+- Updated dependencies [ccd65a5]
+  - @voyantjs/connect-sdk@0.3.0
+
 ## 0.3.5
 
 ### Patch Changes
