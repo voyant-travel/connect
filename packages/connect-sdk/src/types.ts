@@ -1266,6 +1266,21 @@ export interface PackageOffer {
   expiresAt: IsoDateTime;
 }
 
+export type PackageHoldStatus = "active" | "expired" | "consumed" | "released";
+
+/**
+ * Connect-side hold over a package offer — the Offer→Booking ladder's Hold,
+ * mirroring `StayHold`. Connect always materialises one (snapshotting the
+ * offer's price + components) before confirm, whether or not the provider has
+ * a native hold (`lockPackage`).
+ */
+export interface PackageHold {
+  id: string;
+  offerSnapshot: PackageOffer;
+  status: PackageHoldStatus;
+  expiresAt: IsoDateTime;
+}
+
 export interface PackageConfirmInput {
   /**
    * The Connect hold being confirmed. Connect always materialises a hold
