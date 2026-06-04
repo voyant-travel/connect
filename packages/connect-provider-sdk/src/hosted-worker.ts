@@ -15,12 +15,14 @@ export type ConnectorWorkerOperation =
   | "getCruiseBooking"
   // Accommodations (stays) data plane
   | "searchStays"
+  | "quoteStay"
   | "lockStay"
   | "confirmStay"
   | "cancelStay"
   | "getStayBooking"
   // Packages (composed flight + stay) data plane
   | "searchPackages"
+  | "quotePackage"
   | "lockPackage"
   | "confirmPackage"
   | "cancelPackage"
@@ -41,11 +43,13 @@ export const connectorWorkerOperationPaths: Record<
   cancelCruise: "/cruises/cancel",
   getCruiseBooking: "/cruises/bookings/get",
   searchStays: "/stays/search",
+  quoteStay: "/stays/quote",
   lockStay: "/stays/lock",
   confirmStay: "/stays/confirm",
   cancelStay: "/stays/cancel",
   getStayBooking: "/stays/bookings/get",
   searchPackages: "/packages/search",
+  quotePackage: "/packages/quote",
   lockPackage: "/packages/lock",
   confirmPackage: "/packages/confirm",
   cancelPackage: "/packages/cancel",
