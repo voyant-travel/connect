@@ -243,6 +243,54 @@ test("connect adapter liveResolve uses fresh stay search when requested", async 
     currency: "EUR",
     currencyPrecision: 2,
   });
+  // Flat fields the catalog quote engine reads (priceCents/currency).
+  assert.equal(result.values.acc_1.priceCents, 12300);
+  assert.equal(result.values.acc_1.currency, "EUR");
+});
+
+test("connect adapter liveResolve infers the stays route from the query shape", async () => {
+  const recorder = createRecorder([
+    {
+      offers: [
+        {
+          id: "offer_2",
+          connectionId: "conn_1",
+          accommodationId: "acc_2",
+          totals: {
+            total: { amountMinor: 45600, currency: "EUR", currencyPrecision: 2 },
+          },
+          expiresAt: "2026-05-29T17:00:00.000Z",
+        },
+      ],
+    },
+  ]);
+  const client = createVoyantConnectClient({ apiKey: "k", fetch: recorder.fetch });
+  const adapter = createVoyantConnectSourceAdapter({
+    client,
+    operatorId: "op_1",
+  });
+
+  const result = await adapter.liveResolve(
+    { connection_id: "conn_1" },
+    {
+      ids: ["acc_2"],
+      scope: { locale: "en", audience: "public", market: "RO", currency: "EUR" },
+      // No explicit connectRoute — must be inferred from rooms[] + checkIn.
+      parameters: {
+        checkIn: "2026-06-01",
+        checkOut: "2026-06-03",
+        rooms: [{ adults: 2 }],
+      },
+    },
+  );
+
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/search",
+  );
+  assert.equal(result.values.acc_2.available, true);
+  assert.equal(result.values.acc_2.priceCents, 45600);
+  assert.equal(result.values.acc_2.currency, "EUR");
 });
 
 test("connect adapter generic liveResolve includes price hints from availability", async () => {
