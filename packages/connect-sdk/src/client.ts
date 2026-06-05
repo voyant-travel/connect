@@ -902,9 +902,11 @@ export class VoyantConnectClient {
     },
 
     /**
-     * Look up an accommodation in the operator's catalog. Accepts either the
-     * internal id (`csac_…`) or the provider externalId (e.g. TUI `AGP28009`).
-     * Includes the localized `content` for detail pages.
+     * Look up an accommodation in the operator's catalog by its internal id
+     * (`csac_…`). Includes the localized `content` for detail pages. To resolve a
+     * provider externalId (e.g. TUI `AGP28009`) — which isn't unique across an
+     * operator's connections — use `list({ externalId })` or the connection-scoped
+     * `getOnConnection`.
      */
     get: async (
       accommodationId: string,
