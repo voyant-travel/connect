@@ -438,6 +438,8 @@ export interface ListOperatorBookingsQuery {
 
 export interface ListAccommodationsQuery {
   category?: AccommodationCategory | AccommodationCategory[];
+  /** Provider hotel code(s) (e.g. TUI `AGP28009`) — resolve externalId → catalog rows. */
+  externalId?: string | string[];
   countryCode?: string | string[];
   city?: string | string[];
   minStars?: number;
