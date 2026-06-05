@@ -1,5 +1,12 @@
 # @voyantjs/connect-adapter
 
+## 0.2.16
+
+### Patch Changes
+
+- Updated dependencies [53f7d10]
+  - @voyantjs/connect-sdk@0.4.0
+
 ## 0.2.15
 
 ### Patch Changes
