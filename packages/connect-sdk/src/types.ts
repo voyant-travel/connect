@@ -502,6 +502,10 @@ export interface SearchDocument {
   searchableText?: string;
   destinations?: string[] | null;
   countryCodes?: string[] | null;
+  /** Board basis facet (AI/HB/BB/RO/…) — first-class for filtering. */
+  board?: string | null;
+  /** Star rating facet (fractional, e.g. 4.5) — first-class for filtering. */
+  stars?: number | null;
   tags?: string[] | null;
   imageUrl?: string | null;
   priceFrom?: JsonObject | null;
