@@ -506,6 +506,12 @@ export interface SearchDocument {
   board?: string | null;
   /** Star rating facet (fractional, e.g. 4.5) — first-class for filtering. */
   stars?: number | null;
+  /**
+   * Supply-model mechanic the catalog surface forks on: "dynamic"
+   * (composed-live, any-date, calendar pricing) vs "scheduled" (dated
+   * departures/slots with an allotment). Product *type* stays in `category`.
+   */
+  supplyModel?: string | null;
   tags?: string[] | null;
   imageUrl?: string | null;
   priceFrom?: JsonObject | null;
