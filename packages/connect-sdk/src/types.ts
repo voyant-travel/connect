@@ -1174,12 +1174,21 @@ export interface StayConfirmInput {
 export interface ConnectionDiagnostic {
   connectionId: string;
   status: "ok" | "timeout" | "error" | "unauthorized";
+  /**
+   * Canonical error code when `status` is not "ok" — e.g.
+   * "PROVIDER_REJECTED_REQUEST", "UNSUPPORTED_OPERATION",
+   * "UPSTREAM_UNAVAILABLE". Lets callers branch on the failure class without
+   * parsing `message`.
+   */
+  code?: string;
   message?: string;
   durationMs?: number;
 }
 
 export interface StaySearchResponse {
   offers: StayOffer[];
+  /** Canonical error code when the search failed for the connection. */
+  errorCode?: string;
   connectionDiagnostics?: ConnectionDiagnostic[];
   nextCursor?: string | null;
 }
@@ -1337,6 +1346,8 @@ export interface PackageBooking {
 
 export interface PackageSearchResponse {
   offers: PackageOffer[];
+  /** Canonical error code when the search failed for the connection. */
+  errorCode?: string;
   connectionDiagnostics?: ConnectionDiagnostic[];
   nextCursor?: string | null;
 }
