@@ -22,6 +22,7 @@ const connectSources = [
   "links.ts",
   "operator-data.ts",
   "operators.ts",
+  "packages.ts",
   "products.ts",
   "stays.ts",
   "suppliers.ts",
@@ -38,6 +39,9 @@ const manifestFile = path.join(repoRoot, "generated", "public-routes.json");
 // internal-only). Kept in sync with verify-api-parity.mjs.
 const connectExclusions = new Set([
   "POST /connect/internal/operators/sync",
+  // Connector self-registration (register-manifest), authed with the internal
+  // API key at connector deploy time — not a public SDK consumer route.
+  "PUT /connect/v1/connector-providers/:key/manifest",
 ]);
 
 const connectChannelExcluded = (route) =>

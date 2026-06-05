@@ -24,6 +24,7 @@ const connectRouteFiles = [
   "links.ts",
   "operator-data.ts",
   "operators.ts",
+  "packages.ts",
   "products.ts",
   "stays.ts",
   "suppliers.ts",
@@ -35,7 +36,12 @@ const connectRouteFiles = [
 
 // Routes the public Connect SDK intentionally does not surface (different
 // auth model or internal-only). Kept in sync with sync-route-manifests.mjs.
-const connectExclusions = new Set(["POST /connect/internal/operators/sync"]);
+const connectExclusions = new Set([
+  "POST /connect/internal/operators/sync",
+  // Connector self-registration (register-manifest), authed with the internal
+  // API key at connector deploy time — not a public SDK consumer route.
+  "PUT /connect/v1/connector-providers/:key/manifest",
+]);
 
 function isConnectChannelRoute(route) {
   return route.includes(" /connect/v1/connect-channel/");

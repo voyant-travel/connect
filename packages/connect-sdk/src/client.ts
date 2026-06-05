@@ -30,6 +30,12 @@ import type {
   OperatorCruiseSummary,
   OperatorSailingDetail,
   OperatorSailingSummary,
+  PackageBooking,
+  PackageConfirmInput,
+  PackageHold,
+  PackageOffer,
+  PackageSearchQuery,
+  PackageSearchResponse,
   RatePlan,
   RoomType,
   StayBooking,
@@ -1105,6 +1111,168 @@ export class VoyantConnectClient {
           StayBooking & { providerKey: string | null; supplierName: string }
         >
       >(`/connect/v1/operators/${operatorId}/stays/bookings`, { query });
+    },
+  };
+
+  // ── Packages (composed flight + stay data plane) ─────────────────────────
+
+  readonly packages = {
+    /**
+     * Per-connection live package search; delegates to the connector. A
+     * canonical `destination.countryCode`/`region`/`city` is resolved to the
+     * supplier's accommodations server-side, so callers stay on one model
+     * across providers. Returns offers + per-connection diagnostics.
+     */
+    search: (connectionId: string, query: PackageSearchQuery) =>
+      this.transport.request<PackageSearchResponse>(
+        `/connect/v1/connections/${connectionId}/packages/search`,
+        { body: query, method: "POST", unwrapData: false },
+      ),
+
+    /**
+     * Cross-connection search. Fans out across the operator's accessible
+     * connections, merges offers, and returns a unified response with
+     * `connectionDiagnostics` per connection (a connection that can't serve
+     * packages reports an error there without failing the whole search).
+     */
+    searchAcrossProviders: async (
+      query: PackageSearchQuery,
+      filter?: ConnectionScopeFilter & OperatorScope,
+    ) => {
+      const operatorId = this.resolveOperatorId(filter);
+      const body: Record<string, unknown> = { ...query };
+      if (
+        filter &&
+        (filter.connectionId !== undefined || filter.providerKey !== undefined)
+      ) {
+        body.filter = {
+          connectionId: filter.connectionId,
+          providerKey: filter.providerKey,
+        };
+      }
+      return this.transport.request<PackageSearchResponse>(
+        `/connect/v1/operators/${operatorId}/packages/search`,
+        { body, method: "POST", unwrapData: false },
+      );
+    },
+
+    /**
+     * Lock an offer. Pass the PackageOffer returned from search; Connect creates
+     * a server-side hold (snapshotting price + components) whose TTL caps any
+     * provider-native lock that exists.
+     */
+    lock: (
+      connectionId: string,
+      offer: PackageOffer,
+      options?: { ttlMinutes?: number },
+    ) =>
+      this.transport.request<PackageHold>(
+        `/connect/v1/connections/${connectionId}/packages/lock`,
+        {
+          body: { offerId: offer.id, offer, ttlMinutes: options?.ttlMinutes },
+          method: "POST",
+          unwrapData: false,
+        },
+      ),
+
+    releaseLock: (connectionId: string, holdId: string) =>
+      this.transport.request<PackageHold>(
+        `/connect/v1/connections/${connectionId}/packages/holds/${holdId}`,
+        { method: "DELETE", unwrapData: false },
+      ),
+
+    getHold: (connectionId: string, holdId: string) =>
+      this.transport.request<PackageHold>(
+        `/connect/v1/connections/${connectionId}/packages/holds/${holdId}`,
+        { unwrapData: false },
+      ),
+
+    /**
+     * Confirm a held offer into a booking. `idempotencyKey` becomes
+     * `Idempotency-Key` and is enforced server-side against the hold.
+     */
+    confirm: (
+      connectionId: string,
+      input: PackageConfirmInput,
+      options?: { idempotencyKey?: string },
+    ) =>
+      this.transport.request<PackageBooking>(
+        `/connect/v1/connections/${connectionId}/packages/bookings`,
+        {
+          body: input,
+          headers: withIdempotency(options?.idempotencyKey),
+          method: "POST",
+          unwrapData: false,
+        },
+      ),
+
+    cancel: (
+      connectionId: string,
+      bookingId: string,
+      options?: { reason?: string },
+    ) =>
+      this.transport.request<PackageBooking>(
+        `/connect/v1/connections/${connectionId}/packages/bookings/${bookingId}`,
+        {
+          body: options?.reason ? { reason: options.reason } : {},
+          method: "DELETE",
+          unwrapData: false,
+        },
+      ),
+
+    get: (connectionId: string, bookingId: string) =>
+      this.transport.request<PackageBooking>(
+        `/connect/v1/connections/${connectionId}/packages/bookings/${bookingId}`,
+        { unwrapData: false },
+      ),
+
+    list: (
+      connectionId: string,
+      query?: {
+        status?: string | string[];
+        departureFrom?: string;
+        departureTo?: string;
+        limit?: number;
+      },
+    ) =>
+      this.transport.request<PackageBooking[]>(
+        `/connect/v1/connections/${connectionId}/packages/bookings`,
+        {
+          query: query as unknown as Record<
+            string,
+            string | string[] | number | undefined
+          >,
+          unwrapData: false,
+        },
+      ),
+
+    /** Cross-connection booking list scoped to the operator. */
+    listAll: async (
+      filter?: ConnectionScopeFilter &
+        OperatorScope & {
+          status?: string | string[];
+          departureFrom?: string;
+          departureTo?: string;
+          limit?: number;
+        },
+    ) => {
+      const operatorId = this.resolveOperatorId(filter);
+      const query: Record<string, string | string[] | number | undefined> = {};
+      if (filter?.connectionId !== undefined)
+        query.connectionId = filter.connectionId;
+      if (filter?.providerKey !== undefined)
+        query.providerKey = filter.providerKey;
+      if (filter?.status !== undefined) query.status = filter.status;
+      if (filter?.departureFrom !== undefined)
+        query.departureFrom = filter.departureFrom;
+      if (filter?.departureTo !== undefined)
+        query.departureTo = filter.departureTo;
+      if (filter?.limit !== undefined) query.limit = filter.limit;
+      return this.transport.request<
+        Array<
+          PackageBooking & { providerKey: string | null; supplierName: string }
+        >
+      >(`/connect/v1/operators/${operatorId}/packages/bookings`, { query });
     },
   };
 
