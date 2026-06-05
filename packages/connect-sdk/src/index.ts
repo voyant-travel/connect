@@ -39,6 +39,8 @@ export type {
   ConnectProductExtraSummary,
   ConnectUnitSummary,
   ConnectionScopeFilter,
+  ConnectionAccommodation,
+  ConnectionAccommodationDetail,
   ConnectionStatus,
   ConnectionSummary,
   ConnectorProviderApplicationSummary,
