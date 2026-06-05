@@ -885,6 +885,8 @@ export class VoyantConnectClient {
       if (filter?.providerKey !== undefined)
         query.providerKey = filter.providerKey;
       if (filter?.category !== undefined) query.category = filter.category;
+      if (filter?.externalId !== undefined)
+        query.externalId = filter.externalId;
       if (filter?.countryCode !== undefined)
         query.countryCode = filter.countryCode;
       if (filter?.city !== undefined) query.city = filter.city;
@@ -899,7 +901,11 @@ export class VoyantConnectClient {
       );
     },
 
-    /** Look up an accommodation in the operator's catalog. */
+    /**
+     * Look up an accommodation in the operator's catalog. Accepts either the
+     * internal id (`csac_…`) or the provider externalId (e.g. TUI `AGP28009`).
+     * Includes the localized `content` for detail pages.
+     */
     get: async (
       accommodationId: string,
       scope?: OperatorScope & { locale?: string },
@@ -930,9 +936,11 @@ export class VoyantConnectClient {
       ),
 
     /**
-     * Per-connection accommodation lookup. Includes the rich, localized
-     * `content` (descriptions, gallery, rooms, reviews) for detail pages — pass
-     * `locale` to request a language (falls back to any synced locale).
+     * Per-connection accommodation lookup. Accepts either the internal id
+     * (`csac_…`) or the provider externalId (e.g. TUI `AGP28009`). Includes the
+     * rich, localized `content` (descriptions, gallery, rooms, reviews) for
+     * detail pages — pass `locale` to request a language (falls back to any
+     * synced locale).
      */
     getOnConnection: (
       connectionId: string,
