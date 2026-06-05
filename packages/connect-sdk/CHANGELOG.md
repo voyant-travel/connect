@@ -1,5 +1,11 @@
 # @voyantjs/connect-sdk
 
+## 0.3.0
+
+### Minor Changes
+
+- ccd65a5: Add the `PackageHold` contract type (+ `PackageHoldStatus`) — the Connect-side hold over a `PackageOffer`, mirroring `StayHold`. Returned by the package lock route; Connect always materialises a hold before confirm (binding `PackageConfirmInput.holdId`).
+
 ## 0.2.0
 
 ### Minor Changes
