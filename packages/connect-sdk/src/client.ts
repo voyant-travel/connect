@@ -9,6 +9,8 @@ import type {
   CabinPricing,
   ConfirmBookingInput,
   ConnectCruiseRow,
+  ConnectionAccommodation,
+  ConnectionAccommodationDetail,
   CruiseBooking,
   CruiseConfirmInput,
   CruiseInquireInput,
@@ -916,7 +918,7 @@ export class VoyantConnectClient {
       connectionId: string,
       options?: { locale?: string; limit?: number },
     ) =>
-      this.transport.request<JsonObject[]>(
+      this.transport.request<ConnectionAccommodation[]>(
         `/connect/v1/connections/${connectionId}/accommodations`,
         {
           query: options as unknown as Record<
@@ -927,13 +929,17 @@ export class VoyantConnectClient {
         },
       ),
 
-    /** Per-connection accommodation lookup. */
+    /**
+     * Per-connection accommodation lookup. Includes the rich, localized
+     * `content` (descriptions, gallery, rooms, reviews) for detail pages — pass
+     * `locale` to request a language (falls back to any synced locale).
+     */
     getOnConnection: (
       connectionId: string,
       accommodationId: string,
       options?: { locale?: string },
     ) =>
-      this.transport.request<JsonObject>(
+      this.transport.request<ConnectionAccommodationDetail>(
         `/connect/v1/connections/${connectionId}/accommodations/${accommodationId}`,
         {
           query: options as unknown as Record<string, string | undefined>,

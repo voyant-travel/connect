@@ -564,6 +564,49 @@ export interface OperatorAccommodationDetail {
   content: AccommodationContent | null;
 }
 
+/**
+ * A synced accommodation as returned by the per-connection endpoints
+ * (`listOnConnection` / `getOnConnection`) — denormalized columns plus the full
+ * normalized accommodation in `payload`.
+ */
+export interface ConnectionAccommodation {
+  id: string;
+  connectionId: string;
+  externalId: string;
+  category: AccommodationCategory;
+  name: string;
+  slug: string | null;
+  countryCode: string;
+  region: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  stars: number | null;
+  locale: string;
+  taxesIncludedInPrice: boolean | null;
+  amenities: string[];
+  destinationCodes: string[] | null;
+  /** The full normalized `Accommodation` contract object. */
+  payload: JsonObject;
+  sourceMeta: JsonObject | null;
+  priceFromAmountMinor: number | null;
+  priceFromCurrency: string | null;
+  priceFromRefreshedAt: IsoDateTime | null;
+  lastSyncedAt: IsoDateTime;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+  [key: string]: unknown;
+}
+
+/**
+ * Per-connection accommodation detail — a {@link ConnectionAccommodation} plus
+ * the rich, localized {@link AccommodationContent} for detail pages (in the
+ * requested `locale`, or a fallback; `null` when none is synced).
+ */
+export interface ConnectionAccommodationDetail extends ConnectionAccommodation {
+  content: AccommodationContent | null;
+}
+
 export interface SearchDocumentQuery {
   connectionId?: string;
   updatedSince?: IsoDateTime;
