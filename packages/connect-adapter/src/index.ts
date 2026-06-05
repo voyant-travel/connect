@@ -353,6 +353,7 @@ export function mapSearchDocumentToProjection(
       countryCodes: getStringArray(payload, "countryCodes"),
       board: getString(payload, "board") ?? null,
       stars: getNumber(payload, "stars"),
+      supplyModel: getString(payload, "supplyModel") ?? null,
       tags: getStringArray(payload, "tags"),
       image_url: getString(payload, "imageUrl") ?? null,
       price_from: priceFrom,
@@ -373,7 +374,20 @@ export function mapSearchDocumentToProjection(
 function normalizeSearchDocumentPayload(document: SearchDocument): JsonRecord {
   const payload = (document as JsonRecord).payload;
   if (payload && typeof payload === "object" && !Array.isArray(payload)) {
-    return payload as JsonRecord;
+    const enveloped = payload as JsonRecord;
+    // The enveloped payload is the raw connector payload and may predate the
+    // platform's first-class facet columns (board/stars/supplyModel), which the
+    // row carries at the top level. Merge them in — the top-level document field
+    // wins, falling back to any value already in the envelope — so downstream
+    // reads of the normalized payload don't drop the facet when an envelope
+    // exists.
+    return {
+      ...enveloped,
+      board: document.board ?? getString(enveloped, "board") ?? null,
+      stars: document.stars ?? getNumber(enveloped, "stars") ?? null,
+      supplyModel:
+        document.supplyModel ?? getString(enveloped, "supplyModel") ?? null,
+    };
   }
 
   return {
@@ -402,6 +416,7 @@ function normalizeSearchDocumentPayload(document: SearchDocument): JsonRecord {
     countryCodes: document.countryCodes,
     board: document.board ?? null,
     stars: document.stars ?? null,
+    supplyModel: document.supplyModel ?? null,
     tags: document.tags,
     imageUrl: getString(document as JsonRecord, "imageUrl"),
     priceFrom: getRecordOrNull(document as JsonRecord, "priceFrom"),
