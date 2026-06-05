@@ -1,5 +1,13 @@
 # @voyantjs/connect-adapter
 
+## 0.2.15
+
+### Patch Changes
+
+- 3a4f807: Add `supplyModel` to `SearchDocument` (and carry it through the connect-adapter catalog projection), mirroring the platform's first-class facet. `supplyModel` is the supply-model mechanic a catalog surface forks on — `dynamic` (composed-live, any-date, calendar pricing) vs `scheduled` (dated departures/slots with an allotment) — so consumers can split the catalog into search-first vs browse-departures surfaces. Product _type_ stays in `category`.
+- Updated dependencies [3a4f807]
+  - @voyantjs/connect-sdk@0.3.2
+
 ## 0.2.14
 
 ### Patch Changes
