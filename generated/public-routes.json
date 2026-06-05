@@ -130,6 +130,7 @@
     "POST /connect/v1/invites/:token/redeem",
     "POST /connect/v1/operators",
     "POST /connect/v1/operators/:operatorId/connections",
+    "POST /connect/v1/operators/:operatorId/connections/:id/content-syncs",
     "POST /connect/v1/operators/:operatorId/connections/:id/search-projection-syncs",
     "POST /connect/v1/operators/:operatorId/connections/:id/webhook-secret/rotate",
     "POST /connect/v1/operators/:operatorId/cruises/search",

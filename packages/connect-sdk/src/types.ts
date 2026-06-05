@@ -473,10 +473,95 @@ export interface OperatorAccommodationSummary {
   [key: string]: unknown;
 }
 
+/** Canonical role of a content section/feature, supplier-agnostic. */
+export type AccommodationContentFeatureType =
+  | "INCLUSION"
+  | "HIGHLIGHT"
+  | "ACCESSIBILITY_INFORMATION"
+  | "ADDITIONAL_INFORMATION";
+
+export interface AccommodationContentSection {
+  /** Supplier section kind (e.g. `BEACH`/`FOOD`/`POOL`) — handy for icons/grouping. */
+  kind: string | null;
+  /** Localized section heading (e.g. `"Beach"`). */
+  title: string | null;
+  /** Canonical role, so a dev can fork rendering without knowing the supplier. */
+  type: AccommodationContentFeatureType;
+  /** Flattened, localized text lines. */
+  lines: string[];
+}
+
+export interface AccommodationContentFeature {
+  type: AccommodationContentFeatureType;
+  /** Supplier code where there is one (e.g. `"free_wifi"`), else null. */
+  code: string | null;
+  shortDescription: string;
+}
+
+export interface AccommodationContentMedia {
+  src: string;
+  /** MIME-ish media type (e.g. `"image/jpeg"`). */
+  type: string;
+  /** Relationship: the cover image vs a gallery image. */
+  rel: "COVER" | "GALLERY";
+  title: string | null;
+  caption: string | null;
+}
+
+export interface AccommodationContentRoom {
+  type: string | null;
+  code: string | null;
+  /** Floor area in m² where given. */
+  area: number | null;
+  maxGuests: number | null;
+  view: string | null;
+  /** Localized in-room amenity lines. */
+  specifications: string[];
+  media: AccommodationContentMedia[];
+}
+
+export interface AccommodationContentReviewSubrating {
+  type: string | null;
+  name: string | null;
+  value: number | null;
+}
+
+export interface AccommodationContentReviews {
+  source: string;
+  rating: number | null;
+  reviewsCount: number | null;
+  subratings: AccommodationContentReviewSubrating[];
+}
+
+/**
+ * Rich, localized accommodation content for detail pages (descriptions,
+ * facilities, gallery, rooms, reviews). Slow-changing CMS content, synced on its
+ * own cadence and served in the requested `locale` (falling back to any synced
+ * one). Normalized across suppliers — same shape regardless of which supplier is
+ * behind the connection.
+ */
+export interface AccommodationContent {
+  accommodationExternalId: string;
+  locale: string;
+  sections: AccommodationContentSection[];
+  features: AccommodationContentFeature[];
+  media: AccommodationContentMedia[];
+  rooms: AccommodationContentRoom[];
+  reviews: AccommodationContentReviews | null;
+  identifiers: { tripadvisorLocationId: string | null };
+  /** Supplier-specific extras that don't map to a canonical slot. */
+  raw: JsonObject;
+}
+
 export interface OperatorAccommodationDetail {
   accommodation: JsonObject;
   providerKey: string | null;
   supplierName: string;
+  /**
+   * Rich, localized content for detail pages, in the requested `locale` (or a
+   * fallback). `null` when no content has been synced for this accommodation.
+   */
+  content: AccommodationContent | null;
 }
 
 export interface SearchDocumentQuery {

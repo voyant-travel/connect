@@ -348,6 +348,16 @@ export class VoyantConnectClient {
         `/connect/v1/operators/${operatorId}/connections/${connectionId}/search-projection-syncs`,
         { method: "POST" },
       ),
+    /**
+     * Trigger a refresh of rich accommodation content (descriptions, gallery,
+     * rooms, reviews) for a connection. Slow-changing CMS content, also refreshed
+     * on a schedule; this forces an out-of-band sync. Returns a run receipt.
+     */
+    triggerContentSync: (operatorId: string, connectionId: string) =>
+      this.transport.request<ProjectionSyncRunReceipt>(
+        `/connect/v1/operators/${operatorId}/connections/${connectionId}/content-syncs`,
+        { method: "POST" },
+      ),
     listWebhookEvents: (
       operatorId: string,
       connectionId: string,
