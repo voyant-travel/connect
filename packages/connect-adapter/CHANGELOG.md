@@ -1,5 +1,13 @@
 # @voyantjs/connect-adapter
 
+## 0.2.14
+
+### Patch Changes
+
+- 2e53c08: Add `board` + `stars` facets to `SearchDocument` (and carry them through the connect-adapter catalog projection), mirroring the platform's first-class filter facets so consumers can build/apply board-basis and star-rating filters.
+- Updated dependencies [2e53c08]
+  - @voyantjs/connect-sdk@0.3.1
+
 ## 0.2.13
 
 ### Patch Changes
