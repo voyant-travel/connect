@@ -625,6 +625,32 @@ function offerMatchesPin(offer: StayOffer, pin: StayOfferPin): boolean {
   });
 }
 
+/**
+ * Build the stay search query from the live-resolve parameters, dropping the
+ * adapter-only keys: the routing hint (`connectRoute`) and the offer pin
+ * (`roomTypeId` / `ratePlanId` / `board`). `StaySearchQuery` doesn't define
+ * these, so a connector that validates the request body would reject the search
+ * before the pin can be applied. (Search filters by `boards` plural — the
+ * singular `board` pin is a distinct field and is stripped here.)
+ */
+const STAY_ADAPTER_ONLY_KEYS = new Set([
+  "connectRoute",
+  "roomTypeId",
+  "ratePlanId",
+  "board",
+]);
+
+function toStaySearchQuery(
+  parameters: LiveResolveRequest["parameters"],
+): StaySearchQuery {
+  const source = (parameters ?? {}) as Record<string, unknown>;
+  const query: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (!STAY_ADAPTER_ONLY_KEYS.has(key)) query[key] = value;
+  }
+  return query as unknown as StaySearchQuery;
+}
+
 async function liveResolveStays(
   client: VoyantConnectClient,
   connectionId: string,
@@ -632,7 +658,7 @@ async function liveResolveStays(
 ): Promise<LiveResolveResult> {
   const response = await client.stays.search(
     connectionId,
-    request.parameters as unknown as StaySearchQuery,
+    toStaySearchQuery(request.parameters),
   );
   const pin = readStayOfferPin(request.parameters);
   // A date with several boards/rates returns several offers per accommodation.

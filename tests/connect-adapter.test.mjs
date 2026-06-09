@@ -343,6 +343,15 @@ test("connect adapter liveResolve pins the stay offer to the chosen room + board
   // The BB rate is selected even though the AI offer came last in the response.
   assert.equal(result.values.acc_1.offer.id, "offer_bb");
   assert.equal(result.values.acc_1.priceCents, 12300);
+
+  // The adapter-only pin keys (and the routing hint) are stripped from the
+  // search body — StaySearchQuery doesn't define them, so a validating
+  // connector would otherwise reject the request.
+  const searchBody = JSON.parse(recorder.calls[0].body);
+  assert.equal(searchBody.connectRoute, undefined);
+  assert.equal(searchBody.roomTypeId, undefined);
+  assert.equal(searchBody.board, undefined);
+  assert.equal(searchBody.checkIn, "2026-06-01");
 });
 
 test("connect adapter generic liveResolve includes price hints from availability", async () => {
