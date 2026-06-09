@@ -7,6 +7,7 @@ import {
   type CruiseSearchQuery,
   type SearchDocument,
   type StayConfirmInput,
+  type StayOffer,
   type StaySearchQuery,
   type VoyantConnectClient,
   type VoyantConnectClientOptions,
@@ -574,6 +575,56 @@ async function liveResolveAvailability(
   return Object.keys(failed).length > 0 ? { values, failed } : { values };
 }
 
+/**
+ * Optional offer-pin carried from the catalog detail page so a date with
+ * several boards/rates resolves to the exact one the operator clicked.
+ *
+ * The stays `offer.id` is a per-search, short-TTL token (e.g. TUI mints a fresh
+ * offer code on every search), so it can't pin the choice across the quote's
+ * re-resolve. The stable keys live on the offer's rooms — `ratePlanId` (the
+ * exact rate) and `roomTypeId` — which a caller threads through `parameters`.
+ * `board` is accepted as a soft fallback for callers that only surface the
+ * board label rather than the full rate-plan id.
+ */
+interface StayOfferPin {
+  roomTypeId?: string;
+  ratePlanId?: string;
+  board?: string;
+}
+
+function readStayOfferPin(
+  parameters: LiveResolveRequest["parameters"],
+): StayOfferPin | undefined {
+  if (!parameters || typeof parameters !== "object") return undefined;
+  const p = parameters as Record<string, unknown>;
+  const roomTypeId = getString(p, "roomTypeId");
+  const ratePlanId = getString(p, "ratePlanId");
+  const board = getString(p, "board");
+  if (!roomTypeId && !ratePlanId && !board) return undefined;
+  return { roomTypeId, ratePlanId, board };
+}
+
+/**
+ * Does any of the offer's rooms satisfy every key the pin specifies? The exact
+ * keys (`ratePlanId`, `roomTypeId`) match a room field directly; `board` is a
+ * suffix match against `ratePlanId` (connectors encode board as the trailing
+ * segment, e.g. `HOTEL:ROOM:AI`) so a board-only pin still discriminates.
+ */
+function offerMatchesPin(offer: StayOffer, pin: StayOfferPin): boolean {
+  return (offer.rooms ?? []).some((room) => {
+    if (pin.ratePlanId && room.ratePlanId !== pin.ratePlanId) return false;
+    if (pin.roomTypeId && room.roomTypeId !== pin.roomTypeId) return false;
+    if (
+      pin.board &&
+      room.ratePlanId !== pin.board &&
+      !room.ratePlanId.endsWith(`:${pin.board}`)
+    ) {
+      return false;
+    }
+    return true;
+  });
+}
+
 async function liveResolveStays(
   client: VoyantConnectClient,
   connectionId: string,
@@ -583,26 +634,39 @@ async function liveResolveStays(
     connectionId,
     request.parameters as unknown as StaySearchQuery,
   );
-  const values: Record<string, JsonRecord> = {};
+  const pin = readStayOfferPin(request.parameters);
+  // A date with several boards/rates returns several offers per accommodation.
+  // Pick one deterministically per requested id: the offer matching the pin
+  // when present, otherwise the first candidate. (The previous keyed-overwrite
+  // let the *last* offer in the response win arbitrarily — so the board the
+  // operator clicked wasn't guaranteed to be the one quoted.)
+  const chosen = new Map<string, StayOffer>();
   for (const offer of response.offers) {
-    if (
-      request.ids.includes(offer.accommodationId) ||
-      request.ids.includes(offer.id)
-    ) {
-      const value = {
-        available: true,
-        offer,
-        price: offer.totals.total,
-        // Flat fields the catalog quote engine's `liveValuesToPricing` reads
-        // (it expects a numeric `priceCents` + string `currency`, not a money
-        // object). Without these, sourced stay quotes extract no pricing.
-        priceCents: offer.totals.total.amountMinor,
-        currency: offer.totals.total.currency,
-        expires_at: offer.expiresAt,
-      };
-      values[offer.accommodationId] = value;
-      values[offer.id] = value;
+    for (const id of [offer.accommodationId, offer.id]) {
+      if (!request.ids.includes(id)) continue;
+      const current = chosen.get(id);
+      if (
+        !current ||
+        (pin && offerMatchesPin(offer, pin) && !offerMatchesPin(current, pin))
+      ) {
+        chosen.set(id, offer);
+      }
     }
+  }
+
+  const values: Record<string, JsonRecord> = {};
+  for (const [id, offer] of chosen) {
+    values[id] = {
+      available: true,
+      offer,
+      price: offer.totals.total,
+      // Flat fields the catalog quote engine's `liveValuesToPricing` reads
+      // (it expects a numeric `priceCents` + string `currency`, not a money
+      // object). Without these, sourced stay quotes extract no pricing.
+      priceCents: offer.totals.total.amountMinor,
+      currency: offer.totals.total.currency,
+      expires_at: offer.expiresAt,
+    };
   }
   return withMissingFailures(request.ids, values);
 }

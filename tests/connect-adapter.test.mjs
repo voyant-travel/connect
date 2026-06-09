@@ -293,6 +293,58 @@ test("connect adapter liveResolve infers the stays route from the query shape", 
   assert.equal(result.values.acc_2.currency, "EUR");
 });
 
+test("connect adapter liveResolve pins the stay offer to the chosen room + board", async () => {
+  // Same accommodation + date, two boards. Without a pin the last offer would
+  // win arbitrarily; the pin must select the bed-&-breakfast rate the operator
+  // clicked, not the all-inclusive one returned after it.
+  const bbOffer = {
+    id: "offer_bb",
+    connectionId: "conn_1",
+    accommodationId: "acc_1",
+    rooms: [{ roomTypeId: "acc_1:DZX1", ratePlanId: "acc_1:DZX1:BB" }],
+    totals: {
+      total: { amountMinor: 12300, currency: "EUR", currencyPrecision: 2 },
+    },
+    expiresAt: "2026-05-29T17:00:00.000Z",
+  };
+  const aiOffer = {
+    id: "offer_ai",
+    connectionId: "conn_1",
+    accommodationId: "acc_1",
+    rooms: [{ roomTypeId: "acc_1:DZX1", ratePlanId: "acc_1:DZX1:AI" }],
+    totals: {
+      total: { amountMinor: 19900, currency: "EUR", currencyPrecision: 2 },
+    },
+    expiresAt: "2026-05-29T17:00:00.000Z",
+  };
+  const recorder = createRecorder([{ offers: [bbOffer, aiOffer] }]);
+  const client = createVoyantConnectClient({ apiKey: "k", fetch: recorder.fetch });
+  const adapter = createVoyantConnectSourceAdapter({
+    client,
+    operatorId: "op_1",
+  });
+
+  const result = await adapter.liveResolve(
+    { connection_id: "conn_1" },
+    {
+      ids: ["acc_1"],
+      scope: { locale: "en", audience: "public", market: "RO", currency: "EUR" },
+      parameters: {
+        connectRoute: "stays",
+        checkIn: "2026-06-01",
+        checkOut: "2026-06-03",
+        rooms: [{ adults: 2 }],
+        roomTypeId: "acc_1:DZX1",
+        board: "BB",
+      },
+    },
+  );
+
+  // The BB rate is selected even though the AI offer came last in the response.
+  assert.equal(result.values.acc_1.offer.id, "offer_bb");
+  assert.equal(result.values.acc_1.priceCents, 12300);
+});
+
 test("connect adapter generic liveResolve includes price hints from availability", async () => {
   const recorder = createRecorder([
     [
