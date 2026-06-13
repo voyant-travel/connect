@@ -49,7 +49,13 @@ export type ConnectExternalCruiseSummary = {
   lineName: string;
   shipName?: string;
   nights: number;
+  // Sailing rollup lifted from the catalog projection so a browse card can show
+  // "N departures / from <date>" without a per-cruise sailings fetch.
+  // `nextDeparture` is the soonest departure on/after the catalog's last sync
+  // (null once all are past); `earliestDeparture` is the stable soonest-overall.
   earliestDeparture?: string | null;
+  nextDeparture?: string | null;
+  departureCount?: number | null;
   lowestPrice?: string | null;
   lowestPriceCurrency?: string | null;
   heroImageUrl?: string | null;
@@ -454,6 +460,9 @@ function createClient(
 
 function toSummary(row: OperatorCruiseSummary): ConnectExternalCruiseSummary {
   const projection = (row.projection ?? {}) as JsonObject;
+  // The catalog projection's sailing rollup (count + next/earliest departure),
+  // null when the cruise has no sailings or the catalog predates the rollup.
+  const sailings = (projection.sailings ?? {}) as JsonObject;
   return {
     sourceRef: sourceRefFromOperatorCruise(row, "cruise"),
     name: row.name,
@@ -463,6 +472,10 @@ function toSummary(row: OperatorCruiseSummary): ConnectExternalCruiseSummary {
     // Prefer the resolved ship name from the projection; fall back to the id.
     shipName: getString(projection, "shipName") ?? row.shipExternalId,
     nights: row.nights,
+    // Lift the sailing rollup so browse cards get departures without a fetch.
+    earliestDeparture: getString(sailings, "earliestDeparture") ?? null,
+    nextDeparture: getString(sailings, "nextDeparture") ?? null,
+    departureCount: getNumber(sailings, "count"),
     // Lift the catalog's "from" price (stored in minor units) onto the summary.
     lowestPrice:
       row.priceFromAmountMinor != null
