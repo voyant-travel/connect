@@ -37,6 +37,11 @@ function cruiseRow(overrides = {}) {
       waterways: ["Adriatic"],
       ports: ["Venice"],
       countries: ["Italy", "Greece"],
+      sailings: {
+        count: 7,
+        nextDeparture: "2026-09-13",
+        earliestDeparture: "2026-05-01",
+      },
     },
     payload: {
       media: [{ url: "https://example.com/cover.jpg", isCover: true }],
@@ -71,6 +76,19 @@ test("cruise search projection surfaces ids, status, price, image, and camelCase
   assert.deepEqual(entry.regionIds, ["region:mediterranean"]); // camelCase read
   assert.deepEqual(entry.waterwayIds, ["sea:adriatic"]);
   assert.deepEqual(entry.countryIso, ["IT", "GR"]);
+  assert.equal(entry.departureCount, 7); // lifted from projection.sailings
+  assert.equal(entry.nextDeparture, "2026-09-13");
+  assert.equal(entry.earliestDeparture, "2026-05-01");
+});
+
+test("cruise search projection leaves sailing summary null when absent", async () => {
+  const entry = await firstProjection([
+    cruiseRow({ projection: { shipName: "Viking Jupiter" } }),
+  ]);
+  assert.ok(entry);
+  assert.equal(entry.departureCount, null);
+  assert.equal(entry.nextDeparture, null);
+  assert.equal(entry.earliestDeparture, null);
 });
 
 test("cruise search projection falls back to legacy snake_case geo keys", async () => {
@@ -142,7 +160,9 @@ test("fetchShip reads the gallery from payload.images", async () => {
     payload: {
       description: "An intimate river ship.",
       deckPlanUrl: "https://example.com/deckplan.jpg",
-      decks: [{ name: "Main Deck", imageUrl: "https://example.com/deck-main.jpg" }],
+      decks: [
+        { name: "Main Deck", imageUrl: "https://example.com/deck-main.jpg" },
+      ],
       images: [
         { url: "https://example.com/ship-1.jpg" },
         { url: "https://example.com/ship-2.jpg" },
@@ -211,7 +231,9 @@ test("fetchShip reads the gallery from payload.images", async () => {
   assert.equal(ship.categories[0].maxOccupancy, 2);
   assert.equal(ship.categories[0].squareFeet, "150");
   assert.deepEqual(ship.categories[0].amenities, ["wifi"]);
-  assert.deepEqual(ship.categories[0].images, ["https://example.com/cabin.jpg"]);
+  assert.deepEqual(ship.categories[0].images, [
+    "https://example.com/cabin.jpg",
+  ]);
   assert.deepEqual(ship.categories[0].roomLayoutImages, [
     "https://example.com/cabin-floor.jpg",
   ]);
