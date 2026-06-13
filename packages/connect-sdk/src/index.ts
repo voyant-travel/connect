@@ -5,6 +5,7 @@ export type {
   AccommodationContent,
   AccommodationContentFeature,
   AccommodationContentFeatureType,
+  AccommodationContentIdentifiers,
   AccommodationContentMedia,
   AccommodationContentReviews,
   AccommodationContentReviewSubrating,

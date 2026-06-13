@@ -475,12 +475,22 @@ export interface OperatorAccommodationSummary {
   [key: string]: unknown;
 }
 
-/** Canonical role of a content section/feature, supplier-agnostic. */
+/**
+ * Canonical role of a content section/feature, supplier-agnostic. Mirrors the
+ * `featureType` vocabulary in the server-side `@repo/connect-contract`
+ * (`accommodationContentSchema`) — the source of truth for this shape.
+ */
 export type AccommodationContentFeatureType =
   | "INCLUSION"
+  | "EXCLUSION"
   | "HIGHLIGHT"
+  | "PREBOOKING_INFORMATION"
+  | "PREARRIVAL_INFORMATION"
+  | "REDEMPTION_INSTRUCTION"
   | "ACCESSIBILITY_INFORMATION"
-  | "ADDITIONAL_INFORMATION";
+  | "ADDITIONAL_INFORMATION"
+  | "BOOKING_TERM"
+  | "CANCELLATION_TERM";
 
 export interface AccommodationContentSection {
   /** Supplier section kind (e.g. `BEACH`/`FOOD`/`POOL`) — handy for icons/grouping. */
@@ -497,17 +507,18 @@ export interface AccommodationContentFeature {
   type: AccommodationContentFeatureType;
   /** Supplier code where there is one (e.g. `"free_wifi"`), else null. */
   code: string | null;
-  shortDescription: string;
+  shortDescription: string | null;
 }
 
 export interface AccommodationContentMedia {
   src: string;
-  /** MIME-ish media type (e.g. `"image/jpeg"`). */
+  /** MIME-ish media type (e.g. `"image/jpeg"`) — a value of the contract `mediaType` enum. */
   type: string;
-  /** Relationship: the cover image vs a gallery image. */
-  rel: "COVER" | "GALLERY";
+  /** Relationship: a logo, the cover image, or a gallery image. */
+  rel: "LOGO" | "COVER" | "GALLERY";
   title: string | null;
   caption: string | null;
+  copyright: string | null;
 }
 
 export interface AccommodationContentRoom {
@@ -536,11 +547,32 @@ export interface AccommodationContentReviews {
 }
 
 /**
+ * External place identifiers for the property — the contract `Identifiers`
+ * shape. A connector fills the ones it has (e.g. `tripadvisorLocationId`) and
+ * leaves the rest `null`.
+ */
+export interface AccommodationContentIdentifiers {
+  googlePlaceId: string | null;
+  applePlaceId: string | null;
+  tripadvisorLocationId: string | null;
+  yelpPlaceId: string | null;
+  facebookPlaceId: string | null;
+  foursquarePlaceId: string | null;
+  baiduPlaceId: string | null;
+  amapPlaceId: string | null;
+}
+
+/**
  * Rich, localized accommodation content for detail pages (descriptions,
  * facilities, gallery, rooms, reviews). Slow-changing CMS content, synced on its
  * own cadence and served in the requested `locale` (falling back to any synced
  * one). Normalized across suppliers — same shape regardless of which supplier is
  * behind the connection.
+ *
+ * This mirrors the server-side `accommodationContentSchema` in
+ * `@repo/connect-contract` (the source of truth). Keep the two field-aligned:
+ * the contract reuses its `Media` / `Identifiers` / `featureType` primitives, so
+ * a change there should be reflected here.
  */
 export interface AccommodationContent {
   accommodationExternalId: string;
@@ -550,7 +582,7 @@ export interface AccommodationContent {
   media: AccommodationContentMedia[];
   rooms: AccommodationContentRoom[];
   reviews: AccommodationContentReviews | null;
-  identifiers: { tripadvisorLocationId: string | null };
+  identifiers: AccommodationContentIdentifiers;
   /** Supplier-specific extras that don't map to a canonical slot. */
   raw: JsonObject;
 }
