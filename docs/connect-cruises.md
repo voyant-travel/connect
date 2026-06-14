@@ -1,6 +1,6 @@
 # Connect Cruises
 
-`@voyantjs/connect-cruises` adapts Connect-normalized cruise inventory into a
+`@voyant-travel/connect-cruises` adapts Connect-normalized cruise inventory into a
 Voyant deployment's cruises adapter boundary.
 
 The package belongs in this public Connect monorepo because it is an adapter
@@ -10,13 +10,13 @@ connector code.
 ## Install
 
 ```sh
-pnpm add @voyantjs/connect-cruises @voyantjs/connect-sdk
+pnpm add @voyant-travel/connect-cruises @voyant-travel/connect-sdk
 ```
 
 ## Example
 
 ```ts
-import { createConnectCruiseAdapter } from "@voyantjs/connect-cruises";
+import { createConnectCruiseAdapter } from "@voyant-travel/connect-cruises";
 
 export const adapter = createConnectCruiseAdapter({
   connect: {
@@ -39,5 +39,5 @@ The initial package boundary provides:
   present, then confirms the quote through Connect cruise bookings
 
 Future work should fill the missing Connect endpoints, then replace the
-structural adapter types with direct `@voyantjs/cruises` type imports once the
+structural adapter types with direct `@voyant-travel/cruises` type imports once the
 Voyant contract package is available as a stable peer dependency.

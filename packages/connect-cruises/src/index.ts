@@ -8,7 +8,7 @@ import {
   type OperatorCruiseSummary,
   type VoyantConnectClient,
   type VoyantConnectClientOptions,
-} from "@voyantjs/connect-sdk";
+} from "@voyant-travel/connect-sdk";
 
 type JsonObject = Record<string, unknown>;
 
@@ -269,7 +269,7 @@ export type ConnectCruiseAdapter = {
 
 export class ConnectCruisesNotImplementedError extends Error {
   constructor(method: string, detail: string) {
-    super(`@voyantjs/connect-cruises cannot ${method}: ${detail}`);
+    super(`@voyant-travel/connect-cruises cannot ${method}: ${detail}`);
     this.name = "ConnectCruisesNotImplementedError";
   }
 }

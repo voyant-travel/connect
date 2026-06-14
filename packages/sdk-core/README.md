@@ -12,7 +12,7 @@ This package centralizes:
 - JSON encoding
 - API error handling
 
-It is bundled into `@voyantjs/connect-sdk` so consumers do not need to install it
+It is bundled into `@voyant-travel/connect-sdk` so consumers do not need to install it
 directly.
 
 ## Rules

@@ -36,7 +36,7 @@ const connectSdkVersion = readPackageVersion("packages/connect-sdk");
 const packages = [
   {
     dir: path.join(repoRoot, "packages", "connect-sdk"),
-    expectedName: "@voyantjs/connect-sdk",
+    expectedName: "@voyant-travel/connect-sdk",
     dependencies: {
       "@voyant-sdk/sdk-core": sdkCoreVersion,
     },
@@ -49,7 +49,7 @@ const packages = [
   },
   {
     dir: path.join(repoRoot, "packages", "connect-provider-sdk"),
-    expectedName: "@voyantjs/connect-provider-sdk",
+    expectedName: "@voyant-travel/connect-provider-sdk",
     dependencies: {},
     bundleDependencies: undefined,
     bundledFiles: [],
@@ -66,24 +66,24 @@ const packages = [
   },
   {
     dir: path.join(repoRoot, "packages", "connect-cruises"),
-    expectedName: "@voyantjs/connect-cruises",
+    expectedName: "@voyant-travel/connect-cruises",
     dependencies: {
-      "@voyantjs/connect-sdk": connectSdkVersion,
+      "@voyant-travel/connect-sdk": connectSdkVersion,
     },
     peerDependencies: {
-      "@voyantjs/cruises": ">=0.85.3 <1",
+      "@voyant-travel/cruises": ">=0.85.3 <1",
     },
     bundleDependencies: undefined,
     bundledFiles: [],
   },
   {
     dir: path.join(repoRoot, "packages", "connect-adapter"),
-    expectedName: "@voyantjs/connect-adapter",
+    expectedName: "@voyant-travel/connect-adapter",
     dependencies: {
-      "@voyantjs/connect-sdk": connectSdkVersion,
+      "@voyant-travel/connect-sdk": connectSdkVersion,
     },
     peerDependencies: {
-      "@voyantjs/catalog": ">=0.85.3 <1",
+      "@voyant-travel/catalog": ">=0.85.3 <1",
     },
     bundleDependencies: undefined,
     bundledFiles: [],
@@ -135,13 +135,13 @@ function installPackedPackage(appDir, tarballPath, packageName) {
 }
 
 function createCatalogTypeStub(appDir) {
-  const catalogDir = path.join(appDir, "node_modules", "@voyantjs", "catalog");
+  const catalogDir = path.join(appDir, "node_modules", "@voyant-travel", "catalog");
   mkdirSync(path.join(catalogDir, "adapter"), { recursive: true });
   writeFileSync(
     path.join(catalogDir, "package.json"),
     JSON.stringify(
       {
-        name: "@voyantjs/catalog",
+        name: "@voyant-travel/catalog",
         type: "module",
         exports: {
           "./adapter/contract": "./adapter/contract.d.ts",
@@ -217,11 +217,11 @@ function verifyInstalledImports(tarballs) {
         "-e",
         `
           import assert from "node:assert/strict";
-          import { createVoyantConnectClient } from "@voyantjs/connect-sdk";
-          import { defineConnectProvider } from "@voyantjs/connect-provider-sdk";
-          import { CONNECTOR_WORKER_PROTOCOL_VERSION } from "@voyantjs/connect-provider-sdk/hosted-worker";
-          import { createConnectCruiseAdapter } from "@voyantjs/connect-cruises";
-          import { createVoyantConnectSourceAdapter } from "@voyantjs/connect-adapter";
+          import { createVoyantConnectClient } from "@voyant-travel/connect-sdk";
+          import { defineConnectProvider } from "@voyant-travel/connect-provider-sdk";
+          import { CONNECTOR_WORKER_PROTOCOL_VERSION } from "@voyant-travel/connect-provider-sdk/hosted-worker";
+          import { createConnectCruiseAdapter } from "@voyant-travel/connect-cruises";
+          import { createVoyantConnectSourceAdapter } from "@voyant-travel/connect-adapter";
 
           const connect = createVoyantConnectClient({ apiKey: "connect_key" });
           const provider = defineConnectProvider({
@@ -339,11 +339,11 @@ function verifyInstalledTypecheck(tarballs) {
           type OAuthTokenResponse,
           type OperatorSummary,
           type VoyantConnectClientOptions,
-        } from "@voyantjs/connect-sdk";
+        } from "@voyant-travel/connect-sdk";
         import {
           defineConnectProvider,
           type ConnectProviderDescriptor,
-        } from "@voyantjs/connect-provider-sdk";
+        } from "@voyant-travel/connect-provider-sdk";
         import {
           CONNECTOR_WORKER_PROTOCOL_VERSION,
           connectorError,
@@ -353,15 +353,15 @@ function verifyInstalledTypecheck(tarballs) {
           type ConnectorWorkerManifest,
           type ConnectorWorkerRequest,
           type ConnectorWorkerResponse,
-        } from "@voyantjs/connect-provider-sdk/hosted-worker";
+        } from "@voyant-travel/connect-provider-sdk/hosted-worker";
         import {
           createConnectCruiseAdapter,
           type ConnectCruiseAdapter,
-        } from "@voyantjs/connect-cruises";
+        } from "@voyant-travel/connect-cruises";
         import {
           createVoyantConnectSourceAdapter,
           type SourceAdapter,
-        } from "@voyantjs/connect-adapter";
+        } from "@voyant-travel/connect-adapter";
 
         const connect: VoyantConnectClient = createVoyantConnectClient({
           apiKey: "connect_key",

@@ -206,13 +206,13 @@ function verifyPrivatePackage(relativePath) {
 
 verifyRootPackage();
 verifyPublicPackage("packages/connect-sdk/package.json", {
-  name: "@voyantjs/connect-sdk",
+  name: "@voyant-travel/connect-sdk",
   descriptionKeyword: "Voyant Connect",
   dependencies: { "@voyant-sdk/sdk-core": "workspace:*" },
   bundleDependencies: ["@voyant-sdk/sdk-core"],
 });
 verifyPublicPackage("packages/connect-provider-sdk/package.json", {
-  name: "@voyantjs/connect-provider-sdk",
+  name: "@voyant-travel/connect-provider-sdk",
   descriptionKeyword: "provider integrations",
   extraExports: {
     "./hosted-worker": {
@@ -228,27 +228,27 @@ verifyPublicPackage("packages/connect-provider-sdk/package.json", {
   },
 });
 verifyPublicPackage("packages/connect-cruises/package.json", {
-  name: "@voyantjs/connect-cruises",
+  name: "@voyant-travel/connect-cruises",
   descriptionKeyword: "cruises adapter",
-  dependencies: { "@voyantjs/connect-sdk": "workspace:*" },
+  dependencies: { "@voyant-travel/connect-sdk": "workspace:*" },
   peerDependencies: {
-    "@voyantjs/cruises": ">=0.85.3 <1",
+    "@voyant-travel/cruises": ">=0.85.3 <1",
   },
   devDependencies: {
-    "@voyantjs/cruises": "^0.85.3",
+    "@voyant-travel/cruises": "^0.118.2",
   },
 });
 verifyPublicPackage("packages/connect-adapter/package.json", {
-  name: "@voyantjs/connect-adapter",
+  name: "@voyant-travel/connect-adapter",
   descriptionKeyword: "catalog SourceAdapter",
   dependencies: {
-    "@voyantjs/connect-sdk": "workspace:*",
+    "@voyant-travel/connect-sdk": "workspace:*",
   },
   peerDependencies: {
-    "@voyantjs/catalog": ">=0.85.3 <1",
+    "@voyant-travel/catalog": ">=0.85.3 <1",
   },
   devDependencies: {
-    "@voyantjs/catalog": "^0.85.3",
+    "@voyant-travel/catalog": "^0.117.2",
   },
 });
 verifyPrivatePackage("packages/sdk-core/package.json");

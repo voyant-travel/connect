@@ -78,7 +78,7 @@ test("connect adapter maps Connect search documents to catalog projections with 
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/operators/op_1/search-documents?connectionId=conn_1",
+    "https://api.voyant.travel/connect/v1/operators/op_1/search-documents?connectionId=conn_1",
   );
   assert.equal(page.projections.length, 1);
   assert.deepEqual(page.projections[0].provenance, {
@@ -234,7 +234,7 @@ test("connect adapter liveResolve uses fresh stay search when requested", async 
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/search",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/stays/search",
   );
   assert.equal(recorder.calls[0].method, "POST");
   assert.equal(result.values.acc_1.available, true);
@@ -286,7 +286,7 @@ test("connect adapter liveResolve infers the stays route from the query shape", 
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/search",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/stays/search",
   );
   assert.equal(result.values.acc_2.available, true);
   assert.equal(result.values.acc_2.priceCents, 45600);
@@ -490,11 +490,11 @@ test("connect adapter getContent returns normalized cruise content for flat sear
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/cruises/308_54-until-2026?locale=en",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/cruises/308_54-until-2026?locale=en",
   );
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/cruises?locale=en&limit=500",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/cruises?locale=en&limit=500",
   );
   assert.equal(result.content_schema_version, "cruises/v1");
   assert.equal(result.source_ref, "308_54-until-2026");
@@ -633,11 +633,11 @@ test("connect adapter getContent prefers canonical cruise projection fields", as
 
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings?cruiseExternalId=308_54-until-2026&limit=200",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/sailings?cruiseExternalId=308_54-until-2026&limit=200",
   );
   assert.equal(
     recorder.calls[4].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings/sail_1/pricing",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/sailings/sail_1/pricing",
   );
   assert.equal(result.source_ref, "cruise:308_54-until-2026:en");
   assert.deepEqual(
@@ -867,11 +867,11 @@ test("connect adapter fetches endpoint itinerary variants for every sailing", as
 
   assert.equal(
     recorder.calls[4].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings/204_24940_74684_81/itinerary",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/sailings/204_24940_74684_81/itinerary",
   );
   assert.equal(
     recorder.calls[5].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings/204_24947_74802_81/itinerary",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/sailings/204_24947_74802_81/itinerary",
   );
   assert.deepEqual(
     result.content.sailings[0].itinerary_stops.map((stop) => stop.port_name),
@@ -917,7 +917,7 @@ test("connect adapter reserve forwards generic bookings with the source connecti
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/bookings",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/bookings",
   );
   assert.equal(recorder.calls[0].headers.get("idempotency-key"), "idem_1");
   assert.deepEqual(JSON.parse(recorder.calls[0].body), {
@@ -1002,7 +1002,7 @@ test("connect adapter listReservations filters by updated time, status, and limi
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/bookings",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/bookings",
   );
   assert.deepEqual(
     result.reservations.map((reservation) => reservation.upstream_ref),

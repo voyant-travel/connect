@@ -29,10 +29,10 @@ function verifyRootReadme() {
 
   const required = [
     "# Voyant Connect SDK",
-    "`@voyantjs/connect-sdk`",
-    "`@voyantjs/connect-adapter`",
-    "`@voyantjs/connect-provider-sdk`",
-    "`@voyantjs/connect-cruises`",
+    "`@voyant-travel/connect-sdk`",
+    "`@voyant-travel/connect-adapter`",
+    "`@voyant-travel/connect-provider-sdk`",
+    "`@voyant-travel/connect-cruises`",
     "`@voyant-sdk/sdk-core`",
     "pnpm verify",
     "pnpm release",
@@ -67,7 +67,7 @@ function verifyPackageReadme({
     `pnpm add ${packageName}`,
     factoryName,
     envVar,
-    "https://api.voyantjs.com",
+    "https://api.voyant.travel",
     docLink,
   ];
 
@@ -162,7 +162,7 @@ function verifyMarkdownExamplesTypecheck() {
 
   try {
     const nodeModulesDir = path.join(tempDir, "node_modules");
-    const voyantJsDir = path.join(nodeModulesDir, "@voyantjs");
+    const voyantJsDir = path.join(nodeModulesDir, "@voyant-travel");
 
     mkdirSync(nodeModulesDir, { recursive: true });
     mkdirSync(voyantJsDir, { recursive: true });
@@ -179,7 +179,7 @@ function verifyMarkdownExamplesTypecheck() {
       path.join(voyantJsDir, "catalog", "package.json"),
       JSON.stringify(
         {
-          name: "@voyantjs/catalog",
+          name: "@voyant-travel/catalog",
           type: "module",
           exports: {
             "./booking-engine": "./booking-engine.d.ts",
@@ -307,28 +307,28 @@ function verifyMarkdownExamplesTypecheck() {
 verifyRootReadme();
 verifyPackageReadme({
   path: "packages/connect-sdk/README.md",
-  packageName: "@voyantjs/connect-sdk",
+  packageName: "@voyant-travel/connect-sdk",
   factoryName: "createVoyantConnectClient",
   docLink: "[../../docs/connect.md](../../docs/connect.md)",
   envVar: "VOYANT_API_KEY",
 });
 verifyPackageReadme({
   path: "packages/connect-adapter/README.md",
-  packageName: "@voyantjs/connect-adapter",
+  packageName: "@voyant-travel/connect-adapter",
   factoryName: "createVoyantConnectSourceAdapter",
   docLink: "[../../docs/connect-adapter.md](../../docs/connect-adapter.md)",
   envVar: "VOYANT_API_KEY",
 });
 verifyPackageReadme({
   path: "packages/connect-provider-sdk/README.md",
-  packageName: "@voyantjs/connect-provider-sdk",
+  packageName: "@voyant-travel/connect-provider-sdk",
   factoryName: "defineConnectProvider",
   docLink: "[../../docs/provider-sdk.md](../../docs/provider-sdk.md)",
-  envVar: "https://api.voyantjs.com",
+  envVar: "https://api.voyant.travel",
 });
 verifyPackageReadme({
   path: "packages/connect-cruises/README.md",
-  packageName: "@voyantjs/connect-cruises",
+  packageName: "@voyant-travel/connect-cruises",
   factoryName: "createConnectCruiseAdapter",
   docLink: "[../../docs/connect-cruises.md](../../docs/connect-cruises.md)",
   envVar: "VOYANT_API_KEY",

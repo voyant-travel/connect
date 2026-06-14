@@ -24,8 +24,8 @@ pnpm verify
 Run a single package if needed:
 
 ```sh
-pnpm --filter @voyantjs/connect-sdk check-types
-pnpm --filter @voyantjs/connect-sdk lint
+pnpm --filter @voyant-travel/connect-sdk check-types
+pnpm --filter @voyant-travel/connect-sdk lint
 ```
 
 ## Workspace structure

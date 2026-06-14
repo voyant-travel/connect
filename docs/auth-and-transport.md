@@ -1,18 +1,18 @@
 # Auth And Transport
 
-`@voyantjs/connect-sdk` is built on an internal transport layer shared with
+`@voyant-travel/connect-sdk` is built on an internal transport layer shared with
 sibling SDK packages.
 
 ## Default behavior
 
-- default base URL: `https://api.voyantjs.com`
+- default base URL: `https://api.voyant.travel`
 - default auth header: `authorization`
 - default auth scheme: `Bearer`
 - default user agent marker: `x-voyant-sdk: voyant-sdk`
 
 ## Client options
 
-`@voyantjs/connect-sdk` accepts transport-level options such as:
+`@voyant-travel/connect-sdk` accepts transport-level options such as:
 
 - `apiKey`
 - `baseUrl`

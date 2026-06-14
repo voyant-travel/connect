@@ -2,7 +2,7 @@
 
 This document is a compact map of the current SDK surface.
 
-## `@voyantjs/connect-sdk`
+## `@voyant-travel/connect-sdk`
 
 Root client:
 
@@ -77,7 +77,7 @@ Selected public types:
   `FlightSsrInput`
 - `UsageQuery`, `UsageSummary`
 
-## `@voyantjs/connect-provider-sdk`
+## `@voyant-travel/connect-provider-sdk`
 
 Provider-author primitives:
 
@@ -96,7 +96,7 @@ Selected public types:
 - `ConnectProviderAccessModel`
 - `ConnectProviderCredentialValidationResult`
 
-## `@voyantjs/connect-adapter`
+## `@voyant-travel/connect-adapter`
 
 Voyant-side catalog adapter factory:
 
@@ -105,7 +105,7 @@ Voyant-side catalog adapter factory:
 - `resolveVoyantConnectAdapterContext(input)`
 
 `createVoyantConnectSourceAdapter` returns an OSS-compatible `SourceAdapter`
-typed against `@voyantjs/catalog/adapter/contract`. Discovery reads Connect
+typed against `@voyant-travel/catalog/adapter/contract`. Discovery reads Connect
 search documents and emits `CatalogProjection` values with `source_kind`,
 `source_provider`, `source_connection_id`, `source_ref`, and
 `source_freshness` populated. Live resolution uses Connect's live routes for
@@ -127,7 +127,7 @@ Selected public types:
 - `CancelResult`
 - `VoyantConnectSourceAdapterOptions`
 
-## `@voyantjs/connect-cruises`
+## `@voyant-travel/connect-cruises`
 
 Voyant-side cruises adapter factory:
 

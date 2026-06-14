@@ -37,7 +37,7 @@ test("connect client unwraps `data` for control-plane reads", async () => {
   assert.deepEqual(operators, [{ id: "op_1", slug: "alpine", name: "Alpine" }]);
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/operators",
+    "https://api.voyant.travel/connect/v1/operators",
   );
   assert.equal(recorder.calls[0].method, "GET");
   assert.equal(
@@ -59,13 +59,13 @@ test("connect client composes nested operator and connection routes", async () =
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/operators/op_1/connections",
+    "https://api.voyant.travel/connect/v1/operators/op_1/connections",
   );
   assert.equal(recorder.calls[0].method, "GET");
 
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyantjs.com/connect/v1/operators/op_1/connections",
+    "https://api.voyant.travel/connect/v1/operators/op_1/connections",
   );
   assert.equal(recorder.calls[1].method, "POST");
   assert.deepEqual(JSON.parse(recorder.calls[1].body), {
@@ -74,7 +74,7 @@ test("connect client composes nested operator and connection routes", async () =
 
   assert.equal(
     recorder.calls[2].url,
-    "https://api.voyantjs.com/connect/v1/operators/op_1/connections/conn_1/webhook-secret/rotate",
+    "https://api.voyant.travel/connect/v1/operators/op_1/connections/conn_1/webhook-secret/rotate",
   );
   assert.equal(recorder.calls[2].method, "POST");
 });
@@ -98,7 +98,7 @@ test("connect client preserves `{ data, pagination }` envelope for audit logs", 
   });
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/audit-logs?limit=5",
+    "https://api.voyant.travel/connect/v1/audit-logs?limit=5",
   );
 });
 
@@ -124,7 +124,7 @@ test("connect client per-connection bookings.create forwards idempotency key", a
   assert.deepEqual(booking, { id: "book_1", status: "reserved" });
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/bookings",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/bookings",
   );
   assert.equal(recorder.calls[0].method, "POST");
   assert.equal(recorder.calls[0].headers.get("idempotency-key"), "key-123");
@@ -153,19 +153,19 @@ test("connect client domain namespaces target Connect-normalized routes", async 
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/products?supplierId=sup_1",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/products?supplierId=sup_1",
   );
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/options/opt_1/units",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/options/opt_1/units",
   );
   assert.equal(
     recorder.calls[2].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/availability?productId=prod_1&localDateStart=2026-05-01&localDateEnd=2026-05-31",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/availability?productId=prod_1&localDateStart=2026-05-01&localDateEnd=2026-05-31",
   );
   assert.equal(
     recorder.calls[3].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/health",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/health",
   );
 });
 
@@ -188,11 +188,11 @@ test("cruises namespace targets sailing pricing and promotions routes", async ()
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings/sail_1/pricing?fareCode=EARLY&occupancySignature=2a&limit=50",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/sailings/sail_1/pricing?fareCode=EARLY&occupancySignature=2a&limit=50",
   );
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/sailings/sail_1/promotions?fareCode=EARLY&limit=10",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/sailings/sail_1/promotions?fareCode=EARLY&limit=10",
   );
 });
 
@@ -215,15 +215,15 @@ test("products.list resolves operatorId from client default and serializes filte
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/operators/op_default/products",
+    "https://api.voyant.travel/connect/v1/operators/op_default/products",
   );
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyantjs.com/connect/v1/operators/op_default/products?connectionId=conn_a&connectionId=conn_b&providerKey=ventrata",
+    "https://api.voyant.travel/connect/v1/operators/op_default/products?connectionId=conn_a&connectionId=conn_b&providerKey=ventrata",
   );
   assert.equal(
     recorder.calls[2].url,
-    "https://api.voyantjs.com/connect/v1/operators/op_override/products",
+    "https://api.voyant.travel/connect/v1/operators/op_override/products",
   );
 });
 
@@ -244,7 +244,7 @@ test("bookings.listAll fans out across connections via operator route", async ()
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/operators/op_default/bookings?providerKey=ventrata&providerKey=fareharbor&localDateStart=2026-05-01",
+    "https://api.voyant.travel/connect/v1/operators/op_default/bookings?providerKey=ventrata&providerKey=fareharbor&localDateStart=2026-05-01",
   );
 });
 
@@ -267,27 +267,27 @@ test("accommodations namespace targets the new accommodations routes", async () 
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/operators/op_default/accommodations?providerKey=tui&minStars=4",
+    "https://api.voyant.travel/connect/v1/operators/op_default/accommodations?providerKey=tui&minStars=4",
   );
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyantjs.com/connect/v1/operators/op_default/accommodations/acc_1",
+    "https://api.voyant.travel/connect/v1/operators/op_default/accommodations/acc_1",
   );
   assert.equal(
     recorder.calls[2].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/accommodations",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/accommodations",
   );
   assert.equal(
     recorder.calls[3].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/accommodations/acc_1",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/accommodations/acc_1",
   );
   assert.equal(
     recorder.calls[4].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/accommodations/TUI_HOTEL_X/room-types",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/accommodations/TUI_HOTEL_X/room-types",
   );
   assert.equal(
     recorder.calls[5].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/accommodations/TUI_HOTEL_X/rate-plans?roomTypeId=TUI_HOTEL_X%3ASTANDARD",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/accommodations/TUI_HOTEL_X/rate-plans?roomTypeId=TUI_HOTEL_X%3ASTANDARD",
   );
 });
 
@@ -353,42 +353,42 @@ test("stays namespace targets search/lock/confirm/cancel routes", async () => {
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/search",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/stays/search",
   );
   assert.equal(recorder.calls[0].method, "POST");
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyantjs.com/connect/v1/operators/op_default/stays/search",
+    "https://api.voyant.travel/connect/v1/operators/op_default/stays/search",
   );
   assert.equal(
     recorder.calls[2].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/lock",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/stays/lock",
   );
   assert.equal(
     recorder.calls[3].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/bookings",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/stays/bookings",
   );
   assert.equal(recorder.calls[3].headers.get("idempotency-key"), "confirm-001");
   assert.equal(
     recorder.calls[4].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/bookings/b_1",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/stays/bookings/b_1",
   );
   assert.equal(recorder.calls[4].method, "DELETE");
   assert.equal(
     recorder.calls[5].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/bookings/b_1",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/stays/bookings/b_1",
   );
   assert.equal(
     recorder.calls[6].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/bookings?status=confirmed&status=pending",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/stays/bookings?status=confirmed&status=pending",
   );
   assert.equal(
     recorder.calls[7].url,
-    "https://api.voyantjs.com/connect/v1/operators/op_default/stays/bookings?providerKey=tui&checkInFrom=2026-06-01",
+    "https://api.voyant.travel/connect/v1/operators/op_default/stays/bookings?providerKey=tui&checkInFrom=2026-06-01",
   );
   assert.equal(
     recorder.calls[8].url,
-    "https://api.voyantjs.com/connect/v1/connections/conn_1/stays/holds/h_1",
+    "https://api.voyant.travel/connect/v1/connections/conn_1/stays/holds/h_1",
   );
   assert.equal(recorder.calls[8].method, "DELETE");
 });
@@ -433,7 +433,7 @@ test("connect client OAuth issueToken sends client_credentials body", async () =
   });
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/oauth/token",
+    "https://api.voyant.travel/connect/v1/oauth/token",
   );
   assert.equal(recorder.calls[0].method, "POST");
   assert.deepEqual(JSON.parse(recorder.calls[0].body), {
@@ -463,7 +463,7 @@ test("connect client flights.searchStream returns the raw response", async () =>
   assert.equal(response instanceof Response, true);
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyantjs.com/connect/v1/flights/search-stream",
+    "https://api.voyant.travel/connect/v1/flights/search-stream",
   );
   assert.equal(recorder.calls[0].method, "POST");
   assert.equal(recorder.calls[0].headers.get("accept"), "text/event-stream");

@@ -1,4 +1,4 @@
-# `@voyantjs/connect-adapter`
+# `@voyant-travel/connect-adapter`
 
 Voyant Connect catalog SourceAdapter for Voyant apps.
 
@@ -9,24 +9,24 @@ quote/book/cancel dispatch, and booking snapshots.
 ## Install
 
 ```sh
-pnpm add @voyantjs/connect-adapter @voyantjs/connect-sdk @voyantjs/catalog
+pnpm add @voyant-travel/connect-adapter @voyant-travel/connect-sdk @voyant-travel/catalog
 ```
 
 ## Usage
 
 ```ts
-import { createSourceAdapterRegistry } from "@voyantjs/catalog/booking-engine";
+import { createSourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine";
 import {
   createVoyantConnectSourceAdapter,
   resolveVoyantConnectAdapterContext,
-} from "@voyantjs/connect-adapter";
+} from "@voyant-travel/connect-adapter";
 
 const registry = createSourceAdapterRegistry();
 const adapter = createVoyantConnectSourceAdapter({
   connect: {
     apiKey: process.env.VOYANT_API_KEY!,
     operatorId: "op_123",
-    baseUrl: "https://api.voyantjs.com",
+    baseUrl: "https://api.voyant.travel",
   },
 });
 
@@ -47,9 +47,9 @@ const resolveAdapterContext = (input: {
 
 ## Notes
 
-- Use `@voyantjs/connect-adapter` for Voyant apps consuming Connect inventory
+- Use `@voyant-travel/connect-adapter` for Voyant apps consuming Connect inventory
   through the OSS catalog.
-- Use `@voyantjs/connect-sdk` directly for non-Voyant apps and low-level tools
+- Use `@voyant-travel/connect-sdk` directly for non-Voyant apps and low-level tools
   calling `/connect/v1/...`.
 - `source_connection_id` is always populated from the Connect connection that
   produced the projection so quote, book, cancel, and status dispatch resolve

@@ -1,33 +1,33 @@
 # Connect Adapter
 
-`@voyantjs/connect-adapter` is the Voyant app integration layer for consuming
+`@voyant-travel/connect-adapter` is the Voyant app integration layer for consuming
 Connect inventory through the OSS catalog plane.
 
 Use it when a Voyant operator template should register Connect as a catalog
-`SourceAdapter`. The raw `@voyantjs/connect-sdk` remains the right package for
+`SourceAdapter`. The raw `@voyant-travel/connect-sdk` remains the right package for
 non-Voyant consumers and low-level tools that call `/connect/v1/...` directly.
 
 ## Install
 
 ```sh
-pnpm add @voyantjs/connect-adapter @voyantjs/connect-sdk @voyantjs/catalog
+pnpm add @voyant-travel/connect-adapter @voyant-travel/connect-sdk @voyant-travel/catalog
 ```
 
 ## Usage
 
 ```ts
-import { createSourceAdapterRegistry } from "@voyantjs/catalog/booking-engine";
+import { createSourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine";
 import {
   createVoyantConnectSourceAdapter,
   resolveVoyantConnectAdapterContext,
-} from "@voyantjs/connect-adapter";
+} from "@voyant-travel/connect-adapter";
 
 const registry = createSourceAdapterRegistry();
 const adapter = createVoyantConnectSourceAdapter({
   connect: {
     apiKey: process.env.VOYANT_API_KEY!,
     operatorId: "op_123",
-    baseUrl: "https://api.voyantjs.com",
+    baseUrl: "https://api.voyant.travel",
   },
 });
 
@@ -42,7 +42,7 @@ quote or sourced-row provenance instead of using the route default `"engine"`
 context:
 
 ```ts
-import { resolveVoyantConnectAdapterContext } from "@voyantjs/connect-adapter";
+import { resolveVoyantConnectAdapterContext } from "@voyant-travel/connect-adapter";
 
 const resolveAdapterContext = (input: {
   sourceKind?: string | null;
@@ -62,8 +62,8 @@ connection that emitted the projection.
 
 ## Routing
 
-- Voyant app consuming Connect inventory: use `@voyantjs/connect-adapter`.
-- Non-Voyant app consuming Connect APIs: use `@voyantjs/connect-sdk`.
+- Voyant app consuming Connect inventory: use `@voyant-travel/connect-adapter`.
+- Non-Voyant app consuming Connect APIs: use `@voyant-travel/connect-sdk`.
 - Voyant app publishing owned inventory through Connect: use the publisher or
   channel package once available.
 
