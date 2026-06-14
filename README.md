@@ -8,10 +8,10 @@ lives as Markdown under [`docs/`](./docs).
 
 ## Packages
 
-- `@voyantjs/connect-sdk`: client for Voyant Connect operator, connection, gateway, and flight APIs
-- `@voyantjs/connect-adapter`: OSS catalog `SourceAdapter` backed by Connect
-- `@voyantjs/connect-provider-sdk`: primitives for building provider integrations
-- `@voyantjs/connect-cruises`: Connect-backed cruises adapter for Voyant deployments
+- `@voyant-travel/connect-sdk`: client for Voyant Connect operator, connection, gateway, and flight APIs
+- `@voyant-travel/connect-adapter`: OSS catalog `SourceAdapter` backed by Connect
+- `@voyant-travel/connect-provider-sdk`: primitives for building provider integrations
+- `@voyant-travel/connect-cruises`: Connect-backed cruises adapter for Voyant deployments
 - `@voyant-sdk/sdk-core`: private shared runtime bundled into the public package
 
 ## Workspace layout

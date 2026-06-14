@@ -1,11 +1,11 @@
 # Connect SDK
 
-`@voyantjs/connect-sdk` is the raw typed HTTP client for `/connect/v1/...`.
+`@voyant-travel/connect-sdk` is the raw typed HTTP client for `/connect/v1/...`.
 Use it for non-Voyant apps and low-level tools. Voyant operator templates that
 want Connect inventory inside the OSS catalog plane should use
-`@voyantjs/connect-adapter` instead.
+`@voyant-travel/connect-adapter` instead.
 
-`@voyantjs/connect-sdk` is the public TypeScript client for the Voyant Connect
+`@voyant-travel/connect-sdk` is the public TypeScript client for the Voyant Connect
 product — the operator/connection control plane plus the Connect-normalized
 data plane for inventory, bookings, and flights.
 
@@ -60,7 +60,7 @@ every connection in an operator's catalog. They use the client-level
 Both `connectionId` and `providerKey` accept a scalar or an array.
 
 ```ts
-import { createVoyantConnectClient } from "@voyantjs/connect-sdk";
+import { createVoyantConnectClient } from "@voyant-travel/connect-sdk";
 
 const client = createVoyantConnectClient({
   apiKey: process.env.VOYANT_API_KEY!,
@@ -99,7 +99,7 @@ merged and paginated response.
 ## Example
 
 ```ts
-import { createVoyantConnectClient } from "@voyantjs/connect-sdk";
+import { createVoyantConnectClient } from "@voyant-travel/connect-sdk";
 
 const client = createVoyantConnectClient({
   apiKey: process.env.VOYANT_API_KEY!,

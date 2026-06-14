@@ -1,16 +1,16 @@
 {
-  "name": "@voyantjs/connect-provider-sdk",
+  "name": "@voyant-travel/connect-provider-sdk",
   "version": "0.4.0",
   "description": "Public SDK primitives for building Voyant Connect provider integrations.",
   "license": "FSL-1.1-Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/connect-sdk.git",
+    "url": "https://github.com/voyant-travel/connect-sdk.git",
     "directory": "packages/connect-provider-sdk"
   },
-  "homepage": "https://github.com/voyantjs/connect-sdk#readme",
+  "homepage": "https://github.com/voyant-travel/connect-sdk#readme",
   "bugs": {
-    "url": "https://github.com/voyantjs/connect-sdk/issues"
+    "url": "https://github.com/voyant-travel/connect-sdk/issues"
   },
   "type": "module",
   "main": "./dist/index.js",

@@ -1,11 +1,11 @@
-# @voyantjs/connect-cruises
+# @voyant-travel/connect-cruises
 
 ## 0.3.15
 
 ### Patch Changes
 
 - Updated dependencies [5ca6297]
-  - @voyantjs/connect-sdk@0.8.0
+  - @voyant-travel/connect-sdk@0.8.0
 
 ## 0.3.14
 
@@ -18,63 +18,63 @@
 ### Patch Changes
 
 - Updated dependencies [65083c9]
-  - @voyantjs/connect-sdk@0.7.1
+  - @voyant-travel/connect-sdk@0.7.1
 
 ## 0.3.12
 
 ### Patch Changes
 
 - Updated dependencies [9d32125]
-  - @voyantjs/connect-sdk@0.7.0
+  - @voyant-travel/connect-sdk@0.7.0
 
 ## 0.3.11
 
 ### Patch Changes
 
 - Updated dependencies [dbc5975]
-  - @voyantjs/connect-sdk@0.6.0
+  - @voyant-travel/connect-sdk@0.6.0
 
 ## 0.3.10
 
 ### Patch Changes
 
 - Updated dependencies [54c4827]
-  - @voyantjs/connect-sdk@0.5.0
+  - @voyant-travel/connect-sdk@0.5.0
 
 ## 0.3.9
 
 ### Patch Changes
 
 - Updated dependencies [53f7d10]
-  - @voyantjs/connect-sdk@0.4.0
+  - @voyant-travel/connect-sdk@0.4.0
 
 ## 0.3.8
 
 ### Patch Changes
 
 - Updated dependencies [3a4f807]
-  - @voyantjs/connect-sdk@0.3.2
+  - @voyant-travel/connect-sdk@0.3.2
 
 ## 0.3.7
 
 ### Patch Changes
 
 - Updated dependencies [2e53c08]
-  - @voyantjs/connect-sdk@0.3.1
+  - @voyant-travel/connect-sdk@0.3.1
 
 ## 0.3.6
 
 ### Patch Changes
 
 - Updated dependencies [ccd65a5]
-  - @voyantjs/connect-sdk@0.3.0
+  - @voyant-travel/connect-sdk@0.3.0
 
 ## 0.3.5
 
 ### Patch Changes
 
 - Updated dependencies [4733680]
-  - @voyantjs/connect-sdk@0.2.0
+  - @voyant-travel/connect-sdk@0.2.0
 
 ## 0.3.4
 
@@ -118,7 +118,7 @@
 ### Patch Changes
 
 - Updated dependencies [9f31956]
-  - @voyantjs/connect-sdk@0.1.6
+  - @voyant-travel/connect-sdk@0.1.6
 
 ## 0.1.6
 
@@ -131,25 +131,25 @@
 ### Patch Changes
 
 - Updated dependencies [10d4451]
-  - @voyantjs/connect-sdk@0.1.5
+  - @voyant-travel/connect-sdk@0.1.5
 
 ## 0.1.4
 
 ### Patch Changes
 
 - Updated dependencies [306b849]
-  - @voyantjs/connect-sdk@0.1.4
+  - @voyant-travel/connect-sdk@0.1.4
 
 ## 0.1.3
 
 ### Patch Changes
 
 - Updated dependencies [9825584]
-  - @voyantjs/connect-sdk@0.1.3
+  - @voyant-travel/connect-sdk@0.1.3
 
 ## 0.1.2
 
 ### Patch Changes
 
 - Updated dependencies [e267f77]
-  - @voyantjs/connect-sdk@0.1.2
+  - @voyant-travel/connect-sdk@0.1.2

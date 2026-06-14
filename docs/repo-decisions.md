@@ -5,8 +5,8 @@ family.
 
 ## What belongs here
 
-- public Connect packages such as `@voyantjs/connect-sdk`,
-  `@voyantjs/connect-provider-sdk`, and `@voyantjs/connect-cruises`
+- public Connect packages such as `@voyant-travel/connect-sdk`,
+  `@voyant-travel/connect-provider-sdk`, and `@voyant-travel/connect-cruises`
 - shared SDK runtime code consumed by those packages
 - package-level tests
 - lightweight Markdown documentation
@@ -25,9 +25,9 @@ generation.
 
 ## Package boundaries
 
-- `@voyantjs/connect-sdk` is for callers of Voyant Connect services
-- `@voyantjs/connect-provider-sdk` is for provider integration authors
-- `@voyantjs/connect-cruises` is for Voyant deployments consuming Connect
+- `@voyant-travel/connect-sdk` is for callers of Voyant Connect services
+- `@voyant-travel/connect-provider-sdk` is for provider integration authors
+- `@voyant-travel/connect-cruises` is for Voyant deployments consuming Connect
   cruise inventory
 - `@voyant-sdk/sdk-core` is private and should contain only transport-level
   concerns

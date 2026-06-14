@@ -38,7 +38,7 @@ The repo includes Node-native smoke tests under `tests/` that exercise:
 ## Good test boundaries
 
 - `sdk-core` should be tested with mocked `fetch`
-- `@voyantjs/connect-sdk` should verify route composition and option forwarding
+- `@voyant-travel/connect-sdk` should verify route composition and option forwarding
 
 ## Contract drift
 

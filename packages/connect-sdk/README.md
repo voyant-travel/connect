@@ -1,4 +1,4 @@
-# `@voyantjs/connect-sdk`
+# `@voyant-travel/connect-sdk`
 
 Public TypeScript client for Voyant Connect APIs — the operator/connection
 control plane plus the Connect-normalized data plane for products,
@@ -21,13 +21,13 @@ and flights.
 ## Install
 
 ```sh
-pnpm add @voyantjs/connect-sdk
+pnpm add @voyant-travel/connect-sdk
 ```
 
 ## Usage
 
 ```ts
-import { createVoyantConnectClient } from "@voyantjs/connect-sdk";
+import { createVoyantConnectClient } from "@voyant-travel/connect-sdk";
 
 const client = createVoyantConnectClient({
   apiKey: process.env.VOYANT_API_KEY!,
@@ -59,7 +59,7 @@ For M2M flows, exchange OAuth client credentials for a short-lived bearer
 token first:
 
 ```ts
-import { createVoyantConnectClient } from "@voyantjs/connect-sdk";
+import { createVoyantConnectClient } from "@voyant-travel/connect-sdk";
 
 const tokenClient = createVoyantConnectClient({
   apiKey: "unused",
@@ -113,7 +113,7 @@ Root groups on `VoyantConnectClient`:
 
 ## Notes
 
-- default base URL is `https://api.voyantjs.com`; the SDK targets the
+- default base URL is `https://api.voyant.travel`; the SDK targets the
   `/connect/v1/...` path namespace under it
 - request auth defaults to `authorization: Bearer <apiKey>`
 - response envelopes of the form `{ data: ... }` are unwrapped by default;

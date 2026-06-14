@@ -15,7 +15,7 @@ app structure.
 
 Current design:
 
-- `@voyantjs/connect-sdk` has a root client plus operation-scoped groups
+- `@voyant-travel/connect-sdk` has a root client plus operation-scoped groups
   (`operators`, `connections`, `gateway`, `connect`, `flights`, …)
 - shared request machinery lives in `sdk-core`
 

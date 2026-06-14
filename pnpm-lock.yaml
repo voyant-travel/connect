@@ -23,7 +23,7 @@ importers:
 
   packages/connect-adapter:
     dependencies:
-      '@voyantjs/connect-sdk':
+      '@voyant-travel/connect-sdk':
         specifier: workspace:*
         version: link:../connect-sdk
     devDependencies:
@@ -33,9 +33,9 @@ importers:
       '@voyant-sdk/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/catalog':
-        specifier: ^0.85.3
-        version: 0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyant-travel/catalog':
+        specifier: ^0.117.2
+        version: 0.117.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       eslint:
         specifier: ^9.39.1
         version: 9.39.4
@@ -45,7 +45,7 @@ importers:
 
   packages/connect-cruises:
     dependencies:
-      '@voyantjs/connect-sdk':
+      '@voyant-travel/connect-sdk':
         specifier: workspace:*
         version: link:../connect-sdk
     devDependencies:
@@ -55,9 +55,9 @@ importers:
       '@voyant-sdk/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/cruises':
-        specifier: ^0.85.3
-        version: 0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyant-travel/cruises':
+        specifier: ^0.118.2
+        version: 0.118.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       eslint:
         specifier: ^9.39.1
         version: 9.39.4
@@ -409,38 +409,53 @@ packages:
     resolution: {integrity: sha512-/uejZt4dSere1bx12WLlPfv8GktzcaDtuJ7s42/HEZ5zGj9oxRaD4bj7qwSunXkf+pbAhFt2zjpHYUiT5lHf0Q==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@voyantjs/action-ledger@0.85.3':
-    resolution: {integrity: sha512-3o/VErIduCj4Qwmf4ez2xwtrRXotqocvfwUGAZHK/9SR/8RzR9WQrv209qKXIDgYYuEXkdn7Ymyo+zbhfAJ+Vg==}
+  '@voyant-travel/action-ledger@0.104.10':
+    resolution: {integrity: sha512-9FoQFYcbq2nI2u0LULGqMD5n9NmRVoknuOHTAmITYQJyw6b4t9eyTUjN3NYeEGjynEH/QjCZ28yWdKx3/vRGCA==}
 
-  '@voyantjs/bookings@0.85.3':
-    resolution: {integrity: sha512-4cgaJ6CB3JeGfh+GOl0eZc418QAjuCQ6NZx4QgXIiEYdvpMrL1xlS51WnZR1xO9T3Vj5P4UWydPtj4dC/vpUTQ==}
+  '@voyant-travel/bookings-contracts@0.104.3':
+    resolution: {integrity: sha512-oM98VfKcVkp2v8Ifw+CLi9yMP4SynD8Gi4gYukx+h5d6UHF/qV+wpxkR6HT2URMk2rwTYZrJZEyrHkmBrDJa/A==}
 
-  '@voyantjs/catalog@0.85.3':
-    resolution: {integrity: sha512-h7gR5Xbr7AhzezpJRg4TYBXK8sbdsO2717TESBbFOtnv3raZjpDgbJDueiyHwn7qWlsd5r6AYiFoUulUzM0+HQ==}
+  '@voyant-travel/bookings@0.119.3':
+    resolution: {integrity: sha512-EXb4OTA+ANUlfU+GKr8MRAEuX8lB/2QrWJ+74iEKE/5gB/WrawnGtjTBf9Ls8cb840ZOn9jSjjM1IWwHkcMo+g==}
 
-  '@voyantjs/core@0.85.3':
-    resolution: {integrity: sha512-yxTdzxuyPHI+3jgt0bPuiirBRi/USijcHF93MyTa6nQFK6HMw0F/Rpd00VDzwDSHJt7E38kGpOoGWNf8dhayqg==}
+  '@voyant-travel/catalog-contracts@0.107.1':
+    resolution: {integrity: sha512-sUq9I0EUqCLk3+bUQddpKGaAsJuNtD4s+pG4OtALSN6OYx+SkHVW9m2e/a7h2U0VbnIP5YMLggyBmYD+UbzmGA==}
 
-  '@voyantjs/cruises@0.85.3':
-    resolution: {integrity: sha512-KnucFq3F1QcJ92ppPpBgPSAKxoRLtjuyru1vaKl7WUsYUpVKc7rYc9U4Ya1SU7CBxC4MTwWFe0THPC2uhxGeYQ==}
+  '@voyant-travel/catalog@0.117.2':
+    resolution: {integrity: sha512-i9uipm5GNc89uOlDSdmwonEmSaVLkHxS80uXjBEVY2edkxn/e6fBlWwewdaKA9RD4f9ySozbtIGTQtzG7O/1iA==}
 
-  '@voyantjs/db@0.85.3':
-    resolution: {integrity: sha512-uq9zXK7FBlHkIXBx6HIA5DSgFy825AgBJtLqAKV4XQ4bMBYKYG4nD6G/HHNrtvcZd0dPixuyDcgOb3Qj6++RGg==}
+  '@voyant-travel/core@0.109.0':
+    resolution: {integrity: sha512-eu15XfqHgZbRXDTw6Tg2vlUC4s7Qiubi478cqmA3602AvQ8jBJ3rmpyClpobDWcY7cGKFmqUYKjBdc0xzTQALg==}
 
-  '@voyantjs/hono@0.85.3':
-    resolution: {integrity: sha512-sn29LhR8D4zBOf6L7kcMt8ikToZ9gT3StFJr1WDazePH1/9sPyTecHvwoKrHcHiGY1hCjUPEZmZS2o9RIzxb0w==}
+  '@voyant-travel/cruises-contracts@0.105.2':
+    resolution: {integrity: sha512-GT1Ur2Qc/g3pPe+lGbsKvNSmzELIx7gWBDMGBM/8aBdzjXfvspOx8wDZDYRgbNAk1c7BX9zh8MP8s505aejBPw==}
 
-  '@voyantjs/storage@0.85.3':
-    resolution: {integrity: sha512-3c9VydK+h+wWPCIlT6Eg+Sg8uA7X4j9a420cMTZu4W8xEeI4suVsgG5kMfMpJYRx8Q8A+P3oaoTQVhKo6TGbzg==}
+  '@voyant-travel/cruises@0.118.2':
+    resolution: {integrity: sha512-5cFGoRvG3E0x3nopGDj/wCACwS7vpxtT7nEDurFqxW4L8IG0IsVW8CdJLD43f8gHG197h2szS0o1bc2aF7xsKg==}
 
-  '@voyantjs/types@0.85.3':
-    resolution: {integrity: sha512-Kg591+4er31eyA/5a4xxgUIuuBzMFsrrjn2eEqkGZeH0YTm1id50Hx2I8dmLR3kHjV6N6qcR1tvjDXTl8WR6zg==}
+  '@voyant-travel/db@0.108.0':
+    resolution: {integrity: sha512-S7x+BGy8Vk9iwD0fXTd4QcKDefXbF3hnaAy76Wml5c1bMhQt6ahTmxqPxp8vnj7yLHxemEmvE8I7a3UVfNtytQ==}
 
-  '@voyantjs/utils@0.85.3':
-    resolution: {integrity: sha512-0+WD6B4+mCdOlOrtpVvNFMcVOdH7iFjoTUTbjN5Jgxg2kpOKzsklSW5CAYTXfEXI1304E+eEGsVQ4y+VkN5ZtQ==}
+  '@voyant-travel/hono@0.109.1':
+    resolution: {integrity: sha512-RNi6nUQ0AWVAPasTd4Q33AT6Kj8kN1lMzEOMAtpLOc4QMzTQnlSwcuuy8C5P3vzBpMr2OO6BTdhxFHuTUTVo7w==}
 
-  '@voyantjs/workflows@0.85.3':
-    resolution: {integrity: sha512-Jgjzfmm9uWTG6W8wDYNPr3UKfyaUWwBjG3RTGmBjGfbinew0lDzahEpiXiEWC9HQ3qe+9isj/CcXgjnnVRq2wg==}
+  '@voyant-travel/schema-kit@0.105.2':
+    resolution: {integrity: sha512-bR6l1rqQxaLVOypXaC35P5J8OYpPlLowEWTEiDc/1qFiza3drbFUgM0IUhwBYUs364wSqUq1J/oZit69YTuNjw==}
+
+  '@voyant-travel/storage@0.104.1':
+    resolution: {integrity: sha512-Fk7cU7bB/zBqgUoVuaausiNiov17gqqtiLNdLYYRj1IUtP/cSWZhxPu6yU2lEGxWgyr0QcKIWOjc1c2vkb4G8Q==}
+
+  '@voyant-travel/templating@0.104.1':
+    resolution: {integrity: sha512-H4ogSzc4tCo0xtQkAu1hyqOAuHLYaNHKu+1CCacxGtGhqpjiEnTATyPYYJWHmZ4UKWhqFuTCFIJY/YN/dheD1g==}
+
+  '@voyant-travel/types@0.104.5':
+    resolution: {integrity: sha512-ucIw+o132fug97YrMdMKBTMBGQl2wXhURxGy+tuTrlhx6Sz6suv35HPCe6nPDTEPI1cQ/y6UpOjqfdX9OztObQ==}
+
+  '@voyant-travel/utils@0.105.1':
+    resolution: {integrity: sha512-iDgc2nKWPPRsS/yMptbh0Ib8ruaQrG3DmYcUvqbuVfYa4Cwfief0WGQN/Z9nLkTVRNf2NKHnd0RxWlhL4vqSuQ==}
+
+  '@voyant-travel/workflows@0.107.10':
+    resolution: {integrity: sha512-fZLD6b1146ecnIC0TovIYOjqcMCx5bKvBs8qDAFL55M3/LiljFcISV6PrFeWTImIy4658hEUdORl0e9BbjBgyg==}
     peerDependencies:
       zod: ^3.23.0 || ^4.0.0
     peerDependenciesMeta:
@@ -2012,11 +2027,11 @@ snapshots:
       '@typescript-eslint/types': 8.59.0
       eslint-visitor-keys: 5.0.1
 
-  '@voyantjs/action-ledger@0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
+  '@voyant-travel/action-ledger@0.104.10(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
     dependencies:
-      '@voyantjs/core': 0.85.3
-      '@voyantjs/db': 0.85.3
-      '@voyantjs/hono': 0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyant-travel/core': 0.109.0
+      '@voyant-travel/db': 0.108.0
+      '@voyant-travel/hono': 0.109.1(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       drizzle-orm: 0.45.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       hono: 4.12.23
       zod: 4.4.3
@@ -2051,13 +2066,19 @@ snapshots:
       - sql.js
       - sqlite3
 
-  '@voyantjs/bookings@0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
+  '@voyant-travel/bookings-contracts@0.104.3':
     dependencies:
-      '@voyantjs/action-ledger': 0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
-      '@voyantjs/core': 0.85.3
-      '@voyantjs/db': 0.85.3
-      '@voyantjs/hono': 0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
-      '@voyantjs/utils': 0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyant-travel/schema-kit': 0.105.2
+      zod: 4.4.3
+
+  '@voyant-travel/bookings@0.119.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
+    dependencies:
+      '@voyant-travel/action-ledger': 0.104.10(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyant-travel/bookings-contracts': 0.104.3
+      '@voyant-travel/core': 0.109.0
+      '@voyant-travel/db': 0.108.0
+      '@voyant-travel/hono': 0.109.1(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyant-travel/utils': 0.105.1(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       drizzle-orm: 0.45.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       hono: 4.12.23
       zod: 4.4.3
@@ -2092,11 +2113,16 @@ snapshots:
       - sql.js
       - sqlite3
 
-  '@voyantjs/catalog@0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
+  '@voyant-travel/catalog-contracts@0.107.1':
     dependencies:
-      '@voyantjs/core': 0.85.3
-      '@voyantjs/db': 0.85.3
-      '@voyantjs/hono': 0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      zod: 4.4.3
+
+  '@voyant-travel/catalog@0.117.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
+    dependencies:
+      '@voyant-travel/catalog-contracts': 0.107.1
+      '@voyant-travel/core': 0.109.0
+      '@voyant-travel/db': 0.108.0
+      '@voyant-travel/hono': 0.109.1(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       drizzle-orm: 0.45.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       hono: 4.12.23
       zod: 4.4.3
@@ -2131,15 +2157,21 @@ snapshots:
       - sql.js
       - sqlite3
 
-  '@voyantjs/core@0.85.3': {}
+  '@voyant-travel/core@0.109.0': {}
 
-  '@voyantjs/cruises@0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
+  '@voyant-travel/cruises-contracts@0.105.2':
     dependencies:
-      '@voyantjs/bookings': 0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
-      '@voyantjs/catalog': 0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
-      '@voyantjs/core': 0.85.3
-      '@voyantjs/db': 0.85.3
-      '@voyantjs/hono': 0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyant-travel/catalog-contracts': 0.107.1
+      zod: 4.4.3
+
+  '@voyant-travel/cruises@0.118.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
+    dependencies:
+      '@voyant-travel/bookings': 0.119.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyant-travel/catalog': 0.117.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyant-travel/core': 0.109.0
+      '@voyant-travel/cruises-contracts': 0.105.2
+      '@voyant-travel/db': 0.108.0
+      '@voyant-travel/hono': 0.109.1(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       drizzle-orm: 0.45.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       hono: 4.12.23
       zod: 4.4.3
@@ -2174,10 +2206,11 @@ snapshots:
       - sql.js
       - sqlite3
 
-  '@voyantjs/db@0.85.3':
+  '@voyant-travel/db@0.108.0':
     dependencies:
       '@neondatabase/serverless': 1.1.0
-      '@voyantjs/core': 0.85.3
+      '@voyant-travel/core': 0.109.0
+      '@voyant-travel/schema-kit': 0.105.2
       drizzle-orm: 0.45.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       postgres: 3.4.9
       typeid-js: 1.2.0
@@ -2211,14 +2244,14 @@ snapshots:
       - sql.js
       - sqlite3
 
-  '@voyantjs/hono@0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
+  '@voyant-travel/hono@0.109.1(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
     dependencies:
-      '@voyantjs/core': 0.85.3
-      '@voyantjs/db': 0.85.3
-      '@voyantjs/storage': 0.85.3
-      '@voyantjs/types': 0.85.3
-      '@voyantjs/utils': 0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
-      '@voyantjs/workflows': 0.85.3(zod@4.4.3)
+      '@voyant-travel/core': 0.109.0
+      '@voyant-travel/db': 0.108.0
+      '@voyant-travel/storage': 0.104.1
+      '@voyant-travel/types': 0.104.5
+      '@voyant-travel/utils': 0.105.1(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyant-travel/workflows': 0.107.10(zod@4.4.3)
       drizzle-orm: 0.45.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       hono: 4.12.23
       zod: 4.4.3
@@ -2253,11 +2286,20 @@ snapshots:
       - sql.js
       - sqlite3
 
-  '@voyantjs/storage@0.85.3': {}
-
-  '@voyantjs/types@0.85.3':
+  '@voyant-travel/schema-kit@0.105.2':
     dependencies:
-      '@voyantjs/db': 0.85.3
+      typeid-js: 1.2.0
+      zod: 4.4.3
+
+  '@voyant-travel/storage@0.104.1': {}
+
+  '@voyant-travel/templating@0.104.1':
+    dependencies:
+      liquidjs: 10.27.0
+
+  '@voyant-travel/types@0.104.5':
+    dependencies:
+      '@voyant-travel/db': 0.108.0
       zod: 4.4.3
     transitivePeerDependencies:
       - '@aws-sdk/client-rds-data'
@@ -2288,9 +2330,10 @@ snapshots:
       - sql.js
       - sqlite3
 
-  '@voyantjs/utils@0.85.3(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
+  '@voyant-travel/utils@0.105.1(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
     dependencies:
-      '@voyantjs/types': 0.85.3
+      '@voyant-travel/templating': 0.104.1
+      '@voyant-travel/types': 0.104.5
       drizzle-orm: 0.45.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       liquidjs: 10.27.0
       pdf-lib: 1.17.1
@@ -2326,7 +2369,7 @@ snapshots:
       - sql.js
       - sqlite3
 
-  '@voyantjs/workflows@0.85.3(zod@4.4.3)':
+  '@voyant-travel/workflows@0.107.10(zod@4.4.3)':
     optionalDependencies:
       zod: 4.4.3
 

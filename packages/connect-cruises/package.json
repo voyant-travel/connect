@@ -1,16 +1,16 @@
 {
-  "name": "@voyantjs/connect-cruises",
+  "name": "@voyant-travel/connect-cruises",
   "version": "0.3.15",
   "description": "Voyant Connect cruises adapter for Voyant deployments.",
   "license": "FSL-1.1-Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/connect-sdk.git",
+    "url": "https://github.com/voyant-travel/connect-sdk.git",
     "directory": "packages/connect-cruises"
   },
-  "homepage": "https://github.com/voyantjs/connect-sdk#readme",
+  "homepage": "https://github.com/voyant-travel/connect-sdk#readme",
   "bugs": {
-    "url": "https://github.com/voyantjs/connect-sdk/issues"
+    "url": "https://github.com/voyant-travel/connect-sdk/issues"
   },
   "type": "module",
   "main": "./dist/index.js",
@@ -39,20 +39,20 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@voyantjs/connect-sdk": "workspace:*"
+    "@voyant-travel/connect-sdk": "workspace:*"
   },
   "peerDependencies": {
-    "@voyantjs/cruises": ">=0.85.3 <1"
+    "@voyant-travel/cruises": ">=0.85.3 <1"
   },
   "peerDependenciesMeta": {
-    "@voyantjs/cruises": {
+    "@voyant-travel/cruises": {
       "optional": true
     }
   },
   "devDependencies": {
     "@voyant-sdk/eslint-config": "workspace:*",
     "@voyant-sdk/typescript-config": "workspace:*",
-    "@voyantjs/cruises": "^0.85.3",
+    "@voyant-travel/cruises": "^0.118.2",
     "eslint": "^9.39.1",
     "typescript": "5.9.2"
   },

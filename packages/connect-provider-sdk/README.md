@@ -1,4 +1,4 @@
-# `@voyantjs/connect-provider-sdk`
+# `@voyant-travel/connect-provider-sdk`
 
 Public SDK primitives for building Voyant Connect provider integrations.
 
@@ -8,7 +8,7 @@ of Connect. It intentionally does not contain provider-specific API clients.
 ## Install
 
 ```sh
-pnpm add @voyantjs/connect-provider-sdk
+pnpm add @voyant-travel/connect-provider-sdk
 ```
 
 ## Usage
@@ -17,7 +17,7 @@ pnpm add @voyantjs/connect-provider-sdk
 import {
   defineConnectProvider,
   parseJsonCredentials,
-} from "@voyantjs/connect-provider-sdk";
+} from "@voyant-travel/connect-provider-sdk";
 
 const provider = defineConnectProvider({
   key: "example-cruises",
@@ -37,9 +37,9 @@ void provider;
 ## Notes
 
 - The package is for provider integration authors, not Connect API consumers.
-- API consumers should use `@voyantjs/connect-sdk`.
+- API consumers should use `@voyant-travel/connect-sdk`.
 - The default Connect API base URL used by consumer clients is
-  `https://api.voyantjs.com`; provider integrations should receive runtime
+  `https://api.voyant.travel`; provider integrations should receive runtime
   endpoints from their host environment.
 
 For repo-level context, see [../../docs/provider-sdk.md](../../docs/provider-sdk.md).

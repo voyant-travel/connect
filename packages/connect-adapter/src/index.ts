@@ -11,7 +11,7 @@ import {
   type StaySearchQuery,
   type VoyantConnectClient,
   type VoyantConnectClientOptions,
-} from "@voyantjs/connect-sdk";
+} from "@voyant-travel/connect-sdk";
 import type {
   AdapterCapabilities,
   CancelRequest,
@@ -26,7 +26,7 @@ import type {
   ReserveResult,
   SourceAdapter,
   SourceAdapterContext,
-} from "@voyantjs/catalog/adapter/contract";
+} from "@voyant-travel/catalog/adapter/contract";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -52,8 +52,8 @@ export type {
   SourceAdapter,
   SourceAdapterContext,
   SourceAdapterRequestScope,
-} from "@voyantjs/catalog/adapter/contract";
-export type { Provenance } from "@voyantjs/catalog/provenance";
+} from "@voyant-travel/catalog/adapter/contract";
+export type { Provenance } from "@voyant-travel/catalog/provenance";
 
 export interface VoyantConnectSourceAdapterOptions {
   client?: VoyantConnectClient;
