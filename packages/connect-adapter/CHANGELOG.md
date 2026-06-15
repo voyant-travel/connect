@@ -1,5 +1,20 @@
 # @voyant-travel/connect-adapter
 
+## 0.3.0
+
+### Minor Changes
+
+- ceab4b0: Rename the npm scope from `@voyantjs` to `@voyant-travel` to match the renamed
+  org. All packages, imports, repository/homepage URLs, and the default API base
+  URL (`api.voyantjs.com` → `api.voyant.travel`) are updated. Consumers must update
+  their dependencies to the `@voyant-travel/*` scope and re-point any pinned
+  `@voyantjs/connect-*` imports.
+
+### Patch Changes
+
+- Updated dependencies [ceab4b0]
+  - @voyant-travel/connect-sdk@0.9.0
+
 ## 0.2.22
 
 ### Patch Changes
