@@ -4,6 +4,7 @@ import {
   type CruiseConfirmInput,
   type CruisePassenger,
   type CruiseFareComponent,
+  type CruiseFareComponentKind,
   type CruisePassengerOccupancy,
   type OperatorCruiseSummary,
   type VoyantConnectClient,
@@ -185,7 +186,7 @@ export type ConnectExternalPriceRow = {
     | "wait_list"
     | "sold_out";
   components?: Array<{
-    kind: string;
+    kind: CruiseFareComponentKind;
     label?: string | null;
     amount: string;
     currency: string;
