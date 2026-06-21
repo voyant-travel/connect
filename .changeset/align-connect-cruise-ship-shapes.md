@@ -13,6 +13,9 @@ and `ConnectCruiseSourceRef` with the cruise vertical's `ExternalShip` family so
   `string`.
 - `ConnectExternalCabinCategory.wheelchairAccessible` narrows from
   `boolean | null` to `boolean`.
+- `ConnectExternalCabinCategory.roomLayoutImages` is renamed to `floorplanImages`
+  (the field the vertical reads), so cabin floorplan images are no longer
+  silently dropped.
 - `ConnectCruiseSourceRef.connectionId` is now optional to match the vertical's
   `SourceRef`; the adapter guards it via `requireConnectionId` before issuing
   connection-scoped Connect calls (throwing a clear error if it is missing

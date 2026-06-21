@@ -238,7 +238,9 @@ test("fetchShip reads the gallery from payload.images", async () => {
   assert.deepEqual(ship.categories[0].images, [
     "https://example.com/cabin.jpg",
   ]);
-  assert.deepEqual(ship.categories[0].roomLayoutImages, [
+  // Emitted as `floorplanImages` (the vertical's field) from the upstream
+  // `roomLayoutImages` payload key.
+  assert.deepEqual(ship.categories[0].floorplanImages, [
     "https://example.com/cabin-floor.jpg",
   ]);
   // studio is normalized to a catalog room type.

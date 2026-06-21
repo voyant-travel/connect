@@ -149,7 +149,8 @@ export type ConnectExternalCabinCategory = {
   amenities?: string[];
   images?: string[];
   // Floor-plan / room-layout schematics, distinct from the photo gallery.
-  roomLayoutImages?: string[];
+  // Named to match the cruise vertical's `ExternalCabinCategory.floorplanImages`.
+  floorplanImages?: string[];
 };
 
 export type ConnectExternalShipDeck = {
@@ -712,7 +713,9 @@ function toCabinCategory(
       getStringArray(payload, "features") ??
       getStringArray(payload, "amenities"),
     images: galleryUrls(payload),
-    roomLayoutImages: urlArray(payload, "roomLayoutImages"),
+    // Emit as `floorplanImages` (the vertical's field) from the upstream
+    // `roomLayoutImages` payload key so cabin floorplans aren't dropped.
+    floorplanImages: urlArray(payload, "roomLayoutImages"),
   };
 }
 
