@@ -2,7 +2,7 @@
   "name": "@voyant-travel/connect-sdk",
   "version": "0.9.0",
   "description": "Public TypeScript SDK for Voyant Connect APIs.",
-  "license": "FSL-1.1-Apache-2.0",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/voyant-travel/connect-sdk.git",
