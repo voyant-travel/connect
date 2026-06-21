@@ -197,6 +197,73 @@ test("registerVoyantConnectSources registers connection-scoped sources on the ca
   ]);
 });
 
+test("prepareVoyantConnectSources uses pre-fetched connections and skips the network enumeration", async () => {
+  // The internally-built live client lists no connections, so if enumeration ran
+  // we'd get no sources. Getting conn_pre sources back proves the supplied list
+  // short-circuited the network call.
+  const sources = await prepareVoyantConnectSources(
+    {
+      VOYANT_API_KEY: "k",
+      VOYANT_CONNECT_OPERATOR_ID: "op_1",
+    },
+    {
+      enumerate: true,
+      connections: [{ id: "conn_pre", status: "active", providerKey: "tui" }],
+    },
+  );
+  assert.deepEqual(
+    sources.map((source) => [source.connectionId, source.role]),
+    [
+      ["conn_pre", "generic"],
+      ["conn_pre:cruises", "cruises"],
+      ["conn_pre:products", "tui-products"],
+    ],
+  );
+});
+
+test("prepareVoyantConnectSources reads connections from connectionCache on a hit without enumerating", async () => {
+  const get = mock.fn(async () => [
+    { id: "conn_cached", status: "active", providerKey: "tui" },
+  ]);
+  const set = mock.fn(async () => {});
+  const sources = await prepareVoyantConnectSources(
+    { VOYANT_API_KEY: "k", VOYANT_CONNECT_OPERATOR_ID: "op_1" },
+    { enumerate: true, connectionCache: { get, set } },
+  );
+  assert.equal(get.mock.calls.length, 1);
+  assert.equal(set.mock.calls.length, 0);
+  assert.deepEqual(
+    sources.map((source) => source.connectionId),
+    ["conn_cached", "conn_cached:cruises", "conn_cached:products"],
+  );
+});
+
+test("prepareVoyantConnectSources enumerates and populates connectionCache on a miss", async () => {
+  // The internally-built client falls through to the real transport, so stub
+  // fetch to return an empty connection list for the enumeration request.
+  const fetchMock = mock.method(globalThis, "fetch", async () =>
+    new Response("[]", { headers: { "content-type": "application/json" } }),
+  );
+  try {
+    const get = mock.fn(async () => undefined);
+    const stored = [];
+    const set = mock.fn(async (connections) => {
+      stored.push(...connections);
+    });
+    await prepareVoyantConnectSources(
+      { VOYANT_API_KEY: "k", VOYANT_CONNECT_OPERATOR_ID: "op_1" },
+      { enumerate: true, connectionCache: { get, set } },
+    );
+    assert.equal(get.mock.calls.length, 1);
+    assert.equal(set.mock.calls.length, 1);
+    assert.ok(fetchMock.mock.calls.length >= 1);
+    // The stubbed enumeration returns no connections, so the cache is set to [].
+    assert.deepEqual(stored, []);
+  } finally {
+    fetchMock.mock.restore();
+  }
+});
+
 test("listVoyantConnectSourceConnections keeps only active connections and enriches provider details", async () => {
   const client = fakeClient({
     list: [

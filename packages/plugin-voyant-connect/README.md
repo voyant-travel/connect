@@ -24,9 +24,31 @@ const sources = await prepareVoyantConnectSources(process.env);
 void sources;
 ```
 
-To build sources from an explicit client instead of the environment, use
-`createVoyantConnectSources` / `registerVoyantConnectSources`, pointing the
-client at `https://api.voyant.travel`.
+On the booking-engine warm path, pass `enumerate: true` to get one set of
+connection-scoped adapters per active connection. To avoid re-paying the network
+enumeration on every cold isolate, supply a pre-fetched `connections` list or a
+read-through `connectionCache` (e.g. backed by Workers KV), and thread
+`cruise.memoize` to wrap cruise reads consistently across the default and
+per-connection planes:
+
+```ts
+const sources = await prepareVoyantConnectSources(env, {
+  enumerate: true,
+  // Skip the list() call when the serializable connection list is cached:
+  connectionCache: {
+    get: () => cache.get("voyant-connect:connections"),
+    set: (connections) => cache.put("voyant-connect:connections", connections),
+  },
+  // Memoize cruise reads on both the default and per-connection adapters:
+  cruise: { memoize: { ttlMs: 60_000 } },
+});
+```
+
+Pass a pre-fetched `connections` array instead of `connectionCache` when the
+caller already holds the list. To build sources from an explicit client instead
+of the environment, use `createVoyantConnectSources` /
+`registerVoyantConnectSources`, pointing the client at
+`https://api.voyant.travel`.
 
 ## Status
 
