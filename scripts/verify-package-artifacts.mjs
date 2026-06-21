@@ -32,6 +32,8 @@ function readPackageVersion(relativePath) {
 
 const sdkCoreVersion = readPackageVersion("packages/sdk-core");
 const connectSdkVersion = readPackageVersion("packages/connect-sdk");
+const connectAdapterVersion = readPackageVersion("packages/connect-adapter");
+const connectCruisesVersion = readPackageVersion("packages/connect-cruises");
 
 const packages = [
   {
@@ -84,6 +86,22 @@ const packages = [
     },
     peerDependencies: {
       "@voyant-travel/catalog": ">=0.85.3 <1",
+    },
+    bundleDependencies: undefined,
+    bundledFiles: [],
+  },
+  {
+    dir: path.join(repoRoot, "packages", "plugin-voyant-connect"),
+    expectedName: "@voyant-travel/plugin-voyant-connect",
+    dependencies: {
+      "@voyant-travel/connect-sdk": connectSdkVersion,
+      "@voyant-travel/connect-adapter": connectAdapterVersion,
+      "@voyant-travel/connect-cruises": connectCruisesVersion,
+    },
+    peerDependencies: {
+      "@voyant-travel/catalog": ">=0.85.3 <1",
+      "@voyant-travel/cruises": ">=0.85.3 <1",
+      "@voyant-travel/data-sdk": ">=0.5.0 <1",
     },
     bundleDependencies: undefined,
     bundledFiles: [],

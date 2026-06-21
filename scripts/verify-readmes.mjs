@@ -46,6 +46,7 @@ function verifyRootReadme() {
     "[Connect Adapter](./docs/connect-adapter.md)",
     "[Provider SDK](./docs/provider-sdk.md)",
     "[Connect Cruises](./docs/connect-cruises.md)",
+    "[Connect Plugin](./docs/connect-plugin.md)",
   ];
 
   for (const needle of required) {
@@ -331,6 +332,13 @@ verifyPackageReadme({
   packageName: "@voyant-travel/connect-cruises",
   factoryName: "createConnectCruiseAdapter",
   docLink: "[../../docs/connect-cruises.md](../../docs/connect-cruises.md)",
+  envVar: "VOYANT_API_KEY",
+});
+verifyPackageReadme({
+  path: "packages/plugin-voyant-connect/README.md",
+  packageName: "@voyant-travel/plugin-voyant-connect",
+  factoryName: "prepareVoyantConnectSources",
+  docLink: "[../../docs/connect-plugin.md](../../docs/connect-plugin.md)",
   envVar: "VOYANT_API_KEY",
 });
 verifyPublishingDoc();
