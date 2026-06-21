@@ -135,6 +135,40 @@ importers:
         specifier: ^8.50.0
         version: 8.59.0(eslint@9.39.4)(typescript@5.9.2)
 
+  packages/plugin-voyant-connect:
+    dependencies:
+      '@voyant-travel/connect-adapter':
+        specifier: workspace:*
+        version: link:../connect-adapter
+      '@voyant-travel/connect-cruises':
+        specifier: workspace:*
+        version: link:../connect-cruises
+      '@voyant-travel/connect-sdk':
+        specifier: workspace:*
+        version: link:../connect-sdk
+    devDependencies:
+      '@voyant-sdk/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@voyant-sdk/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@voyant-travel/catalog':
+        specifier: ^0.117.2
+        version: 0.117.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyant-travel/cruises':
+        specifier: ^0.118.2
+        version: 0.118.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+      '@voyant-travel/data-sdk':
+        specifier: ^0.5.0
+        version: 0.5.0
+      eslint:
+        specifier: ^9.39.1
+        version: 9.39.4
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
   packages/sdk-core:
     devDependencies:
       '@voyant-sdk/eslint-config':
@@ -432,6 +466,11 @@ packages:
 
   '@voyant-travel/cruises@0.118.2':
     resolution: {integrity: sha512-5cFGoRvG3E0x3nopGDj/wCACwS7vpxtT7nEDurFqxW4L8IG0IsVW8CdJLD43f8gHG197h2szS0o1bc2aF7xsKg==}
+
+  '@voyant-travel/data-sdk@0.5.0':
+    resolution: {integrity: sha512-H7haHd5hwRls9AVJeOvFZEsgEWjV6/L0F3JUiifIjQ9mhHfX66V5ofV8xRFpd6FYr613Nc6RT1eyAQjRqk6hBQ==}
+    bundledDependencies:
+      - '@voyant-sdk/sdk-core'
 
   '@voyant-travel/db@0.108.0':
     resolution: {integrity: sha512-S7x+BGy8Vk9iwD0fXTd4QcKDefXbF3hnaAy76Wml5c1bMhQt6ahTmxqPxp8vnj7yLHxemEmvE8I7a3UVfNtytQ==}
@@ -2205,6 +2244,8 @@ snapshots:
       - prisma
       - sql.js
       - sqlite3
+
+  '@voyant-travel/data-sdk@0.5.0': {}
 
   '@voyant-travel/db@0.108.0':
     dependencies:

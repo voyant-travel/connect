@@ -12,6 +12,7 @@ lives as Markdown under [`docs/`](./docs).
 - `@voyant-travel/connect-adapter`: OSS catalog `SourceAdapter` backed by Connect
 - `@voyant-travel/connect-provider-sdk`: primitives for building provider integrations
 - `@voyant-travel/connect-cruises`: Connect-backed cruises adapter for Voyant deployments
+- `@voyant-travel/plugin-voyant-connect`: Connect sources plugin that wires the adapters into a Voyant deployment
 - `@voyant-sdk/sdk-core`: private shared runtime bundled into the public package
 
 ## Workspace layout
@@ -20,6 +21,7 @@ lives as Markdown under [`docs/`](./docs).
 - `packages/connect-adapter`: public OSS catalog adapter package for Connect
 - `packages/connect-provider-sdk`: public provider integration SDK
 - `packages/connect-cruises`: public Voyant cruises adapter package for Connect
+- `packages/plugin-voyant-connect`: public Connect sources plugin for Voyant deployments
 - `packages/sdk-core`: shared internal transport, auth, and error handling
 - `packages/eslint-config`: shared ESLint presets for the workspace
 - `packages/typescript-config`: shared TypeScript presets for the workspace
@@ -67,4 +69,5 @@ pnpm release
 - [Connect Adapter](./docs/connect-adapter.md)
 - [Provider SDK](./docs/provider-sdk.md)
 - [Connect Cruises](./docs/connect-cruises.md)
+- [Connect Plugin](./docs/connect-plugin.md)
 - [Roadmap](./ROADMAP.md)

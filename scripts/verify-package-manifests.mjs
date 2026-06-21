@@ -251,6 +251,25 @@ verifyPublicPackage("packages/connect-adapter/package.json", {
     "@voyant-travel/catalog": "^0.117.2",
   },
 });
+verifyPublicPackage("packages/plugin-voyant-connect/package.json", {
+  name: "@voyant-travel/plugin-voyant-connect",
+  descriptionKeyword: "Voyant Connect",
+  dependencies: {
+    "@voyant-travel/connect-sdk": "workspace:*",
+    "@voyant-travel/connect-adapter": "workspace:*",
+    "@voyant-travel/connect-cruises": "workspace:*",
+  },
+  peerDependencies: {
+    "@voyant-travel/catalog": ">=0.85.3 <1",
+    "@voyant-travel/cruises": ">=0.85.3 <1",
+    "@voyant-travel/data-sdk": ">=0.5.0 <1",
+  },
+  devDependencies: {
+    "@voyant-travel/catalog": "^0.117.2",
+    "@voyant-travel/cruises": "^0.118.2",
+    "@voyant-travel/data-sdk": "^0.5.0",
+  },
+});
 verifyPrivatePackage("packages/sdk-core/package.json");
 
 console.log("Package manifest verification passed.");
