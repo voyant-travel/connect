@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/connect-adapter",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Voyant Connect catalog SourceAdapter for Voyant apps.",
   "license": "Apache-2.0",
   "repository": {

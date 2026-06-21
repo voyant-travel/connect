@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/connect-sdk",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Public TypeScript SDK for Voyant Connect APIs.",
   "license": "Apache-2.0",
   "repository": {

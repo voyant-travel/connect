@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/connect-cruises",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Voyant Connect cruises adapter for Voyant deployments.",
   "license": "Apache-2.0",
   "repository": {

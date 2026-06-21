@@ -1,5 +1,12 @@
 # @voyant-travel/connect-sdk
 
+## 0.9.1
+
+### Patch Changes
+
+- 0130564: Relicense the public Connect packages from `FSL-1.1-Apache-2.0` to `Apache-2.0`.
+  The root `LICENSE` is replaced with the standard Apache License 2.0 text.
+
 ## 0.9.0
 
 ### Minor Changes
