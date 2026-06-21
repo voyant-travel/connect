@@ -2,7 +2,7 @@
   "name": "@voyant-travel/connect-cruises",
   "version": "0.6.0",
   "description": "Voyant Connect cruises adapter for Voyant deployments.",
-  "license": "FSL-1.1-Apache-2.0",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/voyant-travel/connect-sdk.git",
