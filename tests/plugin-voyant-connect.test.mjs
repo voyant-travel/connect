@@ -264,20 +264,17 @@ test("prepareVoyantConnectSources enumerates and populates connectionCache on a 
   }
 });
 
-test("listVoyantConnectSourceConnections keeps only active connections and enriches provider details", async () => {
+test("listVoyantConnectSourceConnections keeps only active connections from the list without a per-connection get", async () => {
   const client = fakeClient({
     list: [
-      fakeConnection({ id: "conn_active", status: "active" }),
-      fakeConnection({ id: "conn_paused", status: "paused" }),
-    ],
-    details: {
-      conn_active: fakeConnection({
+      fakeConnection({
         id: "conn_active",
         status: "active",
         providerKey: "tui",
         supplierName: "TUI",
       }),
-    },
+      fakeConnection({ id: "conn_paused", status: "paused" }),
+    ],
   });
 
   assert.deepEqual(
@@ -291,4 +288,6 @@ test("listVoyantConnectSourceConnections keeps only active connections and enric
       },
     ],
   );
+  // The list summary already carries providerKey/supplierName — no enrichment RTT.
+  assert.equal(client.connections.get.mock.calls.length, 0);
 });
