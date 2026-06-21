@@ -813,21 +813,25 @@ async function getCruiseContentFromConnect(
     locale: request.locale,
   });
   const cabinCategories = shipExternalId
-    ? await client.cruises.listCabinCategories(connectionId, shipExternalId, {
-        locale: request.locale,
-      })
+    ? await listCabinCategoriesWithLocaleFallback(
+        client,
+        connectionId,
+        shipExternalId,
+        request.locale,
+      )
     : [];
   const itineraryVariants = await resolveCruiseItineraryVariants(
     client,
     connectionId,
     sailings,
   );
-  const cabinOptionsBySailing = await resolveCruiseCabinOptions(
-    client,
-    connectionId,
-    sailings,
-    cabinCategories,
-  );
+  const { optionsBySailing: cabinOptionsBySailing, lowestPriceBySailing } =
+    await resolveCruiseCabinOptions(
+      client,
+      connectionId,
+      sailings,
+      cabinCategories,
+    );
   const contentSailings = sailings
     .map((sailing) => {
       const sourceRef = sourceRefForSailing(sailing);
@@ -838,7 +842,9 @@ async function getCruiseContentFromConnect(
         itineraryStops: sourceRef
           ? (itineraryVariants.get(sourceRef) ?? [])
           : [],
-        lowestPrice: lowestPriceFromSailing(sailing),
+        lowestPrice:
+          lowestPriceFromSailing(sailing) ??
+          (sourceRef ? (lowestPriceBySailing.get(sourceRef) ?? null) : null),
         cabinOptions,
       });
     })
@@ -995,9 +1001,13 @@ async function resolveCruiseCabinOptions(
   connectionId: string,
   sailings: JsonRecord[],
   cabinCategories: JsonRecord[],
-): Promise<Map<string, JsonRecord[]>> {
+): Promise<{
+  optionsBySailing: Map<string, JsonRecord[]>;
+  lowestPriceBySailing: Map<string, JsonRecord>;
+}> {
   const categoryLookup = createCabinCategoryLookup(cabinCategories);
   const optionsBySailing = new Map<string, JsonRecord[]>();
+  const lowestPriceBySailing = new Map<string, JsonRecord>();
 
   await Promise.all(
     sailings.map(async (sailing) => {
@@ -1009,13 +1019,20 @@ async function resolveCruiseCabinOptions(
           sourceRef,
         );
         if (!Array.isArray(rows)) return;
-        const options = rows
+        const pricingRows = rows as unknown as JsonRecord[];
+        // Sailing rows from some providers (e.g. Uniworld) carry no
+        // priceFrom/lowestPrice, so fall back to the cheapest pricing row.
+        const sailingPrice =
+          lowestPriceFromSailing(sailing) ??
+          lowestPriceFromPricingRows(pricingRows);
+        if (sailingPrice) lowestPriceBySailing.set(sourceRef, sailingPrice);
+        const options = pricingRows
           .map((row) =>
             toCruiseContentCabinOption(
-              row as unknown as JsonRecord,
+              row,
               sourceRef,
               categoryLookup,
-              lowestPriceFromSailing(sailing),
+              sailingPrice,
             ),
           )
           .filter((option): option is JsonRecord => option !== null);
@@ -1026,7 +1043,7 @@ async function resolveCruiseCabinOptions(
     }),
   );
 
-  return optionsBySailing;
+  return { optionsBySailing, lowestPriceBySailing };
 }
 
 function toCruiseContentSummary(
@@ -1364,6 +1381,81 @@ function lowestPriceFromSailing(sailing: JsonRecord): JsonRecord | null {
     getRecordOrNull(sailing, "lowestPrice") ??
     getRecordOrNull(payload, "lowestPrice")
   );
+}
+
+/**
+ * Derive a "from" price for a sailing from its pricing rows by selecting the
+ * cheapest per-person fare. Used when the sailing row itself carries no
+ * priceFrom/lowestPrice summary.
+ */
+function lowestPriceFromPricingRows(rows: JsonRecord[]): JsonRecord | null {
+  let lowest: JsonRecord | null = null;
+  let lowestAmount = Number.POSITIVE_INFINITY;
+  for (const row of rows) {
+    const payload = getRecord(row, "payload");
+    const price =
+      getRecordOrNull(row, "pricePerPerson") ??
+      getRecordOrNull(payload, "pricePerPerson") ??
+      moneyFromMinorFields(
+        row,
+        "pricePerPersonAmountMinor",
+        "pricePerPersonCurrency",
+      ) ??
+      moneyFromMinorFields(
+        payload,
+        "pricePerPersonAmountMinor",
+        "pricePerPersonCurrency",
+      );
+    if (!price) continue;
+    const amountMinor = getNumber(price, "amountMinor");
+    const currency = getString(price, "currency");
+    if (amountMinor === null || !Number.isInteger(amountMinor) || !currency) {
+      continue;
+    }
+    if (amountMinor < lowestAmount) {
+      lowestAmount = amountMinor;
+      lowest = price;
+    }
+  }
+  return lowest;
+}
+
+/**
+ * List a ship's cabin categories, falling back from a regional locale
+ * (e.g. `en-GB`) to its language (`en`) and finally to no locale. Some
+ * Connect sources only populate cabin data under the language locale, so a
+ * regional request would otherwise drop valid categories.
+ */
+async function listCabinCategoriesWithLocaleFallback(
+  client: VoyantConnectClient,
+  connectionId: string,
+  shipExternalId: string,
+  locale: string,
+): Promise<JsonRecord[]> {
+  for (const candidate of localeFallbacks(locale)) {
+    const categories = await client.cruises.listCabinCategories(
+      connectionId,
+      shipExternalId,
+      candidate ? { locale: candidate } : {},
+    );
+    if (Array.isArray(categories) && categories.length > 0) return categories;
+  }
+  return [];
+}
+
+/**
+ * Ordered locale candidates to try when a regional locale may suppress data.
+ * Only a regional locale (e.g. `en-GB`) gets a fallback chain — its
+ * language-only form (`en`) then no locale — because some Connect sources
+ * only populate cabin data under the language locale. A plain language locale
+ * is requested as-is, so an empty result for it is treated as authoritative
+ * and incurs no extra requests.
+ */
+function localeFallbacks(locale: string): Array<string | undefined> {
+  if (!locale) return [undefined];
+  const dashIndex = locale.indexOf("-");
+  if (dashIndex <= 0) return [locale];
+  return [locale, locale.slice(0, dashIndex), undefined];
 }
 
 function moneyFromMinorFields(
