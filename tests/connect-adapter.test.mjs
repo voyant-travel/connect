@@ -883,6 +883,152 @@ test("connect adapter fetches endpoint itinerary variants for every sailing", as
   );
 });
 
+test("connect adapter getContent falls back from a regional locale for cabin categories", async () => {
+  const recorder = createRecorder([
+    {
+      id: "ccr_204",
+      externalId: "204_81-from-2027",
+      connectionId: "conn_1",
+      cruiseLineExternalId: "uniworld",
+      shipExternalId: "81-from-2027",
+      name: "Castles along the Rhine",
+      cruiseType: "river",
+      nights: 7,
+      locale: "en",
+      payload: {},
+    },
+    [
+      {
+        id: "sail_1",
+        externalId: "204_24940_74684_81",
+        departureDate: "2027-11-25",
+        returnDate: "2027-12-02",
+        nights: 7,
+        salesStatus: "available",
+        payload: {
+          itinerary: [{ dayNumber: 1, portName: "Basel (Embark)" }],
+        },
+      },
+    ],
+    [
+      {
+        externalId: "81-from-2027",
+        name: "S.S. Victoria",
+      },
+    ],
+    // listCabinCategories(locale=en-GB) — the regional locale has no data.
+    [],
+    // listCabinCategories(locale=en) — the language locale fallback.
+    [
+      {
+        externalId: "81-from-2027_DLXFRNCH",
+        code: "DLXFRNCH",
+        name: "Deluxe French Balcony",
+        roomType: "balcony",
+        maxTotal: 2,
+      },
+      {
+        externalId: "81-from-2027_FRNCH",
+        code: "FRNCH",
+        name: "French Balcony",
+        roomType: "balcony",
+        maxTotal: 2,
+      },
+    ],
+    // listSailingPricing(sail_1) — sailing rows carry no priceFrom summary.
+    [
+      {
+        sailingId: "204_24940_74684_81",
+        cabinCategoryId: "81-from-2027_FRNCH",
+        occupancy: { adults: 1 },
+        fareCode: "single-promo",
+        pricePerPerson: {
+          amountMinor: 859400,
+          currency: "USD",
+          currencyPrecision: 2,
+        },
+        totalPrice: {
+          amountMinor: 859400,
+          currency: "USD",
+          currencyPrecision: 2,
+        },
+        availability: "available",
+      },
+      {
+        sailingId: "204_24940_74684_81",
+        cabinCategoryId: "81-from-2027_DLXFRNCH",
+        occupancy: { adults: 2 },
+        fareCode: "standard",
+        pricePerPerson: {
+          amountMinor: 699000,
+          currency: "USD",
+          currencyPrecision: 2,
+        },
+        totalPrice: {
+          amountMinor: 1398000,
+          currency: "USD",
+          currencyPrecision: 2,
+        },
+        availability: "available",
+      },
+    ],
+  ]);
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    fetch: recorder.fetch,
+  });
+  const adapter = createVoyantConnectSourceAdapter({
+    client,
+    operatorId: "op_1",
+  });
+
+  const result = await adapter.getContent(
+    { connection_id: "conn_1" },
+    {
+      entity_module: "cruises",
+      entity_id: "cruise:204_81-from-2027:en",
+      locale: "en-GB",
+    },
+  );
+
+  // The regional locale is tried first, then the language locale fallback.
+  assert.equal(
+    recorder.calls[3].url,
+    "https://api.voyant.travel/connect/v1/connections/conn_1/ships/81-from-2027/cabin-categories?locale=en-GB",
+  );
+  assert.equal(
+    recorder.calls[4].url,
+    "https://api.voyant.travel/connect/v1/connections/conn_1/ships/81-from-2027/cabin-categories?locale=en",
+  );
+  assert.equal(
+    recorder.calls[5].url,
+    "https://api.voyant.travel/connect/v1/connections/conn_1/sailings/204_24940_74684_81/pricing",
+  );
+
+  // Cabin categories are populated from the language-locale fallback.
+  assert.equal(result.content.cabin_categories.length, 2);
+  assert.deepEqual(
+    result.content.cabin_categories.map((category) => category.name),
+    ["Deluxe French Balcony", "French Balcony"],
+  );
+
+  // The sailing exposes a usable "from" price derived from the cheapest
+  // pricing row even though the sailing row has no priceFrom summary.
+  assert.equal(result.content.sailings[0].lowest_price_cents, 699000);
+  assert.equal(result.content.sailings[0].currency, "USD");
+  assert.equal(result.content.sailings[0].cabin_options.length, 2);
+  assert.deepEqual(
+    result.content.sailings[0].cabin_options.map(
+      (option) => option.price_per_person_cents,
+    ),
+    [859400, 699000],
+  );
+  assert.equal(
+    result.content.sailings[0].cabin_options[0].cabin_category_code,
+    "FRNCH",
+  );
+});
+
 test("connect adapter reserve forwards generic bookings with the source connection id", async () => {
   const recorder = createRecorder([
     {
