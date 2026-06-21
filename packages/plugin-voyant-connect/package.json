@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/plugin-voyant-connect",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "Voyant Connect sources plugin for Voyant deployments.",
   "license": "Apache-2.0",
   "repository": {
