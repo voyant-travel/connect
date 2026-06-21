@@ -95,31 +95,21 @@ export function registerVoyantConnectSources(
 export async function listVoyantConnectSourceConnections(options: {
   client: VoyantConnectClient;
   operatorId: string;
+  /** Reserved for diagnostics; the single list() call surfaces no per-row faults. */
   warn?: (message: string) => void;
 }): Promise<VoyantConnectSourceConnection[]> {
-  const connections = (
-    await options.client.connections.list(options.operatorId)
-  ).filter((connection) => connection.status === "active");
-  return Promise.all(
-    connections.map(async (connection) => {
-      const detail = await options.client.connections
-        .get(options.operatorId, connection.id)
-        .catch((err) => {
-          options.warn?.(
-            `could not fetch connection ${connection.id}; falling back to summary: ${
-              err instanceof Error ? err.message : String(err)
-            }`,
-          );
-          return connection;
-        });
-      return {
-        id: detail.id,
-        status: detail.status,
-        providerKey: stringValue(recordValue(detail)?.providerKey) ?? null,
-        supplierName: stringValue(recordValue(detail)?.supplierName) ?? null,
-      };
-    }),
-  );
+  // `connections.list` already returns the full `ConnectionSummary` (id, status,
+  // providerKey, supplierName) — the same shape `connections.get` returns — so a
+  // per-connection get() would be a redundant round-trip. Map the list directly.
+  const connections = await options.client.connections.list(options.operatorId);
+  return connections
+    .filter((connection) => connection.status === "active")
+    .map((connection) => ({
+      id: connection.id,
+      status: connection.status,
+      providerKey: connection.providerKey,
+      supplierName: connection.supplierName,
+    }));
 }
 
 function createDefaultSources(
