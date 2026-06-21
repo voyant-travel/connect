@@ -2,7 +2,7 @@
   "name": "@voyant-travel/plugin-voyant-connect",
   "version": "0.2.1",
   "description": "Voyant Connect sources plugin for Voyant deployments.",
-  "license": "FSL-1.1-Apache-2.0",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/voyant-travel/connect-sdk.git",
