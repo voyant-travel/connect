@@ -14,7 +14,9 @@ import {
 type JsonObject = Record<string, unknown>;
 
 export type ConnectCruiseSourceRef = {
-  connectionId: string;
+  // Optional to match the cruise vertical's `SourceRef`; the adapter guards it
+  // via `requireConnectionId` before issuing connection-scoped Connect calls.
+  connectionId?: string;
   providerKey?: string | null;
   externalId: string;
   kind?: "cruise" | "sailing" | "ship" | "cabin_category";
@@ -143,7 +145,7 @@ export type ConnectExternalCabinCategory = {
   minOccupancy: number;
   maxOccupancy: number;
   squareFeet?: string | null;
-  wheelchairAccessible?: boolean | null;
+  wheelchairAccessible?: boolean;
   amenities?: string[];
   images?: string[];
   // Floor-plan / room-layout schematics, distinct from the photo gallery.
@@ -151,8 +153,8 @@ export type ConnectExternalCabinCategory = {
 };
 
 export type ConnectExternalShipDeck = {
-  name?: string | null;
-  imageUrl: string;
+  name: string;
+  planImageUrl: string;
 };
 
 export type ConnectExternalShip = {
@@ -315,7 +317,7 @@ export function createConnectCruiseAdapter(
 
     async fetchCruise(sourceRef) {
       const row = await client.cruises.getOnConnection(
-        sourceRef.connectionId,
+        requireConnectionId(sourceRef),
         sourceRef.externalId,
         {
           locale: options.locale,
@@ -326,7 +328,7 @@ export function createConnectCruiseAdapter(
 
     async fetchSailing(sourceRef) {
       const row = await client.cruises.getSailingOnConnection(
-        sourceRef.connectionId,
+        requireConnectionId(sourceRef),
         sourceRef.externalId,
       );
       return toSailing(sourceRef, row);
@@ -334,7 +336,7 @@ export function createConnectCruiseAdapter(
 
     async fetchSailingPricing(sourceRef) {
       const rows = await client.cruises.listSailingPricing(
-        sourceRef.connectionId,
+        requireConnectionId(sourceRef),
         sourceRef.externalId,
       );
       return rows.map(toPriceRow);
@@ -342,7 +344,7 @@ export function createConnectCruiseAdapter(
 
     async fetchSailingItinerary(sourceRef) {
       const rows = await client.cruises.listItinerary(
-        sourceRef.connectionId,
+        requireConnectionId(sourceRef),
         sourceRef.externalId,
       );
       return rows.map((row) => ({
@@ -360,8 +362,9 @@ export function createConnectCruiseAdapter(
     },
 
     async fetchShip(sourceRef) {
+      const connectionId = requireConnectionId(sourceRef);
       const row = await client.cruises.getShip(
-        sourceRef.connectionId,
+        connectionId,
         sourceRef.externalId,
       );
       const ship = toShip(sourceRef, row);
@@ -369,19 +372,20 @@ export function createConnectCruiseAdapter(
       // The ship read doesn't include cabin categories; fetch and attach them
       // so the content's "Options" tab + cabin pricing have a catalog to bind.
       const cabinRows = await client.cruises.listCabinCategories(
-        sourceRef.connectionId,
+        connectionId,
         sourceRef.externalId,
         { locale: options.locale },
       );
       ship.categories = cabinRows.map((cabin) =>
-        toCabinCategory(sourceRef.connectionId, cabin),
+        toCabinCategory(connectionId, cabin),
       );
       return ship;
     },
 
     async listSailingsForCruise(cruiseRef) {
+      const connectionId = requireConnectionId(cruiseRef);
       const rows = await client.cruises.listSailingsOnConnection(
-        cruiseRef.connectionId,
+        connectionId,
         {
           cruiseExternalId: cruiseRef.externalId,
           limit: 500,
@@ -389,10 +393,7 @@ export function createConnectCruiseAdapter(
       );
       return rows
         .map((row) =>
-          toSailing(
-            sourceRefFromRow(row, cruiseRef.connectionId, "sailing"),
-            row,
-          ),
+          toSailing(sourceRefFromRow(row, connectionId, "sailing"), row),
         )
         .filter(
           (sailing): sailing is ConnectExternalSailing => sailing !== null,
@@ -404,7 +405,7 @@ export function createConnectCruiseAdapter(
         getString(input.cabinCategoryRef, "quoteId") ??
         (await createQuoteForBooking(client, input, options.quoteTtlHours));
       const result = await client.cruiseBookings.confirm(
-        input.sailingRef.connectionId,
+        requireConnectionId(input.sailingRef),
         {
           quoteId,
           leadPassenger: toLeadPassenger(input),
@@ -436,7 +437,7 @@ async function createQuoteForBooking(
   quoteTtlHours: number | undefined,
 ): Promise<string> {
   const quote = await client.cruiseBookings.lockSelection(
-    input.sailingRef.connectionId,
+    requireConnectionId(input.sailingRef),
     {
       sailingExternalId: input.sailingRef.externalId,
       cabinCategoryExternalId: input.cabinCategoryRef.externalId,
@@ -665,12 +666,12 @@ function shipDecks(payload: JsonObject): ConnectExternalShipDeck[] | undefined {
   const mapped: ConnectExternalShipDeck[] = [];
   for (const item of decks) {
     if (!item || typeof item !== "object") continue;
-    const imageUrl = getString(item as JsonObject, "imageUrl");
-    if (!imageUrl) continue;
-    mapped.push({
-      name: getString(item as JsonObject, "name") ?? null,
-      imageUrl,
-    });
+    const planImageUrl = getString(item as JsonObject, "imageUrl");
+    const name = getString(item as JsonObject, "name");
+    // The vertical's `ExternalDeck` requires a name and reads `planImageUrl`;
+    // skip decks missing either so we never emit non-conformant entries.
+    if (!name || !planImageUrl) continue;
+    mapped.push({ name, planImageUrl });
   }
   return mapped.length > 0 ? mapped : undefined;
 }
@@ -766,9 +767,18 @@ function sourceRefFromOperatorCruise(
   };
 }
 
+function requireConnectionId(ref: ConnectCruiseSourceRef): string {
+  if (!ref.connectionId) {
+    throw new Error(
+      "@voyant-travel/connect-cruises requires a connectionId on the source ref",
+    );
+  }
+  return ref.connectionId;
+}
+
 function sourceRefFromRow(
   row: JsonObject,
-  connectionId: string,
+  connectionId: string | undefined,
   kind: ConnectCruiseSourceRef["kind"],
 ): ConnectCruiseSourceRef {
   return {
@@ -781,7 +791,7 @@ function sourceRefFromRow(
 function sourceRefFromMaybe(
   row: JsonObject,
   field: string,
-  connectionId: string,
+  connectionId: string | undefined,
   kind: ConnectCruiseSourceRef["kind"],
 ): ConnectCruiseSourceRef | undefined {
   const externalId = getString(row, field);

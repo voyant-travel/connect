@@ -162,6 +162,8 @@ test("fetchShip reads the gallery from payload.images", async () => {
       deckPlanUrl: "https://example.com/deckplan.jpg",
       decks: [
         { name: "Main Deck", imageUrl: "https://example.com/deck-main.jpg" },
+        // No name — dropped so we never emit a non-conformant deck.
+        { imageUrl: "https://example.com/deck-unnamed.jpg" },
       ],
       images: [
         { url: "https://example.com/ship-1.jpg" },
@@ -214,8 +216,10 @@ test("fetchShip reads the gallery from payload.images", async () => {
   assert.equal(ship.capacityGuests, 128);
   assert.equal(ship.description, "An intimate river ship.");
   assert.equal(ship.deckPlanUrl, "https://example.com/deckplan.jpg");
+  // Decks expose `planImageUrl` (the field the cruise vertical reads) and
+  // nameless decks are dropped.
   assert.deepEqual(ship.decks, [
-    { name: "Main Deck", imageUrl: "https://example.com/deck-main.jpg" },
+    { name: "Main Deck", planImageUrl: "https://example.com/deck-main.jpg" },
   ]);
   assert.deepEqual(ship.gallery, [
     "https://example.com/ship-1.jpg",
@@ -239,6 +243,30 @@ test("fetchShip reads the gallery from payload.images", async () => {
   ]);
   // studio is normalized to a catalog room type.
   assert.equal(ship.categories[1].roomType, "single");
+});
+
+test("detail reads require a connectionId on the source ref", async () => {
+  let shipCalls = 0;
+  const adapter = createConnectCruiseAdapter({
+    client: {
+      cruises: {
+        getShip: async () => {
+          shipCalls += 1;
+          return {};
+        },
+        listCabinCategories: async () => [],
+      },
+    },
+    operatorId: "opr_1",
+  });
+  // connectionId is optional on the ref (to match the cruise vertical's
+  // SourceRef), so the adapter guards it rather than issuing a call against
+  // `/connections/undefined/...`.
+  await assert.rejects(
+    adapter.fetchShip({ externalId: "49-from-2027", kind: "ship" }),
+    /requires a connectionId/,
+  );
+  assert.equal(shipCalls, 0);
 });
 
 test("fetchSailing maps the rollup from-price without an extra pricing call", async () => {
