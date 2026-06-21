@@ -1,5 +1,14 @@
 # @voyant-travel/connect-cruises
 
+## 0.5.0
+
+### Minor Changes
+
+- e3bbcc8: Narrow the price-component `kind` on `ConnectExternalPriceRow` from `string` to
+  the `CruiseFareComponentKind` union (re-exported from `@voyant-travel/connect-sdk`).
+  This aligns `createConnectCruiseAdapter`'s return type with the cruise vertical's
+  `CruiseAdapter`, so downstream consumers can drop the `as CruiseAdapter` cast.
+
 ## 0.4.0
 
 ### Minor Changes
