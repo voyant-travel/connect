@@ -13,6 +13,7 @@ import { createVoyantConnectClient } from "@voyant-travel/connect-sdk";
 import {
   createVoyantConnectSources,
   listVoyantConnectSourceConnections,
+  type VoyantConnectSourceConnection,
   type VoyantConnectSourceRegistration,
   type VoyantConnectSourcesOptions,
 } from "./sources.js";
@@ -85,6 +86,17 @@ export function resolveVoyantConnectEnv(
   };
 }
 
+/**
+ * Read-through cache for the serializable connection list, so a cold isolate can
+ * skip the network enumeration. `get` returns `undefined` on a miss; `set` is
+ * called with the freshly-enumerated list on a miss. The consumer owns the cache
+ * key (enumeration is per-operator) and TTL — e.g. back it with Workers KV.
+ */
+export interface VoyantConnectConnectionCache {
+  get: () => Promise<VoyantConnectSourceConnection[] | undefined>;
+  set: (connections: VoyantConnectSourceConnection[]) => Promise<void>;
+}
+
 export interface PrepareVoyantConnectSourcesOptions extends ResolveVoyantConnectEnvOptions {
   /**
    * Enumerate the operator's active Connect connections and return one set of
@@ -95,6 +107,25 @@ export interface PrepareVoyantConnectSourcesOptions extends ResolveVoyantConnect
    * connection ids the booking engine routes by; see issue #1976.
    */
   enumerate?: boolean;
+  /**
+   * Pre-fetched connection list. When provided on the `enumerate` path, the
+   * network enumeration is skipped entirely and these connections are used as-is
+   * — letting a consumer cache the serializable list without reimplementing
+   * env/connection resolution. Ignored when `enumerate` is falsy.
+   */
+  connections?: ReadonlyArray<VoyantConnectSourceConnection>;
+  /**
+   * Read-through cache for the enumeration. Consulted on the `enumerate` path
+   * only when `connections` is not supplied: a cache hit skips the network call,
+   * a miss enumerates and populates the cache. Ignored when `enumerate` is falsy.
+   */
+  connectionCache?: VoyantConnectConnectionCache;
+  /**
+   * Cruise adapter options threaded into both the default and per-connection
+   * sources. Supply `cruise.memoize` to wrap cruise reads consistently across
+   * the fallback and per-connection warm planes; see issue #94.
+   */
+  cruise?: VoyantConnectSourcesOptions["cruise"];
 }
 
 /**
@@ -112,7 +143,7 @@ export async function prepareVoyantConnectSources(
   if (!config) return [];
 
   if (!options.enumerate) {
-    return createVoyantConnectSources(config);
+    return createVoyantConnectSources({ ...config, cruise: options.cruise });
   }
 
   const client = createVoyantConnectClient({
@@ -120,15 +151,40 @@ export async function prepareVoyantConnectSources(
     operatorId: config.operatorId,
     baseUrl: config.baseUrl,
   });
-  const connections = await listVoyantConnectSourceConnections({
-    client,
-    operatorId: config.operatorId,
-    warn: options.warn,
-  });
+  const connections = await resolveConnections(client, config.operatorId, options);
   if (connections.length === 0) {
     options.warn?.(
       `Voyant Connect has no active connections for operator ${config.operatorId}`,
     );
   }
-  return createVoyantConnectSources({ ...config, client, connections });
+  return createVoyantConnectSources({
+    ...config,
+    client,
+    connections,
+    cruise: options.cruise,
+  });
+}
+
+/**
+ * Resolve the connection list for the enumerate path: prefer a pre-fetched
+ * list, then a cache hit, otherwise enumerate over the network and populate the
+ * cache on a miss.
+ */
+async function resolveConnections(
+  client: ReturnType<typeof createVoyantConnectClient>,
+  operatorId: string,
+  options: PrepareVoyantConnectSourcesOptions,
+): Promise<VoyantConnectSourceConnection[]> {
+  if (options.connections) return [...options.connections];
+
+  const cached = await options.connectionCache?.get();
+  if (cached) return cached;
+
+  const connections = await listVoyantConnectSourceConnections({
+    client,
+    operatorId,
+    warn: options.warn,
+  });
+  await options.connectionCache?.set(connections);
+  return connections;
 }
