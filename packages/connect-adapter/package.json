@@ -5,12 +5,12 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyant-travel/connect-sdk.git",
+    "url": "https://github.com/voyant-travel/connect.git",
     "directory": "packages/connect-adapter"
   },
-  "homepage": "https://github.com/voyant-travel/connect-sdk#readme",
+  "homepage": "https://github.com/voyant-travel/connect#readme",
   "bugs": {
-    "url": "https://github.com/voyant-travel/connect-sdk/issues"
+    "url": "https://github.com/voyant-travel/connect/issues"
   },
   "type": "module",
   "main": "./dist/index.js",
