@@ -42,7 +42,7 @@
     "@voyant-travel/connect-sdk": "workspace:*"
   },
   "peerDependencies": {
-    "@voyant-travel/catalog": ">=0.85.3 <1"
+    "@voyant-travel/catalog": ">=0.130.0 <1"
   },
   "devDependencies": {
     "@voyant-sdk/eslint-config": "workspace:*",

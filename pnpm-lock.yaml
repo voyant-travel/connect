@@ -154,8 +154,8 @@ importers:
         specifier: workspace:*
         version: link:../typescript-config
       '@voyant-travel/catalog':
-        specifier: ^0.117.2
-        version: 0.117.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
+        specifier: ^0.130.0
+        version: 0.130.0(@neondatabase/serverless@1.1.0)(postgres@3.4.9)
       '@voyant-travel/cruises':
         specifier: ^0.118.2
         version: 0.118.2(@neondatabase/serverless@1.1.0)(postgres@3.4.9)

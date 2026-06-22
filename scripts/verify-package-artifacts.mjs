@@ -85,7 +85,7 @@ const packages = [
       "@voyant-travel/connect-sdk": connectSdkVersion,
     },
     peerDependencies: {
-      "@voyant-travel/catalog": ">=0.85.3 <1",
+      "@voyant-travel/catalog": ">=0.130.0 <1",
     },
     bundleDependencies: undefined,
     bundledFiles: [],
@@ -99,7 +99,7 @@ const packages = [
       "@voyant-travel/connect-cruises": connectCruisesVersion,
     },
     peerDependencies: {
-      "@voyant-travel/catalog": ">=0.85.3 <1",
+      "@voyant-travel/catalog": ">=0.130.0 <1",
       "@voyant-travel/cruises": ">=0.85.3 <1",
       "@voyant-travel/data-sdk": ">=0.5.0 <1",
     },
@@ -173,7 +173,7 @@ function createCatalogTypeStub(appDir) {
   writeFileSync(
     path.join(catalogDir, "adapter", "contract.d.ts"),
     [
-      "export type SourceAdapter = { kind: string; capabilities: AdapterCapabilities; discover?: Function; liveResolve?: Function; getContent?: Function; reserve?: Function; cancel?: Function; getReservation?: Function; listReservations?: Function };",
+      "export type SourceAdapter = { kind: string; capabilities: AdapterCapabilities; discover?: Function; liveResolve?: Function; searchAvailability?: Function; getContent?: Function; reserve?: Function; cancel?: Function; getReservation?: Function; listReservations?: Function };",
       "export type AdapterCapabilities = { verticals: string[]; supportsLiveResolution: boolean; supportsDriftDetection: boolean; supportsBookingForwarding: boolean; postBookOperations: readonly string[]; [key: string]: unknown };",
       "export type SourceAdapterContext = { connection_id: string; credentials?: Record<string, string>; tenant_id?: string; correlation_id?: string };",
       "export type DiscoveryCursor = string | undefined;",
@@ -194,6 +194,9 @@ function createCatalogTypeStub(appDir) {
       "export type ListReservationsQuery = { cursor?: DiscoveryCursor; limit?: number; status?: readonly ReservationStatus[]; updated_after?: Date; scope?: SourceAdapterRequestScope };",
       "export type ListReservationsPage = { reservations: GetReservationResult[]; next_cursor: DiscoveryCursor };",
       "export type ConnectionState = 'active' | 'paused' | 'disconnected' | 'error';",
+      "export type AvailabilitySearchRequest = { vertical: string; criteria: Record<string, unknown>; criteriaVersion: string; scope: SourceAdapterRequestScope; deadlineMs?: number; cursor?: string; limit?: number };",
+      "export type AvailabilityCandidate = { candidateRef: string; entity_module: string; entity_id: string; selection: Record<string, unknown>; source?: { kind: 'sourced'; connectionId: string } | { kind: 'owned'; module: string }; price: { amount: string; currency: string }; expiresAt?: Date; providerData?: Record<string, unknown> };",
+      "export type AvailabilitySearchResult = { candidates: AvailabilityCandidate[]; status: 'ok' | 'partial' | 'empty' | 'unsupported'; next_cursor?: string };",
       "",
     ].join("\n"),
   );
