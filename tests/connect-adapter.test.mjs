@@ -101,6 +101,103 @@ test("connect adapter maps Connect search documents to catalog projections with 
   assert.equal(page.projections[0].fields.title, "Danube tour");
 });
 
+test("connect adapter searches stays and maps offers to AvailabilityCandidates", async () => {
+  const recorder = createRecorder([
+    {
+      offers: [
+        {
+          id: "stayoffer_1",
+          connectionId: "conn_hb",
+          accommodationId: "acc_42",
+          rooms: [
+            {
+              roomTypeId: "rt_1",
+              ratePlanId: "rp_1",
+              occupancy: { adults: 2 },
+              nights: 3,
+              nightlyBreakdown: [],
+              subtotal: { amountMinor: 30000, currency: "EUR", currencyPrecision: 2 },
+              taxes: { amountMinor: 4995, currency: "EUR", currencyPrecision: 2 },
+              fees: { amountMinor: 0, currency: "EUR", currencyPrecision: 2 },
+              total: { amountMinor: 34995, currency: "EUR", currencyPrecision: 2 },
+              cancellationPolicy: { type: "free_until", deadline: null },
+            },
+          ],
+          totals: {
+            subtotal: { amountMinor: 30000, currency: "EUR", currencyPrecision: 2 },
+            taxes: { amountMinor: 4995, currency: "EUR", currencyPrecision: 2 },
+            fees: { amountMinor: 0, currency: "EUR", currencyPrecision: 2 },
+            total: { amountMinor: 34995, currency: "EUR", currencyPrecision: 2 },
+          },
+          expiresAt: "2026-06-22T12:00:00.000Z",
+        },
+      ],
+      nextCursor: "cur_2",
+    },
+  ]);
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    operatorId: "op_1",
+    fetch: recorder.fetch,
+  });
+  const adapter = createVoyantConnectSourceAdapter({ client });
+
+  const result = await adapter.searchAvailability(
+    { connection_id: "conn_hb" },
+    {
+      vertical: "accommodations",
+      criteria: {
+        destination: { city: "Cairo" },
+        checkIn: "2026-09-01",
+        checkOut: "2026-09-04",
+        rooms: [{ adults: 2 }],
+      },
+      criteriaVersion: "accommodations/v1",
+      scope: { locale: "en-GB", audience: "staff", market: "GB", currency: "EUR" },
+      limit: 20,
+    },
+  );
+
+  // Hits the per-connection stay search endpoint with locale/limit from the request.
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyant.travel/connect/v1/connections/conn_hb/stays/search",
+  );
+  const sent = JSON.parse(recorder.calls[0].body);
+  assert.equal(sent.locale, "en-GB");
+  assert.equal(sent.limit, 20);
+
+  assert.equal(result.status, "ok");
+  assert.equal(result.next_cursor, "cur_2");
+  assert.equal(result.candidates.length, 1);
+  const candidate = result.candidates[0];
+  assert.equal(candidate.entity_module, "accommodations");
+  assert.equal(candidate.entity_id, "acc_42");
+  assert.equal(candidate.candidateRef, "stayoffer_1");
+  // ConnectMoney minor→decimal, exact (no float drift).
+  assert.deepEqual(candidate.price, { amount: "349.95", currency: "EUR" });
+  assert.deepEqual(candidate.source, { kind: "sourced", connectionId: "conn_hb" });
+  assert.equal(candidate.selection.offerId, "stayoffer_1");
+  // Full offer round-tripped for stays.lock; stays internal.
+  assert.equal(candidate.providerData.offer.id, "stayoffer_1");
+});
+
+test("connect adapter reports non-stay verticals as unsupported for search", async () => {
+  const client = createVoyantConnectClient({ apiKey: "k", operatorId: "op_1", fetch: async () => new Response("{}") });
+  const adapter = createVoyantConnectSourceAdapter({ client });
+  const result = await adapter.searchAvailability(
+    { connection_id: "conn_1" },
+    {
+      vertical: "flights",
+      criteria: {},
+      criteriaVersion: "flights/v1",
+      scope: { locale: "en", audience: "staff", market: "GB" },
+    },
+  );
+  assert.equal(result.status, "unsupported");
+  assert.equal(result.candidates.length, 0);
+});
+
 test("connect adapter maps flat live API search document rows", () => {
   const updatedAt = "2026-05-29T17:39:33.021Z";
   const projection = mapSearchDocumentToProjection(

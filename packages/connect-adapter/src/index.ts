@@ -1,6 +1,7 @@
 import {
   createVoyantConnectClient,
   type ConnectAvailabilityQuery,
+  type ConnectMoney,
   type CreateBookingInput,
   type CruiseConfirmInput,
   type CruiseLockSelectionInput,
@@ -14,6 +15,9 @@ import {
 } from "@voyant-travel/connect-sdk";
 import type {
   AdapterCapabilities,
+  AvailabilityCandidate,
+  AvailabilitySearchRequest,
+  AvailabilitySearchResult,
   CancelRequest,
   CancelResult,
   CatalogProjection,
@@ -32,6 +36,9 @@ type JsonRecord = Record<string, unknown>;
 
 export type {
   AdapterCapabilities,
+  AvailabilityCandidate,
+  AvailabilitySearchRequest,
+  AvailabilitySearchResult,
   CancelRequest,
   CancelResult,
   CatalogProjection,
@@ -74,6 +81,11 @@ export interface VoyantConnectSourceAdapterOptions {
     request: LiveResolveRequest,
     client: VoyantConnectClient,
   ) => Promise<LiveResolveResult>;
+  searchAvailability?: (
+    ctx: SourceAdapterContext,
+    request: AvailabilitySearchRequest,
+    client: VoyantConnectClient,
+  ) => Promise<AvailabilitySearchResult>;
   getContent?: (
     ctx: SourceAdapterContext,
     request: GetContentRequest,
@@ -221,6 +233,12 @@ export function createVoyantConnectSourceAdapter(
     async liveResolve(ctx, request) {
       if (options.liveResolve) return options.liveResolve(ctx, request, client);
       return liveResolveFromConnect(client, ctx, request);
+    },
+
+    async searchAvailability(ctx, request) {
+      if (options.searchAvailability)
+        return options.searchAvailability(ctx, request, client);
+      return searchAvailabilityThroughConnect(client, ctx, request);
     },
 
     async getContent(ctx, request) {
@@ -435,6 +453,7 @@ function mergeCapabilities(
   return {
     verticals: ["products", "accommodations", "cruises", "stays", "flights"],
     supportsLiveResolution: true,
+    supportsAvailabilitySearch: true,
     supportsDriftDetection: false,
     supportsBookingForwarding: true,
     supportsReservationRetrieval: true,
@@ -503,6 +522,114 @@ function withProjectionDefaults(
       source_freshness: projection.provenance.source_freshness ?? "sync",
     },
   };
+}
+
+// ── Live availability search (accommodations) ────────────────────────────
+
+/**
+ * Map a vertical-agnostic `AvailabilitySearchRequest` onto Connect's stay
+ * search and normalize the offers into `AvailabilityCandidate`s. The request
+ * `criteria` is treated as a partial `StaySearchQuery` (the caller shapes it
+ * per the accommodations vertical); `locale`/`limit`/`cursor` come from the
+ * request envelope. Only the `accommodations`/`stays` verticals are searched
+ * here — other verticals report `unsupported`.
+ */
+async function searchAvailabilityThroughConnect(
+  client: VoyantConnectClient,
+  ctx: SourceAdapterContext,
+  request: AvailabilitySearchRequest,
+): Promise<AvailabilitySearchResult> {
+  if (request.vertical !== "accommodations" && request.vertical !== "stays") {
+    return { candidates: [], status: "unsupported" };
+  }
+  const connectionId = requireConnectConnectionId(ctx);
+  const query = searchRequestToStaySearchQuery(request);
+  const response = await client.stays.search(connectionId, query);
+  const candidates = response.offers.map(stayOfferToCandidate);
+  const status: AvailabilitySearchResult["status"] = response.errorCode
+    ? "unsupported"
+    : candidates.length > 0
+      ? "ok"
+      : "empty";
+  return {
+    candidates,
+    status,
+    next_cursor: response.nextCursor ?? undefined,
+  };
+}
+
+function searchRequestToStaySearchQuery(
+  request: AvailabilitySearchRequest,
+): StaySearchQuery {
+  const c = request.criteria as Partial<StaySearchQuery>;
+  if (typeof c.checkIn !== "string" || typeof c.checkOut !== "string") {
+    throw new Error(
+      "Connect stay search requires `checkIn` and `checkOut` (ISO dates) in criteria",
+    );
+  }
+  if (!Array.isArray(c.rooms) || c.rooms.length === 0) {
+    throw new Error("Connect stay search requires a non-empty `rooms` array in criteria");
+  }
+  return {
+    destination: c.destination,
+    near: c.near,
+    accommodationIds: c.accommodationIds,
+    checkIn: c.checkIn,
+    checkOut: c.checkOut,
+    rooms: c.rooms,
+    category: c.category,
+    minStars: c.minStars,
+    amenities: c.amenities,
+    boards: c.boards,
+    refundableOnly: c.refundableOnly,
+    maxPrice: c.maxPrice,
+    locale: request.scope?.locale ?? c.locale,
+    limit: request.limit ?? c.limit,
+    cursor: request.cursor ?? c.cursor,
+  };
+}
+
+function stayOfferToCandidate(offer: StayOffer): AvailabilityCandidate {
+  return {
+    candidateRef: offer.id,
+    entity_module: "accommodations",
+    entity_id: offer.accommodationId,
+    // Enough to re-resolve the pick; `stays.lock` needs the full offer, which
+    // is round-tripped in `providerData`.
+    selection: {
+      offerId: offer.id,
+      connectionId: offer.connectionId,
+      rooms: offer.rooms.map((room) => ({
+        roomTypeId: room.roomTypeId,
+        ratePlanId: room.ratePlanId,
+        occupancy: room.occupancy,
+      })),
+    },
+    // Per-offer connection so a cross-provider search routes each candidate back
+    // to the right connection at reserve (the fan-out won't clobber this).
+    source: { kind: "sourced", connectionId: offer.connectionId },
+    price: {
+      amount: connectMoneyToDecimal(offer.totals.total),
+      currency: offer.totals.total.currency,
+    },
+    expiresAt: offer.expiresAt ? new Date(offer.expiresAt) : undefined,
+    // Internal only — the full offer (needed for `stays.lock`) + economics.
+    // Never serialized into a public DTO.
+    providerData: { offer },
+  };
+}
+
+/** Connect money is minor-units + precision; render an exact decimal string. */
+function connectMoneyToDecimal(money: ConnectMoney): string {
+  const precision = money.currencyPrecision ?? 2;
+  if (precision <= 0) return String(money.amountMinor);
+  const negative = money.amountMinor < 0;
+  const digits = Math.abs(money.amountMinor)
+    .toString()
+    .padStart(precision + 1, "0");
+  const whole = digits.slice(0, -precision);
+  const fraction = digits.slice(-precision);
+  return `${negative ? "-" : ""}${whole}.${fraction}`;
 }
 
 async function liveResolveFromConnect(
