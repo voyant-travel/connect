@@ -7,6 +7,9 @@ import {
   type CruiseLockSelectionInput,
   type CruiseSearchQuery,
   type SearchDocument,
+  type PackageConfirmInput,
+  type PackageOffer,
+  type PackageSearchQuery,
   type StayConfirmInput,
   type StayOffer,
   type StaySearchQuery,
@@ -651,6 +654,9 @@ async function liveResolveFromConnect(
   if (route === "cruises") {
     return liveResolveCruises(client, connectionId, request);
   }
+  if (route === "packages") {
+    return liveResolvePackages(client, connectionId, request);
+  }
   return liveResolveAvailability(client, connectionId, request);
 }
 
@@ -661,13 +667,34 @@ async function liveResolveFromConnect(
  */
 function inferConnectRoute(
   parameters: LiveResolveRequest["parameters"],
-): "stays" | "cruises" | undefined {
+): "stays" | "cruises" | "packages" | undefined {
   if (!parameters || typeof parameters !== "object") return undefined;
   const p = parameters as Record<string, unknown>;
   if (Array.isArray(p.rooms) && (p.checkIn != null || p.checkOut != null)) {
     return "stays";
   }
+  // A sourced package quote pins a departure DATE plus a room/board choice but
+  // carries neither a stay's `rooms[]`/check-in nor a scheduled product's
+  // departure SLOT — that shape only the packages data plane can price.
+  if (
+    readPackageDepartureDate(p) &&
+    p.departureSlotId == null &&
+    p.slotId == null &&
+    (getString(p, "roomTypeId") ?? getString(p, "ratePlanId") ?? getString(p, "board"))
+  ) {
+    return "packages";
+  }
   return undefined;
+}
+
+/** The package departure date rides the draft (`draft.configure.departureDate`)
+ * or, for callers that lift it, the top-level parameters. */
+function readPackageDepartureDate(p: Record<string, unknown>): string | undefined {
+  const direct = getString(p, "departureDate");
+  if (direct) return direct;
+  const draft = getRecord(p, "draft");
+  const configure = getRecord(draft, "configure");
+  return getString(configure, "departureDate");
 }
 
 async function liveResolveAvailability(
@@ -822,6 +849,112 @@ async function liveResolveStays(
     };
   }
   return withMissingFailures(request.ids, values);
+}
+
+/**
+ * Package offers are per-search and short-lived (TUI mints fresh offer codes),
+ * so a quote re-resolves live and pins the operator's choice by the STABLE
+ * keys — `roomTypeId` / `ratePlanId` / `board` on the offer's stay component —
+ * exactly like the stays pin. The requested id is the catalog product id
+ * (`offer.productRef.entityId`, e.g. `tui-pkg:LCA15019`); the search is
+ * narrowed by the accommodation external id derived from it.
+ */
+async function liveResolvePackages(
+  client: VoyantConnectClient,
+  connectionId: string,
+  request: LiveResolveRequest,
+): Promise<LiveResolveResult> {
+  const p = (request.parameters ?? {}) as Record<string, unknown>;
+  const departureDate = readPackageDepartureDate(p);
+  if (!departureDate) {
+    return withMissingFailures(request.ids, {});
+  }
+
+  const draft = getRecord(p, "draft");
+  const configure = getRecord(draft, "configure");
+  const pax = getRecord(configure, "pax");
+  const adults =
+    getNumber(pax, "adults") ??
+    getNumber(p, "adults") ??
+    getNumber(p, "paxCount") ??
+    2;
+  const children = getNumber(pax, "children");
+  const nightsValue =
+    getNumber(configure, "nights") ?? getNumber(p, "nights") ?? undefined;
+  const pin = readStayOfferPin(p);
+
+  // `tui-pkg:LCA15019` → `LCA15019` — the provider accommodation external id
+  // is the catalog id minus its connector namespace prefix.
+  const accommodationIds = [
+    ...new Set(request.ids.map((id) => id.replace(/^[^:]+:/, ""))),
+  ];
+
+  const query: PackageSearchQuery = {
+    accommodationIds,
+    departureDateFrom: departureDate,
+    departureDateTo: departureDate,
+    occupancy: {
+      adults,
+      ...(children != null ? { children } : {}),
+    },
+    ...(nightsValue != null
+      ? { nights: { min: nightsValue, max: nightsValue } }
+      : {}),
+    limit: 100,
+  };
+
+  const response = await client.packages.search(connectionId, query);
+  const offers = (response as { offers?: PackageOffer[] }).offers ?? [];
+
+  // Several boards/rates return several offers per product. Pick one
+  // deterministically per requested id: the offer matching the pin when
+  // present, otherwise the first candidate (mirrors the stays selection).
+  const chosen = new Map<string, PackageOffer>();
+  for (const offer of offers) {
+    const id = offer.productRef?.entityId;
+    if (!id || !request.ids.includes(id)) continue;
+    const current = chosen.get(id);
+    if (
+      !current ||
+      (pin &&
+        packageOfferMatchesPin(offer, pin) &&
+        !packageOfferMatchesPin(current, pin))
+    ) {
+      chosen.set(id, offer);
+    }
+  }
+
+  const values: Record<string, JsonRecord> = {};
+  for (const [id, offer] of chosen) {
+    values[id] = {
+      available: true,
+      offer: offer as unknown as JsonRecord,
+      price: offer.pricing.total,
+      // Flat fields the catalog quote engine's `liveValuesToPricing` reads
+      // (numeric `priceCents` + string `currency`), mirroring the stays path.
+      priceCents: offer.pricing.total.amountMinor,
+      currency: offer.pricing.total.currency,
+      expires_at: offer.expiresAt,
+    };
+  }
+  return withMissingFailures(request.ids, values);
+}
+
+/** Same discrimination as the stays pin, against the offer's stay component. */
+function packageOfferMatchesPin(offer: PackageOffer, pin: StayOfferPin): boolean {
+  const stay = offer.stay;
+  if (!stay) return false;
+  if (pin.ratePlanId && stay.ratePlanId !== pin.ratePlanId) return false;
+  if (pin.roomTypeId && stay.roomTypeId !== pin.roomTypeId) return false;
+  if (
+    pin.board &&
+    stay.board !== pin.board &&
+    stay.ratePlanId !== pin.board &&
+    !(stay.ratePlanId ?? "").endsWith(`:${pin.board}`)
+  ) {
+    return false;
+  }
+  return true;
 }
 
 async function liveResolveCruises(
@@ -1775,6 +1908,19 @@ async function reserveThroughConnect(
     };
   }
 
+  if (request.parameters.connectRoute === "packages") {
+    const booking = await client.packages.confirm(
+      connectionId,
+      request.parameters as unknown as PackageConfirmInput,
+      { idempotencyKey: request.idempotency_key },
+    );
+    return {
+      upstream_ref: `package:${booking.id}`,
+      status: booking.status === "confirmed" ? "confirmed" : "held",
+      upstream_payload: booking as unknown as JsonRecord,
+    };
+  }
+
   if (request.parameters.connectRoute === "cruises") {
     const quoteId =
       getString(request.parameters, "quoteId") ??
@@ -1845,6 +1991,10 @@ async function cancelThroughConnect(
     );
     return { status: booking.status === "cancelled" ? "cancelled" : "pending" };
   }
+  if (ref.kind === "package") {
+    const booking = await client.packages.cancel(connectionId, ref.id, reason);
+    return { status: booking.status === "cancelled" ? "cancelled" : "pending" };
+  }
   const booking = await client.bookings.cancel(connectionId, ref.id, reason);
   return {
     status:
@@ -1861,6 +2011,11 @@ async function getBookingByRef(
     return client.stays.get(connectionId, ref.id) as unknown as JsonRecord;
   if (ref.kind === "cruise")
     return client.cruiseBookings.get(
+      connectionId,
+      ref.id,
+    ) as unknown as JsonRecord;
+  if (ref.kind === "package")
+    return client.packages.get(
       connectionId,
       ref.id,
     ) as unknown as JsonRecord;
