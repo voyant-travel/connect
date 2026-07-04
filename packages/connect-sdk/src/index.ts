@@ -105,6 +105,8 @@ export type {
   FlightExchangeInput,
   FlightMultiSearchInput,
   FlightOrder,
+  FlightOrderList,
+  FlightOrderListQuery,
   FlightPriceInput,
   FlightRefundInput,
   FlightSearchInput,

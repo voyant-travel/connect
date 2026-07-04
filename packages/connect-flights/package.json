@@ -1,0 +1,70 @@
+{
+  "name": "@voyant-travel/connect-flights",
+  "version": "0.1.0",
+  "description": "Voyant Connect flights adapter for Voyant deployments.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/connect.git",
+    "directory": "packages/connect-flights"
+  },
+  "homepage": "https://github.com/voyant-travel/connect#readme",
+  "bugs": {
+    "url": "https://github.com/voyant-travel/connect/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "sideEffects": false,
+  "keywords": [
+    "voyant",
+    "voyant-connect",
+    "flights",
+    "adapter",
+    "sdk",
+    "typescript"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src --max-warnings 0",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@voyant-travel/connect-sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "@voyant-travel/flights-contracts": ">=0.104.6 <1"
+  },
+  "peerDependenciesMeta": {
+    "@voyant-travel/flights-contracts": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@voyant-sdk/eslint-config": "workspace:*",
+    "@voyant-sdk/typescript-config": "workspace:*",
+    "@voyant-travel/flights-contracts": "^0.104.6",
+    "eslint": "^9.39.1",
+    "typescript": "5.9.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  }
+}

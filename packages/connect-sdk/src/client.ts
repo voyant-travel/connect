@@ -74,6 +74,8 @@ import type {
   FlightExchangeInput,
   FlightMultiSearchInput,
   FlightOrder,
+  FlightOrderList,
+  FlightOrderListQuery,
   FlightPriceInput,
   FlightRefundInput,
   FlightSearchInput,
@@ -1757,6 +1759,21 @@ export class VoyantConnectClient {
       this.transport.request<FlightOrder>(
         `/connect/v1/connections/${connectionId}/flights/orders`,
         { body: input, method: "POST" },
+      ),
+    /**
+     * List persisted orders for a connection (operator-scoped server-side).
+     * Reads the connect-api `flight_orders` store — GDS adapters can't
+     * enumerate an agency's orders, so this does not require adapter support.
+     */
+    listOrders: (connectionId: string, query?: FlightOrderListQuery) =>
+      this.transport.request<FlightOrderList>(
+        `/connect/v1/connections/${connectionId}/flights/orders`,
+        {
+          query: query as unknown as Record<
+            string,
+            string | number | string[] | undefined
+          >,
+        },
       ),
     getOrder: (connectionId: string, orderId: string) =>
       this.transport.request<FlightOrder>(

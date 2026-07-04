@@ -65,6 +65,28 @@ importers:
         specifier: 5.9.2
         version: 5.9.2
 
+  packages/connect-flights:
+    dependencies:
+      '@voyant-travel/connect-sdk':
+        specifier: workspace:*
+        version: link:../connect-sdk
+    devDependencies:
+      '@voyant-sdk/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@voyant-sdk/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@voyant-travel/flights-contracts':
+        specifier: ^0.104.6
+        version: 0.104.6
+      eslint:
+        specifier: ^9.39.1
+        version: 9.39.4
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
   packages/connect-provider-sdk:
     devDependencies:
       '@voyant-sdk/eslint-config':
@@ -486,6 +508,9 @@ packages:
 
   '@voyant-travel/db@0.108.5':
     resolution: {integrity: sha512-cNza/hBZRay2412LJjr5H2gp6pRYQrxnu/TVM62PHhbofL5IWQMU/PjDDObQQTzWcZ55jqQISLEoGhpxxQG/2Q==}
+
+  '@voyant-travel/flights-contracts@0.104.6':
+    resolution: {integrity: sha512-4AZwl/Jj+FkZ10nzczW64XeCzHiRFXmZP8w+dF3Np3VBtcZET8X1kjQOLJ3x7cXlVkCmxrIM5eKudvNEd37apQ==}
 
   '@voyant-travel/hono@0.109.1':
     resolution: {integrity: sha512-RNi6nUQ0AWVAPasTd4Q33AT6Kj8kN1lMzEOMAtpLOc4QMzTQnlSwcuuy8C5P3vzBpMr2OO6BTdhxFHuTUTVo7w==}
@@ -2403,6 +2428,11 @@ snapshots:
       - prisma
       - sql.js
       - sqlite3
+
+  '@voyant-travel/flights-contracts@0.104.6':
+    dependencies:
+      '@voyant-travel/catalog-contracts': 0.108.0
+      zod: 4.4.3
 
   '@voyant-travel/hono@0.109.1(@neondatabase/serverless@1.1.0)(postgres@3.4.9)':
     dependencies:
