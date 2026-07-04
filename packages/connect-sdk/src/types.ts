@@ -1019,9 +1019,21 @@ export interface FlightSsrInput {
   [key: string]: unknown;
 }
 
+export interface FlightOrderListQuery {
+  cursor?: string;
+  limit?: number;
+  /** Free-text match against PNR, provider order id, or contact email. */
+  q?: string;
+  /** Restrict to orders in any of these statuses. */
+  status?: string[];
+  [key: string]: unknown;
+}
+
 // Generic — these come from the connector adapter and vary by provider.
 export type FlightSearchResult = JsonObject;
 export type FlightOrder = JsonObject;
+/** `{ orders: FlightOrder[]; pagination: { total; hasMore; cursor? } }`. */
+export type FlightOrderList = JsonObject;
 export type FlightSeatMap = JsonObject;
 export type FlightAncillaryList = JsonObject;
 
