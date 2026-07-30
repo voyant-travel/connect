@@ -72,9 +72,8 @@ const packages = [
     dependencies: {
       "@voyant-travel/connect-sdk": connectSdkVersion,
     },
-    peerDependencies: {
-      "@voyant-travel/cruises": ">=0.85.3 <1",
-    },
+    // No peer on the cruises runtime: nothing in the package imports it.
+    peerDependencies: {},
     bundleDependencies: undefined,
     bundledFiles: [],
   },
@@ -84,8 +83,10 @@ const packages = [
     dependencies: {
       "@voyant-travel/connect-sdk": connectSdkVersion,
     },
+    // Only the source-adapter contract and provenance surfaces are used, both
+    // of which the catalog runtime merely re-exports from contracts (ADR-0002).
     peerDependencies: {
-      "@voyant-travel/catalog": ">=0.130.0 <1",
+      "@voyant-travel/catalog-contracts": ">=0.112.0 <1",
     },
     bundleDependencies: undefined,
     bundledFiles: [],
@@ -98,9 +99,14 @@ const packages = [
       "@voyant-travel/connect-adapter": connectAdapterVersion,
       "@voyant-travel/connect-cruises": connectCruisesVersion,
     },
+    // Contract types come from the *-contracts packages; the runtime peers stay
+    // because this package uses runtime values from both - SourceAdapterRegistry
+    // from catalog/booking-engine, and memoizeCruiseAdapter.
     peerDependencies: {
       "@voyant-travel/catalog": ">=0.130.0 <1",
+      "@voyant-travel/catalog-contracts": ">=0.112.0 <1",
       "@voyant-travel/cruises": ">=0.85.3 <1",
+      "@voyant-travel/cruises-contracts": ">=0.105.0 <1",
       "@voyant-travel/data-sdk": ">=0.5.0 <1",
     },
     bundleDependencies: undefined,
@@ -152,14 +158,35 @@ function installPackedPackage(appDir, tarballPath, packageName) {
   rmSync(extractDir, { force: true, recursive: true });
 }
 
-function createCatalogTypeStub(appDir) {
-  const catalogDir = path.join(appDir, "node_modules", "@voyant-travel", "catalog");
+// The packed artifacts import the source-adapter contract from
+// `@voyant-travel/catalog-contracts` (ADR-0002); the catalog runtime re-exports
+// the same surface, so the stub is emitted under both names to typecheck
+// artifacts built before and after that migration.
+function createMemoizeOptionsStub(appDir, stubName) {
+  const dir = path.join(appDir, "node_modules", "@voyant-travel", stubName);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(
+    path.join(dir, "package.json"),
+    JSON.stringify(
+      { name: `@voyant-travel/${stubName}`, type: "module", types: "./index.d.ts" },
+      null,
+      2,
+    ),
+  );
+  writeFileSync(
+    path.join(dir, "index.d.ts"),
+    "export type MemoizeOptions = { ttlMs?: number; maxEntries?: number };\n",
+  );
+}
+
+function createCatalogTypeStub(appDir, stubName = "catalog") {
+  const catalogDir = path.join(appDir, "node_modules", "@voyant-travel", stubName);
   mkdirSync(path.join(catalogDir, "adapter"), { recursive: true });
   writeFileSync(
     path.join(catalogDir, "package.json"),
     JSON.stringify(
       {
-        name: "@voyant-travel/catalog",
+        name: `@voyant-travel/${stubName}`,
         type: "module",
         exports: {
           "./adapter/contract": "./adapter/contract.d.ts",
@@ -327,6 +354,8 @@ function verifyInstalledTypecheck(tarballs) {
       installPackedPackage(appDir, tarballPath, packageName);
     }
     createCatalogTypeStub(appDir);
+    createCatalogTypeStub(appDir, "catalog-contracts");
+    createMemoizeOptionsStub(appDir, "cruises-contracts");
 
     writeFileSync(
       path.join(appDir, "tsconfig.json"),

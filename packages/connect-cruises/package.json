@@ -41,18 +41,11 @@
   "dependencies": {
     "@voyant-travel/connect-sdk": "workspace:*"
   },
-  "peerDependencies": {
-    "@voyant-travel/cruises": ">=0.85.3 <1"
-  },
-  "peerDependenciesMeta": {
-    "@voyant-travel/cruises": {
-      "optional": true
-    }
-  },
+  "peerDependencies": {},
+  "peerDependenciesMeta": {},
   "devDependencies": {
     "@voyant-sdk/eslint-config": "workspace:*",
     "@voyant-sdk/typescript-config": "workspace:*",
-    "@voyant-travel/cruises": "^0.118.2",
     "eslint": "^9.39.1",
     "typescript": "5.9.2"
   },

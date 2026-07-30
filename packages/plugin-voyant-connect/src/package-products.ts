@@ -1,4 +1,4 @@
-import type { CatalogProjection, SourceAdapter } from "@voyant-travel/catalog";
+import type { CatalogProjection, SourceAdapter } from "@voyant-travel/catalog-contracts/adapter/contract";
 import type { VoyantConnectClient } from "@voyant-travel/connect-sdk";
 
 import type { DestinationNameResolver } from "./geo-resolver.js";

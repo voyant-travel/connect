@@ -16,10 +16,8 @@ import {
   createConnectCruiseAdapter,
 } from "@voyant-travel/connect-cruises";
 import type { SearchDocument } from "@voyant-travel/connect-sdk";
-import {
-  type MemoizeOptions,
-  memoizeCruiseAdapter,
-} from "@voyant-travel/cruises";
+import type { MemoizeOptions } from "@voyant-travel/cruises-contracts";
+import { memoizeCruiseAdapter } from "@voyant-travel/cruises";
 import {
   type CruiseAdapter,
   type CruiseSearchProjectionEntry,
@@ -166,4 +164,4 @@ export function withSupplyModel(
   };
 }
 
-type CatalogSourceAdapter = import("@voyant-travel/catalog").SourceAdapter;
+type CatalogSourceAdapter = import("@voyant-travel/catalog-contracts/adapter/contract").SourceAdapter;

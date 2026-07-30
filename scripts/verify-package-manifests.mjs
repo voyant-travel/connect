@@ -231,12 +231,9 @@ verifyPublicPackage("packages/connect-cruises/package.json", {
   name: "@voyant-travel/connect-cruises",
   descriptionKeyword: "cruises adapter",
   dependencies: { "@voyant-travel/connect-sdk": "workspace:*" },
-  peerDependencies: {
-    "@voyant-travel/cruises": ">=0.85.3 <1",
-  },
-  devDependencies: {
-    "@voyant-travel/cruises": "^0.118.2",
-  },
+  // No peer on the cruises runtime: nothing in the package imports it.
+  peerDependencies: {},
+  devDependencies: {},
 });
 verifyPublicPackage("packages/connect-adapter/package.json", {
   name: "@voyant-travel/connect-adapter",
@@ -244,11 +241,13 @@ verifyPublicPackage("packages/connect-adapter/package.json", {
   dependencies: {
     "@voyant-travel/connect-sdk": "workspace:*",
   },
+  // Only the source-adapter contract and provenance surfaces are used, both of
+  // which the catalog runtime merely re-exports from contracts (ADR-0002).
   peerDependencies: {
-    "@voyant-travel/catalog": ">=0.130.0 <1",
+    "@voyant-travel/catalog-contracts": ">=0.112.0 <1",
   },
   devDependencies: {
-    "@voyant-travel/catalog": "^0.130.0",
+    "@voyant-travel/catalog-contracts": "^0.112.2",
   },
 });
 verifyPublicPackage("packages/plugin-voyant-connect/package.json", {
@@ -259,14 +258,21 @@ verifyPublicPackage("packages/plugin-voyant-connect/package.json", {
     "@voyant-travel/connect-adapter": "workspace:*",
     "@voyant-travel/connect-cruises": "workspace:*",
   },
+  // Contract types come from the *-contracts packages; the runtime peers stay
+  // because this package uses runtime values from both - SourceAdapterRegistry
+  // from catalog/booking-engine, and memoizeCruiseAdapter.
   peerDependencies: {
     "@voyant-travel/catalog": ">=0.130.0 <1",
+    "@voyant-travel/catalog-contracts": ">=0.112.0 <1",
     "@voyant-travel/cruises": ">=0.85.3 <1",
+    "@voyant-travel/cruises-contracts": ">=0.105.0 <1",
     "@voyant-travel/data-sdk": ">=0.5.0 <1",
   },
   devDependencies: {
     "@voyant-travel/catalog": "^0.130.0",
+    "@voyant-travel/catalog-contracts": "^0.112.2",
     "@voyant-travel/cruises": "^0.118.2",
+    "@voyant-travel/cruises-contracts": "^0.105.10",
     "@voyant-travel/data-sdk": "^0.5.0",
   },
 });
