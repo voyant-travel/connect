@@ -1,4 +1,4 @@
-import type { SourceAdapter } from "@voyant-travel/catalog";
+import type { SourceAdapter } from "@voyant-travel/catalog-contracts/adapter/contract";
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine";
 import { createVoyantConnectSourceAdapter } from "@voyant-travel/connect-adapter";
 import {
@@ -6,7 +6,7 @@ import {
   type VoyantConnectClient,
   type VoyantConnectClientOptions,
 } from "@voyant-travel/connect-sdk";
-import type { MemoizeOptions } from "@voyant-travel/cruises";
+import type { MemoizeOptions } from "@voyant-travel/cruises-contracts";
 import type { CruiseSourceAdapterShimOptions } from "@voyant-travel/cruises/adapters";
 
 import {

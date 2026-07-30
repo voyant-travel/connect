@@ -33,7 +33,7 @@ import type {
   ReserveResult,
   SourceAdapter,
   SourceAdapterContext,
-} from "@voyant-travel/catalog/adapter/contract";
+} from "@voyant-travel/catalog-contracts/adapter/contract";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -62,8 +62,8 @@ export type {
   SourceAdapter,
   SourceAdapterContext,
   SourceAdapterRequestScope,
-} from "@voyant-travel/catalog/adapter/contract";
-export type { Provenance } from "@voyant-travel/catalog/provenance";
+} from "@voyant-travel/catalog-contracts/adapter/contract";
+export type { Provenance } from "@voyant-travel/catalog-contracts/provenance";
 
 export interface VoyantConnectSourceAdapterOptions {
   client?: VoyantConnectClient;
