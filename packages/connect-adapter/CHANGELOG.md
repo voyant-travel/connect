@@ -1,5 +1,41 @@
 # @voyant-travel/connect-adapter
 
+## 0.6.0
+
+### Minor Changes
+
+- 1090d5f: Depend on the dependency-light `*-contracts` packages instead of the framework
+  runtime packages, per ADR-0002.
+
+  `connect-adapter` now peer-depends on `@voyant-travel/catalog-contracts` rather
+  than `@voyant-travel/catalog`; it only ever imported the source-adapter contract
+  and provenance surfaces, which the runtime package merely re-exports.
+
+  `connect-cruises` drops its `@voyant-travel/cruises` peer dependency entirely —
+  nothing in the package imported it.
+
+  `plugin-voyant-connect` sources its contract types from
+  `@voyant-travel/catalog-contracts` and `@voyant-travel/cruises-contracts`. It
+  keeps its `@voyant-travel/catalog` and `@voyant-travel/cruises` peers because it
+  uses runtime values from both (`SourceAdapterRegistry` from
+  `catalog/booking-engine`, and `memoizeCruiseAdapter`).
+
+### Patch Changes
+
+- c92d083: Widen the `catalog-contracts` peer to the range that actually compiles.
+
+  `^0.112.2` on a 0.x means `>=0.112.2 <0.113.0`. Building the adapter against
+  each published minor shows `0.113.0` compiles and `0.114.0` does not —
+  `GetReservationResult.upstream_ref` became required while the request field
+  became optional — so the supported window is `>=0.112.2 <0.114.0`.
+
+  This is a correction, not a catch-up. `catalog-contracts` is at `0.117.1`; the
+  adapter is three breaking minors behind it and no range change closes that gap.
+  Supporting `>=0.114.0` needs the reservation-lookup contract change
+  implemented, which is tracked separately.
+
+- 3edee9f: Move Voyant development dependencies to the current published contract and runtime lines, and constrain pre-1.0 peers to those compatible minor lines so future breaking minors produce an install-time incompatibility instead of silently matching.
+
 ## 0.5.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/connect-flights",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Voyant Connect flights adapter for Voyant deployments.",
   "license": "Apache-2.0",
   "repository": {
