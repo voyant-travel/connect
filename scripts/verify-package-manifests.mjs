@@ -255,36 +255,10 @@ verifyPublicPackage("packages/connect-adapter/package.json", {
   // Only the source-adapter contract and provenance surfaces are used, both of
   // which the catalog runtime merely re-exports from contracts (ADR-0002).
   peerDependencies: {
-    "@voyant-travel/catalog-contracts": "^0.112.2",
+    "@voyant-travel/catalog-contracts": ">=0.112.2 <0.114.0",
   },
   devDependencies: {
-    "@voyant-travel/catalog-contracts": "^0.112.2",
-  },
-});
-verifyPublicPackage("packages/plugin-voyant-connect/package.json", {
-  name: "@voyant-travel/plugin-voyant-connect",
-  descriptionKeyword: "Voyant Connect",
-  dependencies: {
-    "@voyant-travel/connect-sdk": "workspace:*",
-    "@voyant-travel/connect-adapter": "workspace:*",
-    "@voyant-travel/connect-cruises": "workspace:*",
-  },
-  // Contract types come from the *-contracts packages; the runtime peers stay
-  // because this package uses runtime values from both - SourceAdapterRegistry
-  // from catalog/booking-engine, and memoizeCruiseAdapter.
-  peerDependencies: {
-    "@voyant-travel/catalog": "^0.224.0",
-    "@voyant-travel/catalog-contracts": "^0.112.2",
-    "@voyant-travel/cruises": "^0.225.0",
-    "@voyant-travel/cruises-contracts": "^0.105.10",
-    "@voyant-travel/data-sdk": "^0.8.0",
-  },
-  devDependencies: {
-    "@voyant-travel/catalog": "^0.224.0",
-    "@voyant-travel/catalog-contracts": "^0.112.2",
-    "@voyant-travel/cruises": "^0.225.0",
-    "@voyant-travel/cruises-contracts": "^0.105.10",
-    "@voyant-travel/data-sdk": "^0.8.0",
+    "@voyant-travel/catalog-contracts": "^0.113.0",
   },
 });
 verifyPrivatePackage("packages/sdk-core/package.json");

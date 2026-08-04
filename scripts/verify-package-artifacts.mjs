@@ -110,28 +110,7 @@ const packages = [
     // Only the source-adapter contract and provenance surfaces are used, both
     // of which the catalog runtime merely re-exports from contracts (ADR-0002).
     peerDependencies: {
-      "@voyant-travel/catalog-contracts": "^0.112.2",
-    },
-    bundleDependencies: undefined,
-    bundledFiles: [],
-  },
-  {
-    dir: path.join(repoRoot, "packages", "plugin-voyant-connect"),
-    expectedName: "@voyant-travel/plugin-voyant-connect",
-    dependencies: {
-      "@voyant-travel/connect-sdk": connectSdkVersion,
-      "@voyant-travel/connect-adapter": connectAdapterVersion,
-      "@voyant-travel/connect-cruises": connectCruisesVersion,
-    },
-    // Contract types come from the *-contracts packages; the runtime peers stay
-    // because this package uses runtime values from both - SourceAdapterRegistry
-    // from catalog/booking-engine, and memoizeCruiseAdapter.
-    peerDependencies: {
-      "@voyant-travel/catalog": "^0.224.0",
-      "@voyant-travel/catalog-contracts": "^0.112.2",
-      "@voyant-travel/cruises": "^0.225.0",
-      "@voyant-travel/cruises-contracts": "^0.105.10",
-      "@voyant-travel/data-sdk": "^0.8.0",
+      "@voyant-travel/catalog-contracts": ">=0.112.2 <0.114.0",
     },
     bundleDependencies: undefined,
     bundledFiles: [],

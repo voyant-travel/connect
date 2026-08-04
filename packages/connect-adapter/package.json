@@ -42,12 +42,12 @@
     "@voyant-travel/connect-sdk": "workspace:*"
   },
   "peerDependencies": {
-    "@voyant-travel/catalog-contracts": "^0.112.2"
+    "@voyant-travel/catalog-contracts": ">=0.112.2 <0.114.0"
   },
   "devDependencies": {
     "@voyant-sdk/eslint-config": "workspace:*",
     "@voyant-sdk/typescript-config": "workspace:*",
-    "@voyant-travel/catalog-contracts": "^0.112.2",
+    "@voyant-travel/catalog-contracts": "^0.113.0",
     "eslint": "^9.39.1",
     "typescript": "5.9.2"
   },
