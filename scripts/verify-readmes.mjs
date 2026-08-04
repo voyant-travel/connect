@@ -334,13 +334,6 @@ verifyPackageReadme({
   docLink: "[../../docs/connect-cruises.md](../../docs/connect-cruises.md)",
   envVar: "VOYANT_API_KEY",
 });
-verifyPackageReadme({
-  path: "packages/plugin-voyant-connect/README.md",
-  packageName: "@voyant-travel/plugin-voyant-connect",
-  factoryName: "prepareVoyantConnectSources",
-  docLink: "[../../docs/connect-plugin.md](../../docs/connect-plugin.md)",
-  envVar: "VOYANT_API_KEY",
-});
 verifyPublishingDoc();
 verifyDevelopmentDoc();
 verifyContractsDoc();

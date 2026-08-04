@@ -1,7 +1,6 @@
 ---
 "@voyant-travel/connect-adapter": minor
 "@voyant-travel/connect-cruises": minor
-"@voyant-travel/plugin-voyant-connect": patch
 ---
 
 Depend on the dependency-light `*-contracts` packages instead of the framework
