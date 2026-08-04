@@ -1,0 +1,17 @@
+{
+  "$comment": [
+    "The recorded connector worker protocol surface.",
+    "",
+    "The protocol version is the compatibility axis a third-party connector",
+    "declares against — see ADR-0022 in the voyant repository. Adding,",
+    "removing, or reshaping an operation requires bumping the version.",
+    "",
+    "tests/connector-worker-protocol.test.mjs recomputes operationsChecksum",
+    "from the exported operation table and fails when the surface has moved",
+    "without a bump. Do not regenerate this file to make that failure go",
+    "away — bump the version in the same change."
+  ],
+  "version": "2026-08-04",
+  "operationCount": 37,
+  "operationsChecksum": "sha256:c6ba30fb17b4096ba8cc3fb7e7b80dfca2da76830e2f243c4d8d63d5cfb4bea2"
+}
