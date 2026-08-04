@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   mkdtempSync,
   mkdirSync,
+  readFileSync,
   renameSync,
   rmSync,
   writeFileSync,
@@ -14,6 +15,17 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const packDir = mkdtempSync(path.join(tmpdir(), "voyant-sdk-pack-"));
+
+// The recorded protocol surface. The packed artifact must carry the same
+// version the repository records — asserting a frozen literal here would
+// instead prevent the version from ever moving. The surface itself is
+// guarded by tests/connector-worker-protocol.test.mjs.
+const protocolSurface = JSON.parse(
+  readFileSync(
+    path.join(repoRoot, "packages/connect-provider-sdk/protocol-surface.json"),
+    "utf8",
+  ),
+);
 
 function readPackageVersion(relativePath) {
   const manifestPath = path.join(repoRoot, relativePath, "package.json");
@@ -279,7 +291,7 @@ function verifyInstalledImports(tarballs) {
           import assert from "node:assert/strict";
           import { createVoyantConnectClient } from "@voyant-travel/connect-sdk";
           import { defineConnectProvider } from "@voyant-travel/connect-provider-sdk";
-          import { CONNECTOR_WORKER_PROTOCOL_VERSION } from "@voyant-travel/connect-provider-sdk/hosted-worker";
+          import { CONNECTOR_WORKER_PROTOCOL_VERSION, connectorWorkerOperationPaths } from "@voyant-travel/connect-provider-sdk/hosted-worker";
           import { createConnectCruiseAdapter } from "@voyant-travel/connect-cruises";
           import { createVoyantConnectSourceAdapter } from "@voyant-travel/connect-adapter";
 
@@ -327,7 +339,9 @@ function verifyInstalledImports(tarballs) {
           assert.equal(typeof connect.flights.search, "function");
           assert.equal(typeof connect.flights.searchStream, "function");
           assert.equal(typeof connect.flights.book, "function");
-          assert.equal(CONNECTOR_WORKER_PROTOCOL_VERSION, "2026-05-28");
+          assert.equal(CONNECTOR_WORKER_PROTOCOL_VERSION, ${JSON.stringify(protocolSurface.version)});
+          assert.equal(Object.keys(connectorWorkerOperationPaths).length, ${protocolSurface.operationCount});
+          assert.equal(connectorWorkerOperationPaths.searchFlights, "/flights/search");
           assert.equal(provider.key, "example-cruises");
           assert.equal(typeof cruiseAdapter.listEntries, "function");
           assert.equal(sourceAdapter.kind, "voyant-connect");

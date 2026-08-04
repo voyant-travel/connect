@@ -1,4 +1,14 @@
-export const CONNECTOR_WORKER_PROTOCOL_VERSION = "2026-05-28" as const;
+/**
+ * The connector worker protocol version.
+ *
+ * This is the compatibility axis a third-party connector declares against —
+ * see ADR-0022 in the voyant repository. Bump it whenever an operation is
+ * added, removed, or changes shape. `protocol-surface.json` records the
+ * version alongside a checksum of the operation table, and
+ * `tests/connector-worker-protocol.test.mjs` fails when the surface moves
+ * without a bump.
+ */
+export const CONNECTOR_WORKER_PROTOCOL_VERSION = "2026-08-04" as const;
 export const connectorWorkerManifestPath =
   "/.well-known/voyant-connect/manifest" as const;
 
@@ -27,6 +37,25 @@ export type ConnectorWorkerOperation =
   | "confirmPackage"
   | "cancelPackage"
   | "getPackageBooking"
+  // Flights data plane (FlightConnectorAdapter over RPC). Core five first,
+  // then the capability-gated operations — a connector only routes the ones
+  // its provider supports; the platform's capability gate answers 501 for
+  // the rest without dispatching.
+  | "searchFlights"
+  | "priceFlightOffer"
+  | "bookFlight"
+  | "getFlightOrder"
+  | "cancelFlightOrder"
+  | "ticketFlightOrder"
+  | "listFlightOrders"
+  | "getFlightSeatMap"
+  | "selectFlightSeats"
+  | "getFlightAncillaries"
+  | "checkInFlight"
+  | "modifyFlightOrder"
+  | "refundFlightOrder"
+  | "voidFlightOrder"
+  | "addFlightSsr"
   | "health";
 
 export const connectorWorkerOperationPaths: Record<
@@ -54,6 +83,21 @@ export const connectorWorkerOperationPaths: Record<
   confirmPackage: "/packages/confirm",
   cancelPackage: "/packages/cancel",
   getPackageBooking: "/packages/bookings/get",
+  searchFlights: "/flights/search",
+  priceFlightOffer: "/flights/price",
+  bookFlight: "/flights/book",
+  getFlightOrder: "/flights/orders/get",
+  cancelFlightOrder: "/flights/orders/cancel",
+  ticketFlightOrder: "/flights/orders/ticket",
+  listFlightOrders: "/flights/orders/list",
+  getFlightSeatMap: "/flights/seatmap",
+  selectFlightSeats: "/flights/seats/select",
+  getFlightAncillaries: "/flights/ancillaries",
+  checkInFlight: "/flights/checkin",
+  modifyFlightOrder: "/flights/orders/modify",
+  refundFlightOrder: "/flights/orders/refund",
+  voidFlightOrder: "/flights/orders/void",
+  addFlightSsr: "/flights/ssr",
   health: "/health",
 };
 
@@ -76,6 +120,13 @@ export type ConnectorWorkerContext = {
     currency?: string | null;
   };
   now?: string;
+  // Request-scoped tracing/replay signals, forwarded on per-call operations.
+  // The abort signal cannot cross the wire — the platform aborts the dispatch
+  // fetch instead.
+  requestId?: string;
+  correlationId?: string;
+  idempotencyKey?: string;
+  environment?: "sandbox" | "production";
 };
 
 export type ConnectorWorkerManifest = {
