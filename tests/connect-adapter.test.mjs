@@ -611,6 +611,108 @@ test("connect adapter getContent returns normalized cruise content for flat sear
   assert.equal(result.content.policies[0].kind, "supplier_notes");
 });
 
+function encodeSourceRefKey(prefix, sourceRef) {
+  return `${prefix}_sr_${Buffer.from(JSON.stringify(sourceRef)).toString("base64url")}`;
+}
+
+test("connect adapter getContent resolves encoded SourceRef cruise keys", async () => {
+  // The catalog keys sourced cruises as `crus_sr_<base64url(JSON)>`; Connect
+  // only knows the bare `externalId` carried inside it.
+  const encodedKey = encodeSourceRefKey("crus", {
+    connectionId: "conn_1",
+    externalId: "178_88-from-2027",
+    kind: "cruise",
+    providerKey: "uniworld",
+  });
+  const recorder = createRecorder([
+    {
+      id: "ccr_01kssac9y3eskt07tej26h5192",
+      externalId: "178_88-from-2027",
+      connectionId: "conn_1",
+      sourceRef: "cruise:178_88-from-2027:en",
+      shipExternalId: "ss_joy",
+      name: "Classic Christmas Markets",
+      cruiseType: "river",
+      nights: 7,
+      locale: "en",
+    },
+    [],
+    [{ id: "ccs_1", externalId: "ss_joy", name: "S.S. Joie de Vivre" }],
+    [],
+  ]);
+  const client = createVoyantConnectClient({ apiKey: "k", fetch: recorder.fetch });
+  const adapter = createVoyantConnectSourceAdapter({ client, operatorId: "op_1" });
+
+  const result = await adapter.getContent(
+    { connection_id: "conn_1" },
+    {
+      entity_module: "cruises",
+      entity_id: encodedKey,
+      locale: "en",
+      market: "US",
+    },
+  );
+
+  // The encoded key is decoded to the upstream external id, so the very first
+  // Connect call is a hit rather than a 404 that falls through to a list scan.
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyant.travel/connect/v1/connections/conn_1/cruises/178_88-from-2027?locale=en",
+  );
+  assert.equal(result.source_ref, "cruise:178_88-from-2027:en");
+  assert.equal(result.content.cruise.name, "Classic Christmas Markets");
+  assert.equal(result.content.ship.name, "S.S. Joie de Vivre");
+});
+
+test("connect adapter getContent matches encoded SourceRef keys when listing", async () => {
+  // Same encoded key, but every per-id lookup 404s, so the list scan has to
+  // recognise the row by the external id carried in the key.
+  const encodedKey = encodeSourceRefKey("crus", {
+    connectionId: "conn_1",
+    externalId: "178_88-from-2027",
+    kind: "cruise",
+    providerKey: "uniworld",
+  });
+  const notFound = {
+    __status: 404,
+    __body: { error: { code: "NOT_FOUND", message: "Cruise not found" } },
+  };
+  const recorder = createRecorder([
+    // One 404 per direct id candidate: the decoded external id, then the raw
+    // `sr_<base64url>` tail.
+    notFound,
+    notFound,
+    [
+      {
+        id: "ccr_01kssac9y3eskt07tej26h5192",
+        externalId: "178_88-from-2027",
+        connectionId: "conn_1",
+        sourceRef: "cruise:178_88-from-2027:en",
+        shipExternalId: "ss_joy",
+        name: "Classic Christmas Markets",
+        locale: "en",
+      },
+    ],
+    [],
+    [{ id: "ccs_1", externalId: "ss_joy", name: "S.S. Joie de Vivre" }],
+    [],
+  ]);
+  const client = createVoyantConnectClient({ apiKey: "k", fetch: recorder.fetch });
+  const adapter = createVoyantConnectSourceAdapter({ client, operatorId: "op_1" });
+
+  const result = await adapter.getContent(
+    { connection_id: "conn_1" },
+    {
+      entity_module: "cruises",
+      entity_id: encodedKey,
+      locale: "en",
+      market: "US",
+    },
+  );
+
+  assert.equal(result.content.cruise.name, "Classic Christmas Markets");
+});
+
 test("connect adapter getContent prefers canonical cruise projection fields", async () => {
   const recorder = createRecorder([
     {
