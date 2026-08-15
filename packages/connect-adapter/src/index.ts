@@ -2054,11 +2054,51 @@ function getSourceRef(payload: JsonRecord, fallback: string): string {
   return getString(payload, "productId") ?? fallback;
 }
 
+/**
+ * Decode the catalog's encoded SourceRef key, `<prefix>_sr_<base64url(JSON)>`
+ * (e.g. `crus_sr_eyJjb25uZWN0aW9uSWQiOi…`), whose payload is
+ * `{connectionId, externalId, kind, providerKey}`.
+ *
+ * Connect keys the same entity by its bare `externalId`, with a source ref of
+ * `<kind>:<externalId>[:<locale>]`, so the encoded form has to be unwrapped
+ * before any lookup — nothing upstream is keyed by the encoded string itself.
+ */
+function decodeEncodedSourceRefKey(value: string): string | undefined {
+  const marker = value.indexOf("_sr_");
+  const encoded =
+    marker >= 0
+      ? value.slice(marker + "_sr_".length)
+      : value.startsWith("sr_")
+        ? value.slice("sr_".length)
+        : undefined;
+  if (!encoded) return undefined;
+  try {
+    const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    const payload: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    if (!payload || typeof payload !== "object") return undefined;
+    const externalId = (payload as Record<string, unknown>).externalId;
+    return typeof externalId === "string" && externalId
+      ? externalId
+      : undefined;
+  } catch {
+    // Not an encoded SourceRef — fall through to the plain-string candidates.
+    return undefined;
+  }
+}
+
 function sourceRefCandidatesForEntityId(entityId: string): string[] {
   const candidates: string[] = [];
   const add = (value: string | undefined) => {
     if (value && !candidates.includes(value)) candidates.push(value);
   };
+  // The upstream external id first, so it is both the preferred source ref and
+  // the first id tried against Connect. A `<kind>:<externalId>` variant is not
+  // needed: matching re-derives candidates from each row's own source ref,
+  // which already reduces to the bare external id.
+  add(decodeEncodedSourceRefKey(entityId));
   if (entityId.startsWith("crus_")) add(entityId.slice("crus_".length));
   const parts = entityId.split(":");
   if (parts.length > 1) {
