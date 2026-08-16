@@ -1377,3 +1377,106 @@ test("resolveVoyantConnectAdapterContext builds catalog route contexts from prov
     /source_connection_id/,
   );
 });
+
+test("connect adapter getContent reads sea days and ship media from snake_case rows", async () => {
+  // These are the shapes Connect actually stores and returns: itinerary days as
+  // `is_sea_day` / `port_name`, ships with a `ship_type` column and images as
+  // `{ url }` objects on the payload. Sourced from the live Uniworld rows for
+  // cruise 178_88-from-2027.
+  const recorder = createRecorder([
+    {
+      id: "ccr_uniworld_178",
+      externalId: "178_88-from-2027",
+      connectionId: "conn_1",
+      cruiseLineExternalId: "uniworld",
+      shipExternalId: "88-from-2027",
+      name: "Classic Christmas Markets",
+      cruiseType: "river",
+      nights: 7,
+      locale: "en",
+      payload: {},
+    },
+    [
+      {
+        id: "sail_1",
+        externalId: "178_24513_74360_88",
+        cruiseExternalId: "178_88-from-2027",
+        departureDate: "2027-11-25",
+        returnDate: "2027-12-02",
+        nights: 7,
+        payload: {
+          // The real Uniworld sailing payload: camelCase, port name under
+          // `title`, and no `portName` key anywhere.
+          itinerary: [
+            {
+              dayNumber: 1,
+              title: "Frankfurt (Embark)",
+              isSeaDay: false,
+              description: "Arrive at Frankfurt International Airport.",
+            },
+            {
+              dayNumber: 3,
+              title: "Cruising the Main River, Wertheim",
+              isSeaDay: true,
+            },
+            { dayNumber: 4, isSeaDay: false },
+          ],
+        },
+      },
+    ],
+    [
+      {
+        id: "ccs_1",
+        externalId: "88-from-2027",
+        name: "S.S. Audrey - From 2027",
+        ship_type: "river",
+        payload: {
+          images: [{ url: "https://example.com/audrey.jpg" }],
+          deckPlanUrl: "https://example.com/audrey-decks.jpg",
+        },
+      },
+    ],
+    [],
+  ]);
+  const client = createVoyantConnectClient({
+    apiKey: "k",
+    fetch: recorder.fetch,
+  });
+  const adapter = createVoyantConnectSourceAdapter({
+    client,
+    operatorId: "op_1",
+  });
+
+  const result = await adapter.getContent(
+    { connection_id: "conn_1" },
+    {
+      entity_module: "cruises",
+      entity_id: "cruise:178_88-from-2027:en",
+      locale: "en",
+      market: "US",
+    },
+  );
+
+  const stops = result.content.itinerary_stops;
+  assert.equal(stops.length, 3);
+
+  // A named port is never "at sea" — this rendered "At sea" for every day of
+  // every cruise while showing the port name beside it.
+  assert.equal(stops[0].port_name, "Frankfurt (Embark)");
+  assert.equal(stops[0].is_at_sea, false);
+
+  // A genuine sea day still reads as one, from the snake_case key.
+  assert.equal(stops[1].is_at_sea, true);
+
+  // No port at all is the only remaining reason to say "at sea".
+  assert.equal(stops[2].port_name, "");
+  assert.equal(stops[2].is_at_sea, true);
+
+  assert.equal(result.content.ship.ship_type, "river");
+  assert.deepEqual(result.content.ship.gallery, [
+    "https://example.com/audrey.jpg",
+  ]);
+  assert.deepEqual(result.content.ship.deck_plans, [
+    "https://example.com/audrey-decks.jpg",
+  ]);
+});
