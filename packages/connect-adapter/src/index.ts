@@ -1396,6 +1396,18 @@ function toCruiseContentShip(ship: JsonRecord): JsonRecord | null {
       null,
     year_built:
       getNumber(ship, "yearBuilt") ?? getNumber(payload, "yearBuilt") ?? null,
+    // The row and payload both carry these; without them the tenant contract
+    // defaults ship_type to null and gallery/deck_plans to [], so a ship that
+    // has a photo and a type renders as a bare name. Uniworld's row is exactly
+    // that: `ship_type: "river"` with `payload.images[0].url` set.
+    ship_type:
+      getString(ship, "shipType") ??
+      getString(ship, "ship_type") ??
+      getString(payload, "shipType") ??
+      getString(payload, "ship_type") ??
+      null,
+    gallery: getMediaUrls(payload, "gallery", "images", "photos"),
+    deck_plans: getMediaUrls(payload, "deckPlans", "deck_plans", "deckPlanUrl"),
   };
 }
 
@@ -1577,14 +1589,15 @@ function toCruiseContentCabinCategory(category: JsonRecord): JsonRecord | null {
 function toCruiseContentItineraryStop(day: JsonRecord): JsonRecord | null {
   const dayNumber = getNumber(day, "dayNumber") ?? getNumber(day, "day_number");
   if (dayNumber === null || dayNumber < 1) return null;
+  const portName =
+    getString(day, "portName") ??
+    getString(day, "port_name") ??
+    getString(day, "title") ??
+    "";
   return {
     day_number: dayNumber,
     date: getString(day, "date") ?? null,
-    port_name:
-      getString(day, "portName") ??
-      getString(day, "port_name") ??
-      getString(day, "title") ??
-      "",
+    port_name: portName,
     arrival_time:
       getString(day, "arriveAt") ??
       getString(day, "arrivalTime") ??
@@ -1596,10 +1609,18 @@ function toCruiseContentItineraryStop(day: JsonRecord): JsonRecord | null {
       getString(day, "departure_time") ??
       null,
     description: getString(day, "description") ?? null,
+    // Rows arrive snake_case from the Connect store (`is_sea_day`, `port_name`),
+    // so read both casings — and decide "at sea" from the port name we actually
+    // resolved above, not from one spelling of one key. The previous form only
+    // checked `isSeaDay`/`is_at_sea` and then fell back to
+    // `getString(day, "portName") === undefined`, which is true for every
+    // snake_case row: every day of every cruise rendered "At sea" while showing
+    // a real port beside it.
     is_at_sea:
       getBoolean(day, "isSeaDay") ||
+      getBoolean(day, "is_sea_day") ||
       getBoolean(day, "is_at_sea") ||
-      getString(day, "portName") === undefined,
+      portName === "",
   };
 }
 
@@ -2325,6 +2346,35 @@ function getNumber(record: JsonRecord, key: string): number | null {
 
 function getBoolean(record: JsonRecord, key: string): boolean {
   return record[key] === true;
+}
+
+/**
+ * Collects media URLs across the shapes connectors actually emit: a bare string
+ * array, an array of `{ url }` objects (Uniworld's `images`), or a single URL
+ * string (a lone `deckPlanUrl`). Always returns an array so the tenant contract
+ * never has to distinguish "absent" from "empty".
+ */
+function getMediaUrls(record: JsonRecord, ...keys: string[]): string[] {
+  const urls: string[] = [];
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string") {
+      if (value) urls.push(value);
+      continue;
+    }
+    if (!Array.isArray(value)) continue;
+    for (const entry of value) {
+      if (typeof entry === "string") {
+        if (entry) urls.push(entry);
+        continue;
+      }
+      if (entry && typeof entry === "object") {
+        const url = getString(entry as JsonRecord, "url");
+        if (url) urls.push(url);
+      }
+    }
+  }
+  return [...new Set(urls)];
 }
 
 function getStringArray(record: JsonRecord, key: string): string[] | undefined {
