@@ -108,6 +108,9 @@ export async function verifyConnectorSignature(
 export function createAccommodationConnector(options: {
   providerKey: string;
   displayName?: string;
+  /** Public provider registration metadata (never backend credentials).
+   * Voyant validates this separately from callable operation capabilities. */
+  registration?: Record<string, unknown>;
   signingSecret: string;
   validateCredentials?: (
     context: ConnectorWorkerContext,
@@ -127,6 +130,16 @@ export function createAccommodationConnector(options: {
         providerKey: options.providerKey,
         displayName: options.displayName,
         categories: ["accommodation"],
+        ...(options.registration
+          ? {
+              registration: {
+                ...options.registration,
+                key: options.providerKey,
+                displayName: options.displayName ?? options.providerKey,
+                categoryCoverage: ["accommodation"],
+              },
+            }
+          : {}),
         capabilities: [
           ...operations,
           ...(options.validateCredentials ? ["validateCredentials"] : []),

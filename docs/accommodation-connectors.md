@@ -34,6 +34,15 @@ Managed organizations use **Settings → Connect Developer**, also available in
 **Catalog → Supply connections → Developer**. Install a registration manifest
 there to create an organization-owned private provider and receive its one-time
 signing secret. Production organizations can use this setup as well as demos.
+Pass public business metadata through the helper's optional `registration` option,
+including `authModel`, `credentialForm`, and business `capabilities` such as
+`catalog_read`, `availability_read`, `booking_create`, and `booking_manage`.
+The helper puts it under `registration` in the canonical discovery manifest,
+binds its key and category to the accommodation connector, and keeps callable
+operation discovery separate. Install the URL ending in
+`/.well-known/voyant-connect/manifest`. Never include real credentials there.
+Voyant validates the registration metadata when installing the provider.
+
 Store the signing secret on the connector Worker before registering a connection.
 Implement `validateCredentials` to check the chosen backend and return supported
 markets; the worker helper dispatches it through the same signed protocol.
