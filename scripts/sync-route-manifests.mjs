@@ -7,6 +7,7 @@ const voyantCloudRepo = path.resolve(repoRoot, "../voyant-cloud");
 
 const connectSources = [
   "accommodations.ts",
+  "accommodations-ingest.ts",
   "audit-logs.ts",
   "availability.ts",
   "bookings.ts",

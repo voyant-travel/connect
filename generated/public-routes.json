@@ -100,6 +100,8 @@
     "PATCH /connect/v1/operators/:operatorId/provider-registrations/:id",
     "PATCH /connect/v1/operators/:operatorId/provider-registrations/:id/tui-settings",
     "PATCH /connect/v1/operators/:operatorId/webhook-subscriptions/:id",
+    "POST /connect/v1/connections/:connectionId/accommodations/catalog",
+    "POST /connect/v1/connections/:connectionId/accommodations/catalog/finalize",
     "POST /connect/v1/connections/:connectionId/availability/calendar",
     "POST /connect/v1/connections/:connectionId/bookings",
     "POST /connect/v1/connections/:connectionId/bookings/:bookingId/confirm",

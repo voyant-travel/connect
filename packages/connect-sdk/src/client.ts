@@ -1,5 +1,10 @@
 import { VoyantApiError, VoyantTransport } from "@voyant-sdk/sdk-core";
 import type { JsonObject } from "@voyant-sdk/sdk-core";
+import type {
+  Accommodation as CatalogAccommodation,
+  RoomType as CatalogRoomType,
+  RatePlan as CatalogRatePlan,
+} from "@voyant-travel/connect-provider-sdk/accommodations";
 
 import type {
   AuditLogPage,
@@ -872,6 +877,33 @@ export class VoyantConnectClient {
   // ── Accommodations (hospitality data plane) ──────────────────────────
 
   readonly accommodations = {
+    /** Push a validated connector-owned catalog section without pruning. */
+    ingestCatalogChunk: (
+      connectionId: string,
+      chunk:
+        | { section: "accommodations"; rows: CatalogAccommodation[] }
+        | { section: "roomTypes"; rows: CatalogRoomType[] }
+        | { section: "ratePlans"; rows: CatalogRatePlan[] },
+    ) =>
+      this.transport.request<{
+        section: string;
+        upserted: number;
+        deleted: number;
+      }>(`/connect/v1/connections/${connectionId}/accommodations/catalog`, {
+        method: "POST",
+        body: chunk,
+      }),
+    /** Complete a successful full sync; never call after a failed chunk. */
+    finalizeCatalogSync: (connectionId: string, syncStartedAt: string) =>
+      this.transport.request<{
+        accommodations: number;
+        roomTypes: number;
+        ratePlans: number;
+        searchDocuments: number;
+      }>(
+        `/connect/v1/connections/${connectionId}/accommodations/catalog/finalize`,
+        { method: "POST", body: { syncStartedAt } },
+      ),
     /**
      * List accommodations across all connections in the operator's catalog.
      * Filter by `connectionId`, `providerKey`, `category`, `countryCode`,

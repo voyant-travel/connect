@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import {
+  cpSync,
   mkdtempSync,
+  realpathSync,
   mkdirSync,
   readFileSync,
   renameSync,
@@ -53,6 +55,7 @@ const packages = [
     expectedName: "@voyant-travel/connect-sdk",
     dependencies: {
       "@voyant-sdk/sdk-core": sdkCoreVersion,
+      "@voyant-travel/connect-provider-sdk": readPackageVersion("packages/connect-provider-sdk"),
     },
     bundleDependencies: ["@voyant-sdk/sdk-core"],
     bundledFiles: [
@@ -64,16 +67,22 @@ const packages = [
   {
     dir: path.join(repoRoot, "packages", "connect-provider-sdk"),
     expectedName: "@voyant-travel/connect-provider-sdk",
-    dependencies: {},
+    dependencies: { zod: "^4.1.13" },
     bundleDependencies: undefined,
     bundledFiles: [],
     extraExports: {
+      "./accommodations": {
+        import: "./dist/accommodations/index.js",
+        types: "./dist/accommodations/index.d.ts",
+      },
       "./hosted-worker": {
         import: "./dist/hosted-worker.js",
         types: "./dist/hosted-worker.d.ts",
       },
     },
     extraFiles: [
+      "package/dist/accommodations/index.js",
+      "package/dist/accommodations/index.d.ts",
       "package/dist/hosted-worker.js",
       "package/dist/hosted-worker.d.ts",
     ],
@@ -257,6 +266,11 @@ function verifyInstalledImports(tarballs) {
       ),
     );
 
+    cpSync(
+      realpathSync(path.join(repoRoot, "packages/connect-provider-sdk/node_modules/zod")),
+      path.join(appDir, "node_modules/zod"),
+      { recursive: true },
+    );
     for (const [packageName, tarballPath] of tarballs) {
       installPackedPackage(appDir, tarballPath, packageName);
     }
@@ -269,6 +283,9 @@ function verifyInstalledImports(tarballs) {
         `
           import assert from "node:assert/strict";
           import { createVoyantConnectClient } from "@voyant-travel/connect-sdk";
+          import { createAccommodationConnector, staySearchQuerySchema } from "@voyant-travel/connect-provider-sdk/accommodations";
+          assert.equal(typeof createAccommodationConnector, "function");
+          assert.equal(typeof staySearchQuerySchema.parse, "function");
           import { defineConnectProvider } from "@voyant-travel/connect-provider-sdk";
           import { CONNECTOR_WORKER_PROTOCOL_VERSION, connectorWorkerOperationPaths } from "@voyant-travel/connect-provider-sdk/hosted-worker";
           import { createConnectCruiseAdapter } from "@voyant-travel/connect-cruises";
@@ -355,6 +372,11 @@ function verifyInstalledTypecheck(tarballs) {
       ),
     );
 
+    cpSync(
+      realpathSync(path.join(repoRoot, "packages/connect-provider-sdk/node_modules/zod")),
+      path.join(appDir, "node_modules/zod"),
+      { recursive: true },
+    );
     for (const [packageName, tarballPath] of tarballs) {
       installPackedPackage(appDir, tarballPath, packageName);
     }

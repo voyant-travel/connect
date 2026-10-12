@@ -9,6 +9,7 @@ const manifestFile = path.join(repoRoot, "generated", "public-routes.json");
 
 const connectRouteFiles = [
   "accommodations.ts",
+  "accommodations-ingest.ts",
   "audit-logs.ts",
   "availability.ts",
   "bookings.ts",
