@@ -92,6 +92,7 @@ export const stayBookingSchema = z.object({
   accommodationId: z.string(),
   status: stayBookingStatusEnum,
   reference: z.string(),
+  /** PMS identity for lookup and cancellation; Connect assigns its own booking id. */
   externalReference: z.string().optional(),
   voucher: stayBookingVoucherSchema.optional(),
   rooms: z.array(stayBookingRoomSchema).min(1),

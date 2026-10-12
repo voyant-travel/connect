@@ -87,5 +87,22 @@ export async function runAccommodationConformance(input: {
   if (validationError) throw validationError;
   if (cancelled.status !== "cancelled")
     throw new Error("Conformance: cancellation did not complete");
+  if (!booking.externalReference)
+    throw new Error(
+      "Conformance: booking needs an externalReference for reconciliation",
+    );
+  // Connect replaces the provider booking ID with its own ID. Check replay
+  // after native cleanup so a broken reference lookup leaves no reservation.
+  const cancellationReplay = await input.handlers.cancelStay(context, {
+    connectionId,
+    booking: { ...booking, id: `cssb_conformance_${booking.id}` },
+  });
+  if (
+    cancellationReplay.status !== "cancelled" ||
+    cancellationReplay.externalReference !== booking.externalReference
+  )
+    throw new Error(
+      "Conformance: cancellation replay lost the provider reference",
+    );
   return { bookingId: booking.id, reference: booking.reference };
 }
