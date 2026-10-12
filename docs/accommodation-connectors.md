@@ -28,6 +28,11 @@ dispatchers; `input.holdId` is the stable Connect confirmation identity. A nativ
 hold reference is passed separately. Expire native holds in the backend, and
 make cancellation and external-reference lookup support reconciliation.
 
+Return the PMS reservation identity in `externalReference`. Connect assigns its
+own `booking.id`, so `cancelStay` must look up the backend reservation using
+`booking.externalReference` and the authenticated connection, rather than the
+Connect ID. Repeated cancellation must return the same cancelled reservation.
+
 ## Developer access
 
 Managed organizations use **Settings → Connect Developer**, also available in
@@ -50,7 +55,9 @@ markets; the worker helper dispatches it through the same signed protocol.
 Create an expiring Connect API token on the same screen with only the required
 Connect permissions. `connect:accommodations:write` permits catalog publication;
 read-only stay search uses `connect:accommodations:read`. The page supplies the
-central API URL and operator ID. Tenant runtime API keys from Settings → API are
+central API URL and operator ID. Holds and confirmation use accommodation write
+permission; cancelling a confirmed booking requires `connect:accommodations:delete`.
+Releasing a temporary hold uses write permission. Tenant runtime API keys from Settings → API are
 separate credentials and cannot authenticate the central Connect API. Tokens
 are shown once, stored hashed by the platform, and can be revoked; the gateway
 forwards their restrictions to Connect's vertical authorization checks.
@@ -76,7 +83,9 @@ purposes; do not interchange them.
 
 Run `runAccommodationConformance` against disposable backend inventory. It checks
 search/quote/hold/confirm, duplicate confirmation, selected room/rate, accepted
-price, booking lookup, and cancellation. Also test overlapping stays, sold-out
+price, booking lookup, and cancellation replay with a distinct Connect booking
+ID. Its fixture must return `externalReference`; native cancellation runs first
+to clean up inventory even when the identity replay check fails. Also test overlapping stays, sold-out
 nights, expired holds, seasonal boundaries, guest occupancy, and invalid signatures.
 
 The beactive demo's `connector/` project is a D1-backed reference implementation.
