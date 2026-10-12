@@ -31,6 +31,10 @@
     "./hosted-worker": {
       "types": "./src/hosted-worker.ts",
       "default": "./dist/hosted-worker.js"
+    },
+    "./accommodations": {
+      "types": "./src/accommodations/index.ts",
+      "default": "./dist/accommodations/index.js"
     }
   },
   "files": [
@@ -59,7 +63,14 @@
       "./hosted-worker": {
         "types": "./dist/hosted-worker.d.ts",
         "import": "./dist/hosted-worker.js"
+      },
+      "./accommodations": {
+        "types": "./dist/accommodations/index.d.ts",
+        "import": "./dist/accommodations/index.js"
       }
     }
+  },
+  "dependencies": {
+    "zod": "^4.1.13"
   }
 }

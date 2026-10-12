@@ -468,3 +468,17 @@ test("connect client flights.searchStream returns the raw response", async () =>
   assert.equal(recorder.calls[0].method, "POST");
   assert.equal(recorder.calls[0].headers.get("accept"), "text/event-stream");
 });
+
+test("accommodation catalog publication preserves chunk and finalization payloads", async () => {
+  const recorder = createRecorder();
+  const client = createVoyantConnectClient({ apiKey: "k", fetch: recorder.fetch });
+  const chunk = { section: "roomTypes", rows: [] };
+  const syncStartedAt = "2026-10-12T10:00:00.000Z";
+  await client.accommodations.ingestCatalogChunk("conn_1", chunk);
+  await client.accommodations.finalizeCatalogSync("conn_1", syncStartedAt);
+  assert.equal(recorder.calls[0].url, "https://api.voyant.travel/connect/v1/connections/conn_1/accommodations/catalog");
+  assert.deepEqual(JSON.parse(recorder.calls[0].body), chunk);
+  assert.equal(recorder.calls[1].url, "https://api.voyant.travel/connect/v1/connections/conn_1/accommodations/catalog/finalize");
+  assert.deepEqual(JSON.parse(recorder.calls[1].body), { syncStartedAt });
+  assert.ok(recorder.calls.every(call => call.method === "POST"));
+});

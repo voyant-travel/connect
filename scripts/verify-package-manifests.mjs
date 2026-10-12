@@ -208,19 +208,22 @@ verifyRootPackage();
 verifyPublicPackage("packages/connect-sdk/package.json", {
   name: "@voyant-travel/connect-sdk",
   descriptionKeyword: "Voyant Connect",
-  dependencies: { "@voyant-sdk/sdk-core": "workspace:*" },
+  dependencies: { "@voyant-sdk/sdk-core": "workspace:*", "@voyant-travel/connect-provider-sdk": "workspace:*" },
   bundleDependencies: ["@voyant-sdk/sdk-core"],
 });
 verifyPublicPackage("packages/connect-provider-sdk/package.json", {
   name: "@voyant-travel/connect-provider-sdk",
   descriptionKeyword: "provider integrations",
+  dependencies: { zod: "^4.1.13" },
   extraExports: {
+    "./accommodations": { types: "./src/accommodations/index.ts", default: "./dist/accommodations/index.js" },
     "./hosted-worker": {
       types: "./src/hosted-worker.ts",
       default: "./dist/hosted-worker.js",
     },
   },
   extraPublishExports: {
+    "./accommodations": { types: "./dist/accommodations/index.d.ts", import: "./dist/accommodations/index.js" },
     "./hosted-worker": {
       types: "./dist/hosted-worker.d.ts",
       import: "./dist/hosted-worker.js",

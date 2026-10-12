@@ -40,7 +40,8 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@voyant-sdk/sdk-core": "workspace:*"
+    "@voyant-sdk/sdk-core": "workspace:*",
+    "@voyant-travel/connect-provider-sdk": "workspace:*"
   },
   "devDependencies": {
     "@voyant-sdk/eslint-config": "workspace:*",

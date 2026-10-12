@@ -85,6 +85,10 @@ importers:
         version: 5.9.2
 
   packages/connect-provider-sdk:
+    dependencies:
+      zod:
+        specifier: ^4.1.13
+        version: 4.4.3
     devDependencies:
       '@voyant-sdk/eslint-config':
         specifier: workspace:*
@@ -104,6 +108,9 @@ importers:
       '@voyant-sdk/sdk-core':
         specifier: workspace:*
         version: link:../sdk-core
+      '@voyant-travel/connect-provider-sdk':
+        specifier: workspace:*
+        version: link:../connect-provider-sdk
     devDependencies:
       '@voyant-sdk/eslint-config':
         specifier: workspace:*
