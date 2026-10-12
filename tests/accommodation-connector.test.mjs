@@ -7,9 +7,11 @@ import {
 } from "../packages/connect-provider-sdk/dist/accommodations/index.js";
 const secret = "test-connector-secret";
 function signed(operation, input, overrides = {}) {
-  const path = { searchStays: "/stays/search", quoteStay: "/stays/quote", validateCredentials: "/validate-credentials" }[
-    operation
-  ];
+  const path = {
+    searchStays: "/stays/search",
+    quoteStay: "/stays/quote",
+    validateCredentials: "/validate-credentials",
+  }[operation];
   const body = JSON.stringify({
     protocolVersion: "2026-08-04",
     operation,
@@ -40,11 +42,12 @@ const query = {
   checkOut: "2027-01-22",
   rooms: [{ adults: 2, children: 1 }],
 };
-function worker(searchStays, validateCredentials) {
+function worker(searchStays, validateCredentials, registration) {
   return createAccommodationConnector({
     providerKey: "example-stays",
     signingSecret: secret,
     validateCredentials,
+    registration,
     handlers: {
       searchStays,
       async confirmStay() {
@@ -128,13 +131,19 @@ test("published stay schema requires the selected room, rate plan and nightly mo
 
 test("validates credentials through the signed public worker contract", async () => {
   let called = false;
-  const response = await worker(async () => [], async context => {
-    called = true;
-    assert.equal(context.connectionId, "conn_1");
-    return { allowedMarkets: ["JP"] };
-  })(signed("validateCredentials", {}));
+  const response = await worker(
+    async () => [],
+    async (context) => {
+      called = true;
+      assert.equal(context.connectionId, "conn_1");
+      return { allowedMarkets: ["JP"] };
+    },
+  )(signed("validateCredentials", {}));
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { ok: true, data: { allowedMarkets: ["JP"] } });
+  assert.deepEqual(await response.json(), {
+    ok: true,
+    data: { allowedMarkets: ["JP"] },
+  });
   assert.equal(called, true);
 });
 test("rejects invalid backend output as a connector failure", async () => {
@@ -142,4 +151,26 @@ test("rejects invalid backend output as a connector failure", async () => {
     signed("searchStays", { connectionId: "conn_1", query }),
   );
   assert.equal(response.status, 502);
+});
+
+test("publishes explicit registration without replacing operation discovery", async () => {
+  const response = await worker(async () => [], undefined, {
+    key: "wrong",
+    categoryCoverage: ["cruise"],
+    capabilities: ["catalog_read", "booking_create"],
+    authModel: "bring_your_own_credentials",
+  })(
+    new Request(
+      "https://connector.example/.well-known/voyant-connect/manifest",
+    ),
+  );
+  const manifest = await response.json();
+  assert.ok(manifest.capabilities.includes("confirmStay"));
+  assert.deepEqual(manifest.registration, {
+    key: "example-stays",
+    displayName: "example-stays",
+    categoryCoverage: ["accommodation"],
+    capabilities: ["catalog_read", "booking_create"],
+    authModel: "bring_your_own_credentials",
+  });
 });
