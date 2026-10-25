@@ -1487,6 +1487,12 @@ export interface PackageConfirmInput {
   contact: StayBookingContact;
   paymentReference?: PaymentReference;
   notes?: string;
+  /**
+   * The supplier's own codes for the terms the customer accepted (TUI's
+   * `clientConfirmations.selectedConfirmations`). Opaque to Connect: carried
+   * to the connector exactly as given.
+   */
+  confirmations?: string[];
 }
 
 export type PackageBookingStatus = StayBookingStatus;
@@ -1505,6 +1511,13 @@ export interface PackageBooking {
   status: PackageBookingStatus;
   reference: string;
   externalReference?: string;
+  /**
+   * The provider's deadline for a `pending` booking: when the provider holds
+   * the booking provisionally (TUI's OPTION reservation) and lapses it on its
+   * own unless it is confirmed before this instant. Absent when the provider
+   * names no deadline or the booking is already confirmed.
+   */
+  supplierExpiresAt?: IsoDateTime;
   offer: PackageOffer;
   leadTraveler: Traveler;
   travelers: Traveler[];
