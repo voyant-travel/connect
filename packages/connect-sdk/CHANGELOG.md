@@ -1,5 +1,21 @@
 # @voyant-travel/connect-sdk
 
+## 0.11.0
+
+### Minor Changes
+
+- da37b3b: Publish accommodation catalog and stay schemas, typed signed worker handlers,
+  and a disposable-inventory conformance runner. Add accommodation catalog chunk
+  and finalization methods to the consumer client.
+- 8139679: Add `PackageBooking.supplierExpiresAt`, the provider's deadline for a provisional package booking, and `PackageConfirmInput.confirmations`, the supplier's codes for the terms the customer accepted.
+
+### Patch Changes
+
+- Updated dependencies [9cf8bfe]
+- Updated dependencies [3f4b21e]
+- Updated dependencies [da37b3b]
+  - @voyant-travel/connect-provider-sdk@0.7.0
+
 ## 0.10.0
 
 ### Minor Changes
