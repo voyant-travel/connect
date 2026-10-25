@@ -1,5 +1,13 @@
 # @voyant-travel/connect-adapter
 
+## 0.6.3
+
+### Patch Changes
+
+- Updated dependencies [da37b3b]
+- Updated dependencies [8139679]
+  - @voyant-travel/connect-sdk@0.11.0
+
 ## 0.6.2
 
 ### Patch Changes

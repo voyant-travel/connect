@@ -1,5 +1,18 @@
 # @voyant-travel/connect-provider-sdk
 
+## 0.7.0
+
+### Minor Changes
+
+- da37b3b: Publish accommodation catalog and stay schemas, typed signed worker handlers,
+  and a disposable-inventory conformance runner. Add accommodation catalog chunk
+  and finalization methods to the consumer client.
+
+### Patch Changes
+
+- 9cf8bfe: Check accommodation cancellation replay using a distinct Connect booking ID and document the provider external-reference contract.
+- 3f4b21e: Expose optional public provider registration metadata alongside accommodation operation discovery for self-service connector installation.
+
 ## 0.6.0
 
 ### Minor Changes
