@@ -1,5 +1,12 @@
 # @voyant-travel/connect-cruises
 
+## 0.7.2
+
+### Patch Changes
+
+- Updated dependencies [8ae6341]
+  - @voyant-travel/connect-sdk@0.12.0
+
 ## 0.7.1
 
 ### Patch Changes
