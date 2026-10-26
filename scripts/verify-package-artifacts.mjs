@@ -99,18 +99,6 @@ const packages = [
     bundledFiles: [],
   },
   {
-    dir: path.join(repoRoot, "packages", "connect-flights"),
-    expectedName: "@voyant-travel/connect-flights",
-    dependencies: {
-      "@voyant-travel/connect-sdk": connectSdkVersion,
-    },
-    peerDependencies: {
-      "@voyant-travel/flights-contracts": "^0.104.11",
-    },
-    bundleDependencies: undefined,
-    bundledFiles: [],
-  },
-  {
     dir: path.join(repoRoot, "packages", "connect-adapter"),
     expectedName: "@voyant-travel/connect-adapter",
     dependencies: {

@@ -238,17 +238,12 @@ verifyPublicPackage("packages/connect-cruises/package.json", {
   peerDependencies: {},
   devDependencies: {},
 });
-verifyPublicPackage("packages/connect-flights/package.json", {
-  name: "@voyant-travel/connect-flights",
-  descriptionKeyword: "flights adapter",
-  dependencies: { "@voyant-travel/connect-sdk": "workspace:*" },
-  peerDependencies: {
-    "@voyant-travel/flights-contracts": "^0.104.11",
-  },
-  devDependencies: {
-    "@voyant-travel/flights-contracts": "^0.104.11",
-  },
-});
+// The flights adapter stays in the workspace but is not published.
+assert.equal(
+  readJson("packages/connect-flights/package.json").private,
+  true,
+  "packages/connect-flights/package.json must stay private",
+);
 verifyPublicPackage("packages/connect-adapter/package.json", {
   name: "@voyant-travel/connect-adapter",
   descriptionKeyword: "catalog SourceAdapter",
