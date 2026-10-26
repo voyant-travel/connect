@@ -8,6 +8,7 @@ import {
 } from "./primitives.js";
 import {
   accommodationCategoryEnum,
+  bookingRequirementsSchema,
   cancellationPolicySchema,
 } from "./shared.js";
 
@@ -152,6 +153,8 @@ export const stayOfferSchema = z.object({
   rooms: z.array(stayOfferRoomSchema).min(1),
   totals: stayOfferTotalsSchema,
   expiresAt: connectDateTimeSchema,
+  /** The supplier's booking requirements for this offer, when it declares any. */
+  bookingRequirements: bookingRequirementsSchema.optional(),
   /** Server-issued proof that authenticates this exact search result for hold. */
   __offerProof: z.string().optional(),
   /** Existing grant presentation metadata, authenticated by __offerProof. */

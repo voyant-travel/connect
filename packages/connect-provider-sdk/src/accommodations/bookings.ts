@@ -40,6 +40,8 @@ export const guestSchema = z.object({
   age: z.number().int().nonnegative().optional(),
   dateOfBirth: connectDateSchema.optional(),
   title: z.string().optional(),
+  /** Where the supplier books each guest under a sex (e.g. TUI). */
+  sex: z.enum(["male", "female", "unspecified"]).optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
   passport: passportSchema.optional(),
@@ -47,9 +49,25 @@ export const guestSchema = z.object({
 
 export type Guest = z.infer<typeof guestSchema>;
 
+/** The booker's postal address, for suppliers that require one. */
+export const bookingContactAddressSchema = z.object({
+  /** Street name (and number, when `streetNumber` is not given separately). */
+  line1: z.string().trim().min(1).max(500),
+  line2: z.string().trim().max(500).optional(),
+  streetNumber: z.string().trim().max(32).optional(),
+  city: z.string().trim().min(1).max(100),
+  postalCode: z.string().trim().min(1).max(20),
+  region: z.string().trim().max(100).optional(),
+  /** ISO 3166-1 alpha-2 country code. */
+  country: z.string().regex(/^[A-Z]{2}$/),
+});
+
+export type BookingContactAddress = z.infer<typeof bookingContactAddressSchema>;
+
 export const stayBookingContactSchema = z.object({
   email: z.string().email(),
   phone: z.string().optional(),
+  address: bookingContactAddressSchema.optional(),
 });
 
 export type StayBookingContact = z.infer<typeof stayBookingContactSchema>;

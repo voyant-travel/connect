@@ -1262,6 +1262,37 @@ export interface StayOfferTotals {
   total: ConnectMoney;
 }
 
+/**
+ * One piece of booking data the supplier needs, and the form it must take.
+ *
+ * `key` names the value on the confirm input: `contact.email`,
+ * `contact.phone`, `contact.address.line1`, `contact.address.city`,
+ * `contact.address.postalCode`, `contact.address.country`,
+ * `leadTraveler.sex`, `traveler.firstName`, `traveler.lastName`. A key the
+ * caller does not recognise can be ignored; it never makes an offer
+ * unbookable on its own.
+ *
+ * `pattern` is a regular expression the whole value must match (JavaScript
+ * syntax, applied with `patternFlags`). `message` is the supplier's own
+ * explanation, suitable for showing next to the field.
+ */
+export interface BookingRequirementField {
+  key: string;
+  required: boolean;
+  pattern?: string;
+  patternFlags?: string;
+  message?: string;
+}
+
+/**
+ * What the supplier will refuse a confirm without. Collect and check these
+ * before the customer pays: a supplier that refuses at confirm has taken no
+ * booking, but the customer may already have been charged.
+ */
+export interface BookingRequirements {
+  fields: BookingRequirementField[];
+}
+
 export interface StayOffer {
   id: string;
   connectionId: string;
@@ -1269,6 +1300,8 @@ export interface StayOffer {
   rooms: StayOfferRoom[];
   totals: StayOfferTotals;
   expiresAt: IsoDateTime;
+  /** The supplier's booking requirements for this offer, when it declares any. */
+  bookingRequirements?: BookingRequirements;
 }
 
 export interface StayHold {
@@ -1285,14 +1318,30 @@ export interface Guest {
   age?: number;
   dateOfBirth?: string;
   title?: string;
+  /** Where the supplier books each guest under a sex (e.g. TUI). */
+  sex?: TravelerSex;
   email?: string;
   phone?: string;
   passport?: { number: string; country: string; expiresAt: string };
 }
 
+/** The booker's postal address, for suppliers that require one. */
+export interface BookingContactAddress {
+  /** Street name (and number, when `streetNumber` is not given separately). */
+  line1: string;
+  line2?: string;
+  streetNumber?: string;
+  city: string;
+  postalCode: string;
+  region?: string;
+  /** ISO 3166-1 alpha-2 country code. */
+  country: string;
+}
+
 export interface StayBookingContact {
   email: string;
   phone?: string;
+  address?: BookingContactAddress;
 }
 
 export interface StayBookingRoom {
@@ -1457,6 +1506,8 @@ export interface PackageOffer {
   pricing: PackagePricing;
   cancellationPolicy: CancellationPolicy;
   expiresAt: IsoDateTime;
+  /** The supplier's booking requirements for this offer, when it declares any. */
+  bookingRequirements?: BookingRequirements;
 }
 
 export type PackageHoldStatus = "active" | "expired" | "consumed" | "released";
