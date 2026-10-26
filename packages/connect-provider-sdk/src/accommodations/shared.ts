@@ -156,3 +156,42 @@ export const accommodationRatingSchema = z.object({
   stars: z.number().min(0).max(5).optional(),
   source: z.string().optional(),
 });
+
+/**
+ * One piece of booking data the supplier needs, and the form it must take.
+ *
+ * `key` names the value on the confirm input: `contact.email`,
+ * `contact.phone`, `contact.address.line1`, `contact.address.city`,
+ * `contact.address.postalCode`, `contact.address.country`,
+ * `leadTraveler.sex`, `traveler.firstName`, `traveler.lastName`. Keys are
+ * open: a caller that does not recognise one ignores it.
+ *
+ * `pattern` is a regular expression the whole value must match (JavaScript
+ * syntax, applied with `patternFlags`); `message` is the supplier's own
+ * explanation for the field.
+ */
+export const bookingRequirementFieldSchema = z.object({
+  key: z.string().min(1).max(64),
+  required: z.boolean(),
+  pattern: z.string().min(1).max(512).optional(),
+  patternFlags: z
+    .string()
+    .regex(/^[imsu]{0,4}$/)
+    .optional(),
+  message: z.string().max(300).optional(),
+});
+
+export type BookingRequirementField = z.infer<
+  typeof bookingRequirementFieldSchema
+>;
+
+/**
+ * What the supplier will refuse a confirm without. Declared on an offer so a
+ * booking flow can collect and check it before the customer pays: a supplier
+ * that refuses at confirm took no booking, but the payment may already exist.
+ */
+export const bookingRequirementsSchema = z.object({
+  fields: z.array(bookingRequirementFieldSchema).max(50),
+});
+
+export type BookingRequirements = z.infer<typeof bookingRequirementsSchema>;
