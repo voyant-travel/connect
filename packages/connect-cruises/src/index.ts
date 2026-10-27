@@ -179,9 +179,24 @@ export type ConnectExternalShip = {
 export type ConnectExternalPriceRow = {
   cabinCategoryRef: ConnectCruiseSourceRef;
   occupancy: number;
+  /**
+   * Who the price is for. Three adults, two adults and a child, and two
+   * adults and an infant are all `occupancy: 3`, and lines price them
+   * differently, so a consumer matches on this rather than the head count.
+   */
+  passengerComposition: {
+    adults: number;
+    children?: number;
+    childAges?: number[];
+    infants?: number;
+  };
   fareCode?: string | null;
   currency: string;
   pricePerPerson: string;
+  /** The per-person price before the row's promotions, when one applies. */
+  originalPricePerPerson?: string | null;
+  /** Cabins of the category the line still has for this fare, when it says. */
+  availabilityCount?: number | null;
   availability:
     | "available"
     | "limited"
@@ -743,9 +758,18 @@ function toPriceRow(row: CabinPricing): ConnectExternalPriceRow {
       kind: "cabin_category",
     },
     occupancy: passengerCountFromConnectOccupancy(row.occupancy),
+    passengerComposition: passengerCompositionFromConnectOccupancy(
+      row.occupancy,
+    ),
     fareCode: row.fareCode ?? null,
     currency: row.pricePerPerson.currency,
     pricePerPerson: moneyToDecimal(row.pricePerPerson),
+    ...(row.originalPricePerPerson
+      ? { originalPricePerPerson: moneyToDecimal(row.originalPricePerPerson) }
+      : {}),
+    ...(row.availableUnits != null
+      ? { availabilityCount: row.availableUnits }
+      : {}),
     availability: row.availability,
     components: row.components.map((component) => ({
       kind: component.kind,
@@ -982,6 +1006,22 @@ function slugify(value: string): string {
       .replace(/^-+|-+$/g, "")
       .slice(0, 80) || "cruise"
   );
+}
+
+/** The party a Connect price is for, in the framework's price-row shape. */
+export function passengerCompositionFromConnectOccupancy(
+  occupancy: CruisePassengerOccupancy,
+): ConnectExternalPriceRow["passengerComposition"] {
+  const children = occupancy.children ?? 0;
+  const infants = occupancy.infants ?? 0;
+  return {
+    adults: occupancy.adults,
+    ...(children > 0 ? { children } : {}),
+    ...(children > 0 && occupancy.childrenAges?.length
+      ? { childAges: occupancy.childrenAges }
+      : {}),
+    ...(infants > 0 ? { infants } : {}),
+  };
 }
 
 export function passengerCountFromConnectOccupancy(
